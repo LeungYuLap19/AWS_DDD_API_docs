@@ -3,30 +3,80 @@
   <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>AWS DDD API reference</title>
+    <meta name="theme-color" content="#111110">
+    <meta name="description" content="AWS DDD API reference for tested migration routes.">
+    <title>API Reference · AWS DDD</title>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/swagger-ui-dist@5.33.2/swagger-ui.css">
-    <style>
-      body { margin: 0; background: #fafafa; }
-      .topbar { display: none; }
-      .swagger-ui .info { margin: 32px 0; }
-    </style>
+    <link rel="stylesheet" href="./site.css">
+    <script defer src="https://cdn.jsdelivr.net/npm/js-yaml@4.1.0/dist/js-yaml.min.js"></script>
+    <script defer src="https://cdn.jsdelivr.net/npm/swagger-ui-dist@5.33.2/swagger-ui-bundle.js"></script>
+    <script defer src="./site.js"></script>
   </head>
   <body>
-    <div id="swagger-ui"></div>
-    <script src="https://cdn.jsdelivr.net/npm/swagger-ui-dist@5.33.2/swagger-ui-bundle.js"></script>
-    <script>
-      window.addEventListener('load', () => {
-        SwaggerUIBundle({
-          url: './openapi.yaml',
-          dom_id: '#swagger-ui',
-          deepLinking: true,
-          filter: true,
-          displayRequestDuration: true,
-          persistAuthorization: false,
-          presets: [SwaggerUIBundle.presets.apis],
-          layout: 'BaseLayout'
-        });
-      });
-    </script>
+    <header class="site-header">
+      <a class="brand" href="./" aria-label="AWS DDD API reference home">
+        <span class="brand-mark" aria-hidden="true"></span>
+        <span>AWS DDD<span class="brand-suffix">/ API</span></span>
+      </a>
+      <button class="menu-button" id="menu-button" type="button" aria-label="Open endpoint navigation" aria-expanded="false">☰</button>
+      <label class="search-box" for="search-input">
+        <span class="search-icon" aria-hidden="true"></span>
+        <input id="search-input" type="search" placeholder="Search endpoints" autocomplete="off" aria-label="Search endpoints">
+        <kbd>⌘ K</kbd>
+      </label>
+      <nav class="header-actions" aria-label="Site links">
+        <a href="./openapi.yaml" target="_blank" rel="noopener">OpenAPI YAML</a>
+        <a href="https://github.com/LeungYuLap19/AWS_DDD_API_docs" target="_blank" rel="noopener">GitHub</a>
+        <button class="explorer-link" id="explorer-button" type="button">Swagger Explorer <span aria-hidden="true">↗</span></button>
+      </nav>
+    </header>
+
+    <div class="section-bar">
+      <span class="section-label">Documentation</span>
+      <button class="section-tab active" id="reference-tab" type="button" aria-current="page">API Reference</button>
+      <button class="section-tab" id="explorer-tab" type="button">Interactive Explorer</button>
+      <a class="download-link" href="./openapi.yaml" download="aws-ddd-api-openapi.yaml" aria-label="Download OpenAPI YAML for tools and LLMs"><span class="download-desktop">Download </span>YAML <span aria-hidden="true">↓</span></a>
+      <span class="section-version" id="section-version">OpenAPI 3.1</span>
+    </div>
+
+    <div class="app-shell" id="reference-view">
+      <aside class="sidebar" id="sidebar" aria-label="Endpoint navigation">
+        <div class="sidebar-intro">
+          <span class="eyebrow">AWS DDD API</span>
+          <span class="sidebar-title">API Reference</span>
+          <span class="sidebar-count" id="sidebar-count">Loading endpoints…</span>
+        </div>
+        <nav id="endpoint-nav"></nav>
+        <div class="sidebar-footer">Tested migration routes <span id="sidebar-total"></span></div>
+      </aside>
+
+      <main class="reference-main" id="reference-main">
+        <div id="endpoint-content" class="loading-state" role="status">Loading API reference…</div>
+      </main>
+
+      <aside class="code-panel" id="code-panel" aria-label="Request examples">
+        <div class="code-panel-heading">
+          <span>Example request</span>
+          <button class="copy-button" id="copy-button" type="button" aria-label="Copy example">Copy</button>
+        </div>
+        <div class="code-tabs" role="tablist" aria-label="Example format">
+          <button class="code-tab active" data-code="json" type="button" role="tab" aria-selected="true">JSON</button>
+          <button class="code-tab" data-code="curl" type="button" role="tab" aria-selected="false">cURL</button>
+        </div>
+        <pre class="code-block"><code id="example-code">Select an endpoint to see its request.</code></pre>
+        <div class="code-hint" id="code-hint"></div>
+      </aside>
+    </div>
+
+    <section class="explorer-view" id="explorer-view" hidden aria-label="Swagger UI interactive explorer">
+      <div class="explorer-intro">
+        <span class="eyebrow">Interactive explorer</span>
+        <h1>Try the API</h1>
+        <p>Set your deployed server and credentials in Swagger UI before sending requests.</p>
+      </div>
+      <div id="swagger-ui"></div>
+    </section>
+
+    <noscript><p class="noscript-message">Enable JavaScript to browse the API reference. The <a href="./openapi.yaml">OpenAPI YAML</a> remains available.</p></noscript>
   </body>
 </html>
