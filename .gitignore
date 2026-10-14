@@ -5,3 +5,14 @@ schema-cache.json
 _base_openapi.yaml
 _draft_openapi.yaml
 _type_probe.cjs
+
+# Local generators, audits, and tests; site.js runs the published site
+*.py
+*.cjs
+*.mjs
+*.sh
+*.ps1
+*.bat
+*.cmd
+*.js
+!site.js

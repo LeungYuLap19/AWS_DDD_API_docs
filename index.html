@@ -6,10 +6,9 @@
     <meta name="theme-color" content="#111110">
     <meta name="description" content="AWS DDD API reference for tested migration routes.">
     <title>API Reference · AWS DDD</title>
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/swagger-ui-dist@5.33.2/swagger-ui.css">
+    <link rel="icon" href="./favicon.svg" type="image/svg+xml">
     <link rel="stylesheet" href="./site.css">
     <script defer src="https://cdn.jsdelivr.net/npm/js-yaml@4.1.0/dist/js-yaml.min.js"></script>
-    <script defer src="https://cdn.jsdelivr.net/npm/swagger-ui-dist@5.33.2/swagger-ui-bundle.js"></script>
     <script defer src="./site.js"></script>
   </head>
   <body>
@@ -28,20 +27,17 @@
     <div class="section-bar">
       <span class="section-label">Documentation</span>
       <span class="section-tab active" aria-current="page">API Reference</span>
-      <a class="download-link" href="./openapi.yaml" download="aws-ddd-api-openapi.yaml" aria-label="Download OpenAPI YAML for tools and LLMs"><span class="download-desktop">Download </span>YAML <span aria-hidden="true">↓</span></a>
       <span class="section-version" id="section-version">OpenAPI 3.1</span>
     </div>
 
     <div class="app-shell" id="reference-view">
       <aside class="sidebar" id="sidebar" aria-label="Endpoint navigation">
-        <label class="search-box" for="search-input">
-          <span class="search-icon" aria-hidden="true"></span>
-          <input id="search-input" type="search" placeholder="Filter endpoints" autocomplete="off" aria-label="Filter endpoints">
-          <kbd>Ctrl K</kbd>
-        </label>
         <div class="sidebar-intro">
-          <span class="eyebrow">AWS DDD API</span>
-          <span class="sidebar-title">API Reference</span>
+          <label class="search-box" for="search-input">
+            <span class="search-icon" aria-hidden="true"></span>
+            <input id="search-input" type="search" placeholder="Search endpoints" autocomplete="off" aria-label="Search endpoints">
+            <kbd>Ctrl K</kbd>
+          </label>
           <span class="sidebar-count" id="sidebar-count">Loading endpoints…</span>
         </div>
         <nav id="endpoint-nav"></nav>
@@ -50,41 +46,45 @@
 
       <main class="reference-main" id="reference-main">
         <div id="endpoint-content" class="loading-state" role="status">Loading API reference…</div>
-        <section class="inline-explorer" id="inline-explorer" hidden aria-label="Interactive request">
-          <div class="inline-explorer-heading">
-            <span class="eyebrow">Interactive request</span>
-            <h3>Try this endpoint</h3>
-            <p>Choose your deployed server and enter the required credentials before sending.</p>
-          </div>
-          <div id="swagger-ui"></div>
-        </section>
       </main>
 
-      <aside class="code-panel" id="code-panel" aria-label="Request and response examples">
-        <div class="code-context">
-          <span class="code-context-label">Language</span>
-          <span class="language-chip">⌘ <strong>Shell / cURL</strong></span>
-        </div>
-        <div class="credentials" id="credentials"></div>
-        <div class="code-panel-heading">
-          <span>Request</span>
+      <aside class="code-panel" id="code-panel" aria-label="Request preview and result">
+        <section class="language-section" aria-label="Request language">
+          <h3 class="panel-label">Language</h3>
+          <div class="language-options" id="language-options" role="group" aria-label="Request language">
+            <button type="button" data-language="curl">Shell</button>
+            <button type="button" data-language="node">Node</button>
+            <button type="button" data-language="ruby">Ruby</button>
+            <button type="button" data-language="php">PHP</button>
+            <button type="button" data-language="http">HTTP</button>
+          </div>
+        </section>
+        <section class="experiment-config" aria-label="Connection and credentials">
+          <h3 class="panel-label">Credentials <span class="panel-note">Kept in this browser tab</span></h3>
+          <div class="server-fields" id="server-fields"></div>
+          <div class="auth-fields" id="auth-fields"></div>
+          <div class="server-url-label">Target server</div>
+          <code class="server-url" id="server-url"></code>
+        </section>
+        <section class="request-preview" aria-label="Generated request">
+          <div class="code-panel-heading">
+          <h3>Request</h3>
           <button class="copy-button" id="copy-button" type="button" aria-label="Copy example">Copy</button>
-        </div>
-        <div class="code-tabs" role="tablist" aria-label="Example format">
-          <button class="code-tab active" data-code="curl" type="button" role="tab" aria-selected="true">cURL</button>
-          <button class="code-tab" data-code="json" type="button" role="tab" aria-selected="false">JSON</button>
-        </div>
-        <pre class="code-block"><code id="example-code">Select an endpoint to see its request.</code></pre>
-        <div class="code-actions"><button class="try-button" id="code-try-button" type="button">Try it out</button></div>
-        <div class="code-hint" id="code-hint"></div>
+          </div>
+        <pre class="code-block request-code-block"><code id="example-code">Select an endpoint to see its request.</code></pre>
+        <div class="code-actions"><button class="try-button" id="send-button" type="submit" form="request-form">Send request</button></div>
+        <p class="request-message" id="request-message" role="status">Enter request fields on the left. Configure the server and credentials above before sending.</p>
+        </section>
+        <section class="result-section" aria-label="Response result">
         <div class="code-panel-heading result-heading">
-          <label for="response-status">Response example</label>
+          <h3 id="response-heading">Response example</h3>
           <div class="result-controls">
-            <select id="response-status" aria-label="Response status"></select>
+            <select id="response-status" aria-label="Response status or example"></select>
             <button class="copy-button" id="copy-response-button" type="button" aria-label="Copy response example">Copy</button>
           </div>
         </div>
         <pre class="code-block response-code-block"><code id="response-code">Select an endpoint to see its response.</code></pre>
+        </section>
       </aside>
     </div>
 

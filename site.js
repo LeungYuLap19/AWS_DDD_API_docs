@@ -5,7 +5,7 @@
   const code = $('#example-code');
   const search = $('#search-input');
   const methods = new Set(['get', 'post', 'put', 'patch', 'delete']);
-  const state = { spec: null, operations: [], active: null, tab: 'request', codeTab: 'curl', responseStatus: '', query: '', groups: new Set(), tryOpen: false };
+  const state = { spec: null, operations: [], active: null, responseStatus: '', query: '', groups: new Set(), language: 'http', mime: '', serverVariables: {}, liveResponse: null, credentials: { apiKeyAuth: '', bearerAuth: '', checkoutToken: '' } };
   const escape = (value) => String(value ?? '').replace(/[&<>"']/g, (char) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[char]);
   const highlightJson = (value) => {
     const source = String(value);
@@ -48,7 +48,8 @@
   const parameter = (raw) => schema(raw);
   const body = (operation) => {
     const entries = Object.entries(operation.requestBody?.content || {});
-    return entries[0] ? { mime: entries[0][0], ...entries[0][1] } : null;
+    const selected = entries.find(([mime]) => mime === state.mime) || entries[0];
+    return selected ? { mime: selected[0], ...selected[1] } : null;
   };
   const fields = (raw, required = [], depth = 0) => {
     const value = schema(raw);
@@ -67,38 +68,48 @@
       : nested ? `<details class="nested-fields" ${depth < 2 ? 'open' : ''}><summary>Fields in ${escape(name)}</summary>${fields(nestedSchema, nestedSchema.required || [], depth + 1)}</details>` : '';
     return `<div class="field-row"><div class="field-heading"><span class="field-name">${escape(name)}</span><span class="type-pill">${escape(typeOf(raw))}</span>${required ? '<span class="required-label">required</span>' : ''}</div>${value.description ? `<p class="field-description">${escape(value.description)}</p>` : ''}${extra ? `<p class="field-extra">${escape(extra)}</p>` : ''}${children}</div>`;
   };
+  const inputField = (item) => {
+    const kind = typeOf(item.schema);
+    const control = kind === 'boolean'
+      ? `<select data-param-location="${escape(item.in)}" data-param-name="${escape(item.name)}" ${item.required ? 'required' : ''}><option value="">Select value</option><option value="true">true</option><option value="false">false</option></select>`
+      : `<input data-param-location="${escape(item.in)}" data-param-name="${escape(item.name)}" type="${kind === 'number' || kind === 'integer' ? 'number' : 'text'}" ${kind === 'number' ? 'step="any"' : ''} ${item.required ? 'required' : ''} placeholder="${escape(item.schema?.example ?? item.schema?.default ?? `Enter ${item.name}`)}" autocomplete="off">`;
+    return `<label class="request-field"><span class="request-field-title"><code>${escape(item.name)}</code><span class="type-pill">${escape(kind)}</span>${item.required ? '<span class="required-label">required</span>' : ''}</span>${item.description ? `<span class="field-description">${escape(item.description)}</span>` : ''}${control}</label>`;
+  };
   const paramFields = (operation, location) => {
     const params = (operation.parameters || []).map(parameter).filter((item) => item.in === location);
     if (!params.length) return '';
-    return `<section><div class="content-subhead"><h3>${label(location)} parameters</h3></div><div class="field-list">${params.map((item) => field(item.name, { ...item.schema, description: item.description }, item.required, 0)).join('')}</div></section>`;
+    return `<section class="request-group"><div class="content-subhead"><h3>${label(location)} parameters</h3></div><div class="request-fields">${params.map(inputField).join('')}</div></section>`;
+  };
+  const bodyInput = (operation) => {
+    const request = body(operation);
+    if (!request) return '';
+    const value = schema(request.schema);
+    if (request.mime === 'application/json') {
+      return `<label class="request-field" for="request-body"><span class="request-field-title">JSON body ${operation.requestBody?.required ? '<span class="required-label">required</span>' : ''}</span></label><textarea id="request-body" data-body-json spellcheck="false" ${operation.requestBody?.required ? 'required' : ''}>${escape(JSON.stringify(example(request.schema), null, 2))}</textarea><details class="body-schema"><summary>Body field types and structure</summary>${fields(request.schema, value.required || [])}</details>`;
+    }
+    return `<div class="request-fields">${Object.entries(value.properties || {}).map(([name, prop]) => {
+      const fieldSchema = schema(prop);
+      const file = fieldSchema.format === 'binary';
+      return `<label class="request-field"><span class="request-field-title"><code>${escape(name)}</code><span class="type-pill">${escape(typeOf(prop))}</span>${(value.required || []).includes(name) ? '<span class="required-label">required</span>' : ''}</span>${fieldSchema.description ? `<span class="field-description">${escape(fieldSchema.description)}</span>` : ''}<input data-body-field="${escape(name)}" type="${file ? 'file' : 'text'}" ${(value.required || []).includes(name) ? 'required' : ''} autocomplete="off"></label>`;
+    }).join('')}</div>`;
   };
   const requestContent = (operation) => {
-    const request = body(operation);
-    const requestFields = request ? `<section><div class="content-subhead"><h3>Request body</h3><span class="mime-type">${escape(request.mime)}</span></div>${fields(request.schema, schema(request.schema).required || [])}</section>` : '';
+    const options = Object.keys(operation.requestBody?.content || {});
+    const mimeControl = options.length > 1 ? `<select id="request-mime" aria-label="Request content type">${options.map((mime) => `<option value="${escape(mime)}" ${mime === state.mime ? 'selected' : ''}>${escape(mime)}</option>`).join('')}</select>` : `<span class="mime-type">${escape(options[0] || '')}</span>`;
+    const requestFields = options.length ? `<section class="request-group"><div class="content-subhead"><h3>Body</h3>${mimeControl}</div><div id="body-input-container">${bodyInput(operation)}</div></section>` : '';
     const params = ['path', 'query', 'header'].map((location) => paramFields(operation, location)).join('');
-    return requestFields + params || '<p class="empty-content">This operation has no request body or parameters.</p>';
+    return `<form id="request-form">${params}${requestFields}${params || requestFields ? '' : '<p class="empty-content">This operation has no request body or parameters.</p>'}</form>`;
   };
   const responseContent = (operation) => Object.entries(operation.responses || {}).map(([status, raw]) => {
     const response = schema(raw);
     const entry = Object.entries(response.content || {})[0];
-    const details = entry ? fields(entry[1].schema, schema(entry[1].schema).required || []) : '';
+    const details = entry ? fields(entry[1].schema, schema(entry[1].schema).required || []) : '<p class="empty-content">No response body.</p>';
     const keys = schema(entry?.[1]?.schema).properties?.errorKey?.enum || [];
     const examples = entry?.[1]?.examples || {};
     const exampleList = Object.values(examples).map((item) => `<details class="response-example"><summary>${escape(item.summary || 'Example')}</summary><pre>${escape(JSON.stringify(item.value, null, 2))}</pre></details>`).join('');
     const title = (response.description || '').split(' Possible error keys:')[0];
-    return `<section class="response-block"><h3><span class="response-status ${status.startsWith('4') || status.startsWith('5') ? 'error' : ''}">${escape(status)}</span>${escape(title)}</h3>${keys.length ? `<p class="error-key-label">Possible errorKey values</p><div class="error-key-list">${keys.map((key) => `<code>${escape(key)}</code>`).join('')}</div>` : ''}${details}${exampleList ? `<div class="response-examples"><h4>Examples</h4>${exampleList}</div>` : ''}</section>`;
+    return `<details class="response-block"><summary><span class="response-status ${status.startsWith('4') || status.startsWith('5') ? 'error' : ''}">${escape(status)}</span>${escape(title)}</summary><div class="response-detail">${keys.length ? `<p class="error-key-label">Possible errorKey values</p><div class="error-key-list">${keys.map((key) => `<code>${escape(key)}</code>`).join('')}</div>` : ''}${details}${exampleList ? `<div class="response-examples"><h4>Examples</h4>${exampleList}</div>` : ''}</div></details>`;
   }).join('') || '<p class="empty-content">No responses are specified.</p>';
-  const authContent = (operation) => {
-    const alternatives = operation.security ?? state.spec.security ?? [];
-    const schemes = [...new Set(alternatives.flatMap((item) => Object.keys(item)))];
-    const cards = schemes.map((name) => {
-      const scheme = state.spec.components?.securitySchemes?.[name] || {};
-      const usage = scheme.type === 'http' ? 'Authorization: Bearer &lt;token&gt;' : `${escape(scheme.name || name)}: &lt;value&gt;`;
-      return `<div class="auth-card"><strong>${escape(name)}</strong><p>${escape(scheme.description || scheme.type || '')}</p><p><code>${usage}</code></p></div>`;
-    }).join('');
-    const headers = (operation.parameters || []).map(parameter).filter((item) => item.in === 'header' && item.required);
-    return (cards || '<p class="empty-content">No authorization scheme is required by this operation.</p>') + (headers.length ? `<section><div class="content-subhead"><h3>Required headers</h3></div><div class="field-list">${headers.map((item) => field(item.name, { ...item.schema, description: item.description }, true, 0)).join('')}</div></section>` : '');
-  };
   const example = (raw, depth = 0, includeAll = false) => {
     const value = schema(raw);
     if (depth > 6) return null;
@@ -119,70 +130,160 @@
     if (value.format === 'date') return '2026-10-14';
     return `<${value.format || 'string'}>`;
   };
-  const serverUrl = () => {
+  const serverUrl = (strict = false) => {
     const server = state.spec.servers?.[0];
-    return (server?.url || 'https://your-api.example.com').replace(/\{([^}]+)\}/g, (_, key) => server.variables?.[key]?.default || `<${key}>`);
+    if (!server) throw new Error('No server is defined in the OpenAPI spec.');
+    return server.url.replace(/\{([^}]+)\}/g, (_, key) => {
+      const value = (state.serverVariables[key] || '').trim();
+      if (strict && (!(key === 'stage' ? /^[A-Za-z0-9_$-]+$/ : /^[A-Za-z0-9-]+$/).test(value) || value.startsWith('your-'))) throw new Error(`Enter a valid ${key} in Credentials.`);
+      return value || `{${key}}`;
+    });
   };
-  const curlExample = (item) => {
-    const operation = item.operation;
-    const request = body(operation);
-    const params = (operation.parameters || []).map(parameter);
-    let url = serverUrl() + item.path.replace(/\{([^}]+)\}/g, (_, key) => `<${key}>`);
-    const queries = params.filter((part) => part.in === 'query').map((part) => `${encodeURIComponent(part.name)}=<${part.name}>`);
-    if (queries.length) url += `?${queries.join('&')}`;
-    const lines = [`curl -X ${item.method.toUpperCase()} '${url}'`];
-    if (request && request.mime !== 'multipart/form-data') lines.push(`  -H 'Content-Type: ${request.mime}'`);
-    const schemes = [...new Set((operation.security ?? state.spec.security ?? []).flatMap((part) => Object.keys(part)))];
-    for (const name of schemes) {
-      const scheme = state.spec.components?.securitySchemes?.[name];
-      if (scheme?.type === 'http') lines.push("  -H 'Authorization: Bearer <token>'");
-      if (scheme?.type === 'apiKey' && scheme.in === 'header') lines.push(`  -H '${scheme.name}: <${name}>'`);
+  const renderServerConfig = () => {
+    const variables = state.spec.servers?.[0]?.variables || {};
+    $('#server-fields').innerHTML = Object.entries(variables).map(([name]) => `<label class="server-field"><span>${escape(name)}</span><input data-server-variable="${escape(name)}" value="${escape(state.serverVariables[name] || '')}" autocomplete="off" spellcheck="false"></label>`).join('');
+    const schemes = state.spec.components?.securitySchemes || {};
+    const needed = new Set((state.active?.operation.security ?? state.spec.security ?? []).flatMap((item) => Object.keys(item)));
+    $('#auth-fields').innerHTML = Object.entries(schemes).map(([name, scheme]) => `<label class="server-field"><span>${escape(scheme.type === 'http' ? 'JWT' : scheme.name || name)} ${needed.has(name) ? '<em>required</em>' : ''}</span><input type="password" data-credential="${escape(name)}" value="${escape(state.credentials[name] || '')}" autocomplete="off" placeholder="${escape(scheme.type === 'http' ? 'Bearer token' : scheme.name || name)}"></label>`).join('');
+    $('#server-url').textContent = serverUrl();
+  };
+  const buildRequest = (strict = false) => {
+    const item = state.active;
+    const values = [...content.querySelectorAll('[data-param-location]')];
+    const path = item.path.replace(/\{([^}]+)\}/g, (_, name) => {
+      const value = values.find((input) => input.dataset.paramLocation === 'path' && input.dataset.paramName === name)?.value.trim();
+      if (strict && !value) throw new Error(`Enter the required path parameter ${name}.`);
+      return value ? encodeURIComponent(value) : `{${name}}`;
+    });
+    const url = new URL(`${serverUrl(strict)}${path}`);
+    const headers = {};
+    for (const input of values) {
+      const value = input.value.trim();
+      if (strict && input.required && !value) throw new Error(`Enter ${input.dataset.paramName}.`);
+      if (!value) continue;
+      if (input.dataset.paramLocation === 'query') url.searchParams.append(input.dataset.paramName, value);
+      if (input.dataset.paramLocation === 'header') headers[input.dataset.paramName] = value;
     }
-    for (const part of params.filter((part) => part.in === 'header')) lines.push(`  -H '${part.name}: <${part.name}>'`);
-    if (request?.mime === 'application/json') lines.push(`  --data '${JSON.stringify(example(request.schema))}'`);
-    else if (request?.mime === 'multipart/form-data') {
-      for (const name of Object.keys(schema(request.schema).properties || {})) lines.push(`  -F '${name}=<${name}>'`);
-    } else if (request?.mime === 'application/x-www-form-urlencoded') {
-      for (const name of Object.keys(schema(request.schema).properties || {})) lines.push(`  --data-urlencode '${name}=<${name}>'`);
-    } else if (request) lines.push("  --data '<request body>'");
-    return lines.join(' \\\n');
+    const alternatives = item.operation.security ?? state.spec.security ?? [];
+    const chosen = alternatives.find((alternative) => Object.keys(alternative).every((name) => state.credentials[name]?.trim())) || alternatives[0] || {};
+    for (const name of Object.keys(chosen)) {
+      const scheme = state.spec.components?.securitySchemes?.[name];
+      const credential = state.credentials[name]?.trim();
+      if (strict && !credential) throw new Error(`Enter ${scheme?.type === 'http' ? 'JWT' : scheme?.name || name} in Credentials.`);
+      if (scheme?.type === 'http' && scheme.scheme === 'bearer') headers.Authorization = `Bearer ${credential?.replace(/^Bearer\s+/i, '') || '<JWT>'}`;
+      if (scheme?.type === 'apiKey' && scheme.in === 'header') headers[scheme.name] = credential || `<${scheme.name}>`;
+    }
+    const request = body(item.operation);
+    let payload;
+    const entries = [];
+    if (request?.mime === 'application/json') {
+      const raw = content.querySelector('[data-body-json]')?.value.trim() || '';
+      if (strict && item.operation.requestBody?.required && !raw) throw new Error('Enter a JSON body.');
+      if (raw) {
+        if (strict) { try { JSON.parse(raw); } catch { throw new Error('Request body must be valid JSON.'); } }
+        payload = raw;
+        headers['Content-Type'] = request.mime;
+      }
+    } else if (request?.mime === 'multipart/form-data' || request?.mime === 'application/x-www-form-urlencoded') {
+      const form = request.mime === 'multipart/form-data' ? new FormData() : new URLSearchParams();
+      for (const input of content.querySelectorAll('[data-body-field]')) {
+        const file = input.type === 'file' ? input.files?.[0] : null;
+        const value = file || input.value.trim();
+        if (strict && input.required && !value) throw new Error(`Enter ${input.dataset.bodyField}.`);
+        if (!value) continue;
+        form.append(input.dataset.bodyField, value);
+        entries.push({ name: input.dataset.bodyField, value: file ? file.name : value, file: !!file });
+      }
+      if (strict && item.operation.requestBody?.required && !entries.length) throw new Error('Enter a request body.');
+      if (entries.length) {
+        payload = request.mime === 'multipart/form-data' ? form : form.toString();
+        if (request.mime !== 'multipart/form-data') headers['Content-Type'] = request.mime;
+      }
+    }
+    return { url: url.href, method: item.method.toUpperCase(), headers, body: payload, mime: request?.mime, entries };
+  };
+  const safeHeaders = (headers) => Object.fromEntries(Object.entries(headers).map(([name, value]) => [name, /authorization|api[-_]?key|checkout[-_]?token|signature/i.test(name) ? `<${name}>` : value]));
+  const shellQuote = (value) => `'${String(value).replace(/'/g, "'\\''")}'`;
+  const phpQuote = (value) => `'${String(value).replace(/\\/g, '\\\\').replace(/'/g, "\\'")}'`;
+  const snippet = (request) => {
+    const { url, method, mime, entries } = request;
+    const headers = safeHeaders(request.headers);
+    const bodyText = typeof request.body === 'string' ? request.body : '';
+    if (state.language === 'curl') {
+      const parts = [`curl --request ${method} ${shellQuote(url)}`, ...Object.entries(headers).map(([name, value]) => `--header ${shellQuote(`${name}: ${value}`)}`)];
+      if (mime === 'multipart/form-data') parts.push(...entries.map(({ name, value, file }) => `--form ${shellQuote(`${name}=${file ? '@' : ''}${value}`)}`));
+      else if (bodyText) parts.push(`--data-raw ${shellQuote(bodyText)}`);
+      return parts.join(' \\\n  ');
+    }
+    if (state.language === 'node') {
+      const lines = [];
+      if (mime === 'multipart/form-data') {
+        lines.push("import { readFile } from 'node:fs/promises';", 'const form = new FormData();');
+        for (const { name, value, file } of entries) lines.push(file ? `form.append(${JSON.stringify(name)}, new Blob([await readFile(${JSON.stringify(value)})]), ${JSON.stringify(value)});` : `form.append(${JSON.stringify(name)}, ${JSON.stringify(value)});`);
+      }
+      lines.push(`const response = await fetch(${JSON.stringify(url)}, {`, `  method: ${JSON.stringify(method)},`);
+      if (Object.keys(headers).length) lines.push(`  headers: ${JSON.stringify(headers, null, 2).replace(/\n/g, '\n  ')},`);
+      let bodySource = JSON.stringify(bodyText);
+      if (mime === 'application/json') {
+        try { bodySource = `JSON.stringify(${JSON.stringify(JSON.parse(bodyText), null, 2).replace(/\n/g, '\n  ')})`; } catch {}
+      }
+      if (request.body) lines.push(`  body: ${mime === 'multipart/form-data' ? 'form' : bodySource},`);
+      lines.push('});', 'console.log(response.status, await response.text());');
+      return lines.join('\n');
+    }
+    if (state.language === 'ruby') {
+      const lines = ["require 'net/http'", "require 'uri'", `uri = URI(${JSON.stringify(url)})`, `request = Net::HTTP::${label(method.toLowerCase())}.new(uri)`];
+      for (const [name, value] of Object.entries(headers)) lines.push(`request[${JSON.stringify(name)}] = ${JSON.stringify(value)}`);
+      if (mime === 'multipart/form-data') lines.push(`request.set_form([${entries.map(({ name, value, file }) => `[${JSON.stringify(name)}, ${file ? `File.open(${JSON.stringify(value)})` : JSON.stringify(value)}]`).join(', ')}], 'multipart/form-data')`);
+      else if (bodyText) lines.push(`request.body = ${JSON.stringify(bodyText)}`);
+      lines.push('response = Net::HTTP.start(uri.hostname, uri.port, use_ssl: uri.scheme == "https") { |http| http.request(request) }', 'puts response.code, response.body');
+      return lines.join('\n');
+    }
+    if (state.language === 'php') {
+      const lines = ['<?php', `$ch = curl_init(${phpQuote(url)});`, `curl_setopt($ch, CURLOPT_CUSTOMREQUEST, ${phpQuote(method)});`];
+      if (Object.keys(headers).length) lines.push(`curl_setopt($ch, CURLOPT_HTTPHEADER, [${Object.entries(headers).map(([name, value]) => phpQuote(`${name}: ${value}`)).join(', ')}]);`);
+      if (mime === 'multipart/form-data') lines.push(`curl_setopt($ch, CURLOPT_POSTFIELDS, [${entries.map(({ name, value, file }) => `${phpQuote(name)} => ${file ? `new CURLFile(${phpQuote(value)})` : phpQuote(value)}`).join(', ')}]);`);
+      else if (bodyText) lines.push(`curl_setopt($ch, CURLOPT_POSTFIELDS, ${phpQuote(bodyText)});`);
+      lines.push('$response = curl_exec($ch);', 'echo curl_getinfo($ch, CURLINFO_RESPONSE_CODE), PHP_EOL, $response;', 'curl_close($ch);');
+      return lines.join('\n');
+    }
+    const target = new URL(url);
+    const lines = [`${method} ${target.pathname}${target.search} HTTP/1.1`, `Host: ${target.host}`, ...Object.entries(headers).map(([name, value]) => `${name}: ${value}`)];
+    // shortcut: HTTP multipart previews omit file bytes; use a generated client snippet to reproduce uploads.
+    if (mime === 'multipart/form-data' && entries.length) lines.push('Content-Type: multipart/form-data; boundary=<generated by client>', '', ...entries.map(({ name, value, file }) => `${name}: ${file ? `[file: ${value}]` : value}`));
+    else if (bodyText) lines.push('', bodyText);
+    return lines.join('\n');
   };
   const renderCode = () => {
-    const item = state.active;
-    const request = body(item.operation);
-    const json = request ? JSON.stringify(example(request.schema), null, 2) : '// No request body';
-    const source = state.codeTab === 'json' ? json : curlExample(item);
-    code.innerHTML = state.codeTab === 'json' ? highlightJson(source) : escape(source);
-    $('#code-hint').textContent = state.codeTab === 'json' ? (request ? `Generated from the ${request.mime} schema. Replace placeholders with real values.` : 'Use the cURL tab for a complete request example.') : 'Replace server, path, credentials, and placeholder values before sending.';
-    document.querySelectorAll('[data-code]').forEach((button) => {
-      const active = button.dataset.code === state.codeTab;
-      button.classList.toggle('active', active);
-      button.setAttribute('aria-selected', String(active));
-    });
-    const schemes = [...new Set((item.operation.security ?? state.spec.security ?? []).flatMap((part) => Object.keys(part)))];
-    $('#credentials').innerHTML = schemes.length ? `<span class="credentials-label">Credentials</span>${schemes.map((name) => {
-      const scheme = state.spec.components?.securitySchemes?.[name] || {};
-      const header = scheme.type === 'http' ? 'Authorization' : scheme.name || name;
-      const value = scheme.type === 'http' ? 'Bearer &lt;token&gt;' : `&lt;${escape(name)}&gt;`;
-      return `<div class="credential-line"><span>${escape(header)}</span><code>${value}</code></div>`;
-    }).join('')}` : '';
-    const responses = Object.keys(item.operation.responses || {});
-    if (!responses.includes(state.responseStatus)) state.responseStatus = responses[0] || '';
-    $('#response-status').innerHTML = responses.map((status) => `<option value="${escape(status)}">${escape(status)} ${status.startsWith('2') ? 'Success' : 'Error'}</option>`).join('');
+    try {
+      const request = buildRequest();
+      code.innerHTML = highlightJson(snippet(request));
+      $('#server-url').textContent = serverUrl();
+    } catch (error) {
+      code.textContent = error.message;
+    }
+  };
+  const renderResponse = () => {
+    const statuses = Object.keys(state.active.operation.responses || {});
+    const live = state.liveResponse;
+    $('#response-status').innerHTML = statuses.map((status) => `<option value="${escape(status)}">${escape(status)} ${status.startsWith('2') ? 'Success' : 'Error'}</option>`).join('') + (live ? '<option value="live">Live result</option>' : '');
     $('#response-status').value = state.responseStatus;
-    const response = schema(item.operation.responses?.[state.responseStatus]);
+    const selectedLive = state.responseStatus === 'live' && live;
+    const response = schema(state.active.operation.responses?.[state.responseStatus]);
     const media = Object.values(response.content || {})[0];
     const sample = Object.values(media?.examples || {})[0]?.value ?? media?.example ?? (media?.schema ? example(media.schema, 0, true) : null);
-    $('#response-code').innerHTML = sample === null ? '// No response body' : highlightJson(JSON.stringify(sample, null, 2));
+    const output = selectedLive ? live.body : sample === null ? '// No response body' : JSON.stringify(sample, null, 2);
+    $('#response-heading').textContent = selectedLive ? `Result · ${live.status}` : 'Response example';
+    $('#response-code').innerHTML = highlightJson(output);
   };
   const renderOperation = () => {
     const item = state.active;
     const operation = item.operation;
     const group = label(item.tag);
-    const tabs = [['request', 'Request'], ['responses', 'Responses'], ['auth', 'Auth']];
-    const detail = state.tab === 'request' ? requestContent(operation) : state.tab === 'responses' ? responseContent(operation) : authContent(operation);
-    content.innerHTML = `<div class="group-heading"><span class="eyebrow">API Reference / ${escape(group)}</span></div><div class="endpoint-heading"><h2>${escape(operation.summary || `${item.method.toUpperCase()} ${item.path}`)}</h2><div class="route-line"><span class="method-badge ${item.method}">${item.method.toUpperCase()}</span><code>${escape(item.path)}</code><button class="try-button" type="button" data-try aria-expanded="${state.tryOpen}" aria-controls="inline-explorer">${state.tryOpen ? 'Hide request' : 'Try it out'} ↗</button><span class="route-id">${escape(item.id)}</span></div><p>${description(operation.description)}</p></div><div class="content-tabs" role="tablist" aria-label="Endpoint details">${tabs.map(([key, title]) => `<button type="button" class="content-tab ${state.tab === key ? 'active' : ''}" data-tab="${key}" role="tab" aria-selected="${state.tab === key}">${title}</button>`).join('')}</div><div class="tab-content" role="tabpanel">${detail}</div>`;
+    content.innerHTML = `<div class="group-heading"><span class="eyebrow">API Reference / ${escape(group)}</span></div><div class="endpoint-heading"><h2>${escape(operation.summary || `${item.method.toUpperCase()} ${item.path}`)}</h2><div class="route-line"><span class="method-badge ${item.method}">${item.method.toUpperCase()}</span><code>${escape(item.path)}</code><span class="route-id">${escape(item.id)}</span></div><p>${description(operation.description)}</p></div><section class="api-detail-section"><h3 class="api-section-title">Request requirements</h3><p class="section-help">Fill in the fields below. The request preview updates as you type.</p>${requestContent(operation)}</section><section class="api-detail-section"><h3 class="api-section-title">Responses</h3><p class="section-help">Open a status to see its fields, types, and examples.</p>${responseContent(operation)}</section>`;
+    renderServerConfig();
     renderCode();
+    renderResponse();
   };
   const renderNav = () => {
     const terms = state.query.toLowerCase().split(/\s+/).filter(Boolean);
@@ -199,27 +300,47 @@
     const item = state.operations.find((entry) => entry.id === id);
     if (!item) return;
     state.active = item;
-    state.tab = 'request';
-    state.codeTab = 'curl';
-    state.responseStatus = '';
+    state.mime = Object.keys(item.operation.requestBody?.content || {})[0] || '';
+    state.responseStatus = Object.keys(item.operation.responses || {})[0] || '';
+    state.liveResponse = null;
     state.groups.add(item.tag);
     renderNav();
     nav.querySelector('.nav-item.active')?.scrollIntoView({ block: 'center' });
     renderOperation();
-    if (state.tryOpen) renderTry();
+    $('#request-message').textContent = 'Enter request fields on the left. Configure the server and credentials above before sending.';
     $('#reference-main').scrollTop = 0;
     if (updateHash) history.replaceState(null, '', `#${encodeURIComponent(id)}`);
     $('#sidebar').classList.remove('mobile-open');
     $('#menu-button').setAttribute('aria-expanded', 'false');
   };
-  const renderTry = () => {
-    if (!window.SwaggerUIBundle) {
-      $('#swagger-ui').textContent = 'Swagger UI could not load. Check access to jsDelivr and reload the page.';
-      return;
+  const sendRequest = async () => {
+    let request;
+    try { request = buildRequest(true); }
+    catch (error) { $('#request-message').textContent = error.message; return; }
+    const id = state.active.id;
+    const button = $('#send-button');
+    button.disabled = true;
+    button.textContent = 'Sending…';
+    $('#request-message').textContent = 'Sending request…';
+    try {
+      const response = await fetch(request.url, { method: request.method, headers: request.headers, body: request.body });
+      let result = await response.text();
+      try { result = JSON.stringify(JSON.parse(result), null, 2); } catch {}
+      if (state.active.id !== id) return;
+      state.liveResponse = { status: response.status, body: result || '// No response body' };
+      state.responseStatus = 'live';
+      renderResponse();
+      $('#request-message').textContent = `Request completed with HTTP ${response.status}.`;
+    } catch (error) {
+      if (state.active.id !== id) return;
+      state.liveResponse = { status: 'Network error', body: error.message || 'The request could not be sent. Check the server URL and CORS settings.' };
+      state.responseStatus = 'live';
+      renderResponse();
+      $('#request-message').textContent = 'Request failed. Check the server URL, connection, and CORS settings.';
+    } finally {
+      button.disabled = false;
+      button.textContent = 'Send request';
     }
-    const item = state.active;
-    const spec = { ...state.spec, paths: { [item.path]: { [item.method]: item.operation } }, tags: (state.spec.tags || []).filter((tag) => tag.name === item.tag) };
-    window.SwaggerUIBundle({ spec, dom_id: '#swagger-ui', deepLinking: false, filter: false, docExpansion: 'full', defaultModelsExpandDepth: -1, tryItOutEnabled: true, displayRequestDuration: true, persistAuthorization: false, presets: [window.SwaggerUIBundle.presets.apis], layout: 'BaseLayout' });
   };
   nav.addEventListener('click', (event) => {
     const endpoint = event.target.closest('[data-id]');
@@ -230,22 +351,38 @@
       renderNav();
     }
   });
-  content.addEventListener('click', (event) => {
-    const tab = event.target.closest('[data-tab]');
-    if (tab) { state.tab = tab.dataset.tab; renderOperation(); }
-    if (event.target.closest('[data-try]')) {
-      state.tryOpen = !state.tryOpen;
-      $('#inline-explorer').hidden = !state.tryOpen;
-      renderOperation();
-      if (state.tryOpen) {
-        renderTry();
-        $('#inline-explorer').scrollIntoView({ behavior: 'smooth', block: 'start' });
-      }
-    }
+  content.addEventListener('change', (event) => {
+    if (event.target.id !== 'request-mime') return;
+    state.mime = event.target.value;
+    $('#body-input-container').innerHTML = bodyInput(state.active.operation);
+    renderCode();
   });
-  document.querySelectorAll('[data-code]').forEach((button) => button.addEventListener('click', () => { state.codeTab = button.dataset.code; renderCode(); }));
-  $('#response-status').addEventListener('change', (event) => { state.responseStatus = event.target.value; renderCode(); });
-  $('#code-try-button').addEventListener('click', () => content.querySelector('[data-try]')?.click());
+  content.addEventListener('input', (event) => {
+    if (event.target.closest('#request-form')) renderCode();
+  });
+  content.addEventListener('submit', (event) => {
+    if (event.target.id !== 'request-form') return;
+    event.preventDefault();
+    sendRequest();
+  });
+  $('#code-panel').addEventListener('input', (event) => {
+    if (event.target.dataset.serverVariable) state.serverVariables[event.target.dataset.serverVariable] = event.target.value;
+    if (event.target.dataset.credential) state.credentials[event.target.dataset.credential] = event.target.value;
+    if (state.active) renderCode();
+  });
+  $('#language-options').addEventListener('click', (event) => {
+    const button = event.target.closest('[data-language]');
+    if (!button) return;
+    state.language = button.dataset.language;
+    document.querySelectorAll('[data-language]').forEach((option) => {
+      option.classList.toggle('active', option === button);
+      option.setAttribute('aria-pressed', String(option === button));
+    });
+    renderCode();
+  });
+  document.querySelector('[data-language="http"]').classList.add('active');
+  document.querySelector('[data-language="http"]').setAttribute('aria-pressed', 'true');
+  $('#response-status').addEventListener('change', (event) => { state.responseStatus = event.target.value; renderResponse(); });
   search.addEventListener('input', () => { state.query = search.value.trim(); renderNav(); });
   $('#menu-button').addEventListener('click', () => {
     const open = $('#sidebar').classList.toggle('mobile-open');
@@ -266,7 +403,14 @@
     } catch { $('#copy-response-button').textContent = 'Copy failed'; }
   });
   document.addEventListener('keydown', (event) => {
-    if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === 'k') { event.preventDefault(); search.focus(); }
+    if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === 'k') {
+      event.preventDefault();
+      if (window.matchMedia('(max-width: 1100px)').matches) {
+        $('#sidebar').classList.add('mobile-open');
+        $('#menu-button').setAttribute('aria-expanded', 'true');
+      }
+      search.focus();
+    }
     if (event.key === 'Escape') { $('#sidebar').classList.remove('mobile-open'); $('#menu-button').setAttribute('aria-expanded', 'false'); search.blur(); }
   });
   window.addEventListener('hashchange', () => select(decodeURIComponent(location.hash.slice(1)), false));
@@ -276,6 +420,7 @@
   }).then((yaml) => {
     if (!window.jsyaml) throw new Error('YAML parser could not load');
     state.spec = window.jsyaml.load(yaml);
+    state.serverVariables = Object.fromEntries(Object.entries(state.spec.servers?.[0]?.variables || {}).map(([name, value]) => [name, value.default || '']));
     for (const [path, pathItem] of Object.entries(state.spec.paths || {})) {
       for (const [method, operation] of Object.entries(pathItem)) {
         if (methods.has(method)) state.operations.push({ id: operation.operationId || `${method}-${path}`, method, path, tag: operation.tags?.[0] || 'Other', summary: operation.summary || `${method.toUpperCase()} ${path}`, operation });
