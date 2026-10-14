@@ -5,7 +5,7 @@
   const code = $('#example-code');
   const search = $('#search-input');
   const methods = new Set(['get', 'post', 'put', 'patch', 'delete']);
-  const state = { spec: null, operations: [], active: null, tab: 'request', codeTab: 'json', query: '', groups: new Set(), explorerLoaded: false };
+  const state = { spec: null, operations: [], active: null, tab: 'request', codeTab: 'json', query: '', groups: new Set(), tryOpen: false };
   const escape = (value) => String(value ?? '').replace(/[&<>"']/g, (char) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[char]);
   const label = (value) => String(value).replace(/[-_]/g, ' ').replace(/\b\w/g, (char) => char.toUpperCase()).replace(/\b(Iam|Api)\b/g, (word) => word.toUpperCase());
   const schema = (value) => {
@@ -140,7 +140,7 @@
     const group = label(item.tag);
     const tabs = [['request', 'Request'], ['responses', 'Responses'], ['auth', 'Auth']];
     const detail = state.tab === 'request' ? requestContent(operation) : state.tab === 'responses' ? responseContent(operation) : authContent(operation);
-    content.innerHTML = `<div class="group-heading"><span class="eyebrow">Resources / ${escape(group)}</span><h1>${escape(group)}</h1><p>${state.operations.filter((entry) => entry.tag === item.tag).length} documented operations in this group.</p></div><div class="endpoint-heading"><h2>${escape(operation.summary || `${item.method.toUpperCase()} ${item.path}`)}</h2><p>${description(operation.description)}</p><div class="route-line"><span class="method-badge ${item.method}">${item.method.toUpperCase()}</span><code>${escape(item.path)}</code><span class="route-id">${escape(item.id)}</span></div></div><div class="content-tabs" role="tablist" aria-label="Endpoint details">${tabs.map(([key, title]) => `<button type="button" class="content-tab ${state.tab === key ? 'active' : ''}" data-tab="${key}" role="tab" aria-selected="${state.tab === key}">${title}</button>`).join('')}</div><div class="tab-content" role="tabpanel">${detail}</div>`;
+    content.innerHTML = `<div class="group-heading"><span class="eyebrow">Resources / ${escape(group)}</span><h1>${escape(group)}</h1><p>${state.operations.filter((entry) => entry.tag === item.tag).length} documented operations in this group.</p></div><div class="endpoint-heading"><h2>${escape(operation.summary || `${item.method.toUpperCase()} ${item.path}`)}</h2><p>${description(operation.description)}</p><div class="route-line"><span class="method-badge ${item.method}">${item.method.toUpperCase()}</span><code>${escape(item.path)}</code><button class="try-button" type="button" data-try aria-expanded="${state.tryOpen}" aria-controls="inline-explorer">${state.tryOpen ? 'Hide request' : 'Try it out'} ↗</button><span class="route-id">${escape(item.id)}</span></div></div><div class="content-tabs" role="tablist" aria-label="Endpoint details">${tabs.map(([key, title]) => `<button type="button" class="content-tab ${state.tab === key ? 'active' : ''}" data-tab="${key}" role="tab" aria-selected="${state.tab === key}">${title}</button>`).join('')}</div><div class="tab-content" role="tabpanel">${detail}</div>`;
     renderCode();
   };
   const renderNav = () => {
@@ -163,26 +163,20 @@
     state.groups.add(item.tag);
     renderNav();
     renderOperation();
+    if (state.tryOpen) renderTry();
+    $('#reference-main').scrollTop = 0;
     if (updateHash) history.replaceState(null, '', `#${encodeURIComponent(id)}`);
     $('#sidebar').classList.remove('mobile-open');
     $('#menu-button').setAttribute('aria-expanded', 'false');
   };
-  const view = (name) => {
-    const explorer = name === 'explorer';
-    $('#reference-view').hidden = explorer;
-    $('#explorer-view').hidden = !explorer;
-    $('#reference-tab').classList.toggle('active', !explorer);
-    $('#explorer-tab').classList.toggle('active', explorer);
-    $('#reference-tab').setAttribute('aria-current', explorer ? 'false' : 'page');
-    $('#explorer-tab').setAttribute('aria-current', explorer ? 'page' : 'false');
-    if (explorer && !state.explorerLoaded) {
-      state.explorerLoaded = true;
-      if (!window.SwaggerUIBundle) {
-        $('#swagger-ui').textContent = 'Swagger UI could not load. Check access to jsDelivr and reload the page.';
-        return;
-      }
-      window.SwaggerUIBundle({ url: './openapi.yaml', dom_id: '#swagger-ui', deepLinking: true, filter: true, displayRequestDuration: true, persistAuthorization: false, presets: [window.SwaggerUIBundle.presets.apis], layout: 'BaseLayout' });
+  const renderTry = () => {
+    if (!window.SwaggerUIBundle) {
+      $('#swagger-ui').textContent = 'Swagger UI could not load. Check access to jsDelivr and reload the page.';
+      return;
     }
+    const item = state.active;
+    const spec = { ...state.spec, paths: { [item.path]: { [item.method]: item.operation } }, tags: (state.spec.tags || []).filter((tag) => tag.name === item.tag) };
+    window.SwaggerUIBundle({ spec, dom_id: '#swagger-ui', deepLinking: false, filter: false, docExpansion: 'full', defaultModelsExpandDepth: -1, tryItOutEnabled: true, displayRequestDuration: true, persistAuthorization: false, presets: [window.SwaggerUIBundle.presets.apis], layout: 'BaseLayout' });
   };
   nav.addEventListener('click', (event) => {
     const endpoint = event.target.closest('[data-id]');
@@ -196,6 +190,15 @@
   content.addEventListener('click', (event) => {
     const tab = event.target.closest('[data-tab]');
     if (tab) { state.tab = tab.dataset.tab; renderOperation(); }
+    if (event.target.closest('[data-try]')) {
+      state.tryOpen = !state.tryOpen;
+      $('#inline-explorer').hidden = !state.tryOpen;
+      renderOperation();
+      if (state.tryOpen) {
+        renderTry();
+        $('#inline-explorer').scrollIntoView({ behavior: 'smooth', block: 'start' });
+      }
+    }
   });
   document.querySelectorAll('[data-code]').forEach((button) => button.addEventListener('click', () => { state.codeTab = button.dataset.code; renderCode(); }));
   search.addEventListener('input', () => { state.query = search.value.trim(); renderNav(); });
@@ -203,9 +206,6 @@
     const open = $('#sidebar').classList.toggle('mobile-open');
     $('#menu-button').setAttribute('aria-expanded', String(open));
   });
-  $('#reference-tab').addEventListener('click', () => view('reference'));
-  $('#explorer-tab').addEventListener('click', () => view('explorer'));
-  $('#explorer-button').addEventListener('click', () => view('explorer'));
   $('#copy-button').addEventListener('click', async () => {
     try {
       await navigator.clipboard.writeText(code.textContent);

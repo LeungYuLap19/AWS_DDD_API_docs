@@ -27,14 +27,12 @@
       <nav class="header-actions" aria-label="Site links">
         <a href="./openapi.yaml" target="_blank" rel="noopener">OpenAPI YAML</a>
         <a href="https://github.com/LeungYuLap19/AWS_DDD_API_docs" target="_blank" rel="noopener">GitHub</a>
-        <button class="explorer-link" id="explorer-button" type="button">Swagger Explorer <span aria-hidden="true">↗</span></button>
       </nav>
     </header>
 
     <div class="section-bar">
       <span class="section-label">Documentation</span>
-      <button class="section-tab active" id="reference-tab" type="button" aria-current="page">API Reference</button>
-      <button class="section-tab" id="explorer-tab" type="button">Interactive Explorer</button>
+      <span class="section-tab active" aria-current="page">API Reference</span>
       <a class="download-link" href="./openapi.yaml" download="aws-ddd-api-openapi.yaml" aria-label="Download OpenAPI YAML for tools and LLMs"><span class="download-desktop">Download </span>YAML <span aria-hidden="true">↓</span></a>
       <span class="section-version" id="section-version">OpenAPI 3.1</span>
     </div>
@@ -52,6 +50,14 @@
 
       <main class="reference-main" id="reference-main">
         <div id="endpoint-content" class="loading-state" role="status">Loading API reference…</div>
+        <section class="inline-explorer" id="inline-explorer" hidden aria-label="Interactive request">
+          <div class="inline-explorer-heading">
+            <span class="eyebrow">Interactive request</span>
+            <h3>Try this endpoint</h3>
+            <p>Choose your deployed server and enter the required credentials before sending.</p>
+          </div>
+          <div id="swagger-ui"></div>
+        </section>
       </main>
 
       <aside class="code-panel" id="code-panel" aria-label="Request examples">
@@ -67,15 +73,6 @@
         <div class="code-hint" id="code-hint"></div>
       </aside>
     </div>
-
-    <section class="explorer-view" id="explorer-view" hidden aria-label="Swagger UI interactive explorer">
-      <div class="explorer-intro">
-        <span class="eyebrow">Interactive explorer</span>
-        <h1>Try the API</h1>
-        <p>Set your deployed server and credentials in Swagger UI before sending requests.</p>
-      </div>
-      <div id="swagger-ui"></div>
-    </section>
 
     <noscript><p class="noscript-message">Enable JavaScript to browse the API reference. The <a href="./openapi.yaml">OpenAPI YAML</a> remains available.</p></noscript>
   </body>
