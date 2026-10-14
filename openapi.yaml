@@ -3,13 +3,12 @@
 openapi: 3.1.0
 info:
   title: AWS DDD API — tested migration routes
-  version: '2026-10-13'
+  version: '2026-10-14'
   description: The 206 current HTTP operations with PASS verdicts in the migration-preview live results. Paths,
     gateway credentials, request validation, and permission keys are checked against current source. A PASS covers
-    the isolated live route cases; seven system flows have separate PASS verdicts within their stated scopes. Five
-    unimplemented routes and three excluded preview/smoke routes are omitted. Success responses document the handler
-    status and payload fields; error keys and conditional response fields depend on the requested resource and caller
-    state.
+    the isolated live route cases; system flows have separate verdicts within their stated scopes. Deferred and
+    excluded preview/smoke routes are omitted. Success responses document the handler status and payload fields;
+    error keys and conditional response fields depend on the requested resource and caller state.
 servers:
 - url: https://{apiId}.execute-api.{region}.amazonaws.com/{stage}
   description: Set these variables to the deployed API Gateway stage.
@@ -11372,28 +11371,6 @@ components:
           type: object
           additionalProperties: true
       additionalProperties: true
-    pet_access_src_zodSchema_accessSchemas_ts_requestBodySchema:
-      type: object
-      properties:
-        requestedPermissionKeys:
-          minItems: 1
-          maxItems: 50
-          type: array
-          items:
-            type: string
-            pattern: ^[a-z][a-z0-9_]*(?:\.[a-z][a-z0-9_]*){2}$
-        purpose:
-          type: string
-          minLength: 1
-          maxLength: 1000
-        requestedFrom: {}
-        requestedUntil: {}
-      required:
-      - requestedPermissionKeys
-      - purpose
-      - requestedFrom
-      - requestedUntil
-      additionalProperties: false
     pet_access_src_zodSchema_accessSchemas_ts_consentBodySchema:
       oneOf:
       - type: object
@@ -13366,6 +13343,28 @@ components:
         status:
           type: string
           const: withdrawn
+      additionalProperties: false
+    pet_access_src_zodSchema_accessSchemas_ts_requestBodySchema:
+      type: object
+      properties:
+        requestedPermissionKeys:
+          minItems: 1
+          maxItems: 50
+          type: array
+          items:
+            type: string
+            pattern: ^[a-z][a-z0-9_]*(?:\.[a-z][a-z0-9_]*){2}$
+        purpose:
+          type: string
+          minLength: 1
+          maxLength: 1000
+        requestedFrom: {}
+        requestedUntil: {}
+      required:
+      - requestedPermissionKeys
+      - purpose
+      - requestedFrom
+      - requestedUntil
       additionalProperties: false
     camera_src_zodSchema_petCameraLinkSchema_ts_petCameraLinkSchema:
       type: object

@@ -3,3 +3,8 @@ _*.py
 _*.cjs
 _schemas.json
 _responses.json
+build_openapi.py
+extract_zod.cjs
+schema-cache.json
+_base_openapi.yaml
+_draft_openapi.yaml
