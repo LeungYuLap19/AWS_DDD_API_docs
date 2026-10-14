@@ -123,14 +123,26 @@ a { color: inherit; text-decoration: none; }
 .field-description { margin: 12px 0 0; color: #a7a7a3; font-size: 13px; line-height: 1.6; }
 .field-extra { margin: 10px 0 0; color: #777772; font: 11px "Cascadia Code", Consolas, monospace; overflow-wrap: anywhere; }
 .nested-fields { margin: 14px 0 0 16px; padding-left: 16px; border-left: 1px solid #37332f; }
+.nested-fields summary { color: #e98a54; cursor: pointer; font-size: 12px; padding: 4px 0; }
+.field-variant { padding: 9px 0; }
+.field-variant > strong { color: #a7a7a3; font: 11px Consolas, monospace; }
 .nested-fields .field-row { padding: 13px 0; }
 .nested-fields .field-name { font-size: 12px; }
 .empty-content { padding: 17px 0; color: var(--muted); font-size: 13px; line-height: 1.6; }
 .response-status { display: inline-flex; padding: 4px 7px; border-radius: 4px; background: #183427; color: #71d0a1; font: 700 11px Consolas, monospace; }
+.response-status.error { background: #38201e; color: #f08b81; }
 .response-block { margin: 0 0 27px; }
 .response-block h3 { display: flex; align-items: center; gap: 9px; margin: 0 0 8px; font-size: 14px; }
 .response-block p { margin: 0; color: var(--muted); font-size: 13px; line-height: 1.55; }
 .response-block .field-list { margin-top: 14px; }
+.error-key-label { margin-top: 12px !important; font-weight: 600; }
+.error-key-list { display: flex; flex-wrap: wrap; gap: 7px; margin-top: 8px; }
+.error-key-list code { padding: 5px 7px; border: 1px solid #5b3530; border-radius: 4px; color: #ffaba2; background: #251817; font-size: 11px; overflow-wrap: anywhere; }
+.response-examples { margin: 14px 0; }
+.response-examples h4 { margin: 0 0 8px; font-size: 12px; color: var(--muted); }
+.response-example { border-top: 1px solid var(--line); }
+.response-example summary { padding: 10px 0; cursor: pointer; color: #ddd; font: 12px Consolas, monospace; }
+.response-example pre { max-height: 280px; overflow: auto; padding: 12px; border: 1px solid var(--line); border-radius: 5px; color: #c9d6e8; background: #151515; font: 11px/1.6 Consolas, monospace; }
 .auth-card { padding: 15px 0; border-top: 1px solid var(--line); }
 .auth-card strong { display: block; margin-bottom: 5px; font-size: 13px; }
 .auth-card p { margin: 0; color: var(--muted); font-size: 12px; line-height: 1.55; }

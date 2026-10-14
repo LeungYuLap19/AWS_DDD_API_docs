@@ -1,10 +1,7 @@
-# Local documentation generation and audit artifacts
-_*.py
-_*.cjs
-_schemas.json
-_responses.json
-build_openapi.py
-extract_zod.cjs
+# Generated documentation artifacts
+__pycache__/
+_*.json
 schema-cache.json
 _base_openapi.yaml
 _draft_openapi.yaml
+_type_probe.cjs

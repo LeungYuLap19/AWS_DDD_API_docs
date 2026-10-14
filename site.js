@@ -15,12 +15,17 @@
       return { ...schema(resolved), ...Object.fromEntries(Object.entries(value).filter(([key]) => key !== '$ref')) };
     }
     if (value.allOf) return { ...value, ...Object.assign({}, ...value.allOf.map(schema)) };
-    if (value.oneOf || value.anyOf) return value.properties ? value : { ...value, ...schema((value.oneOf || value.anyOf)[0]) };
+    if (value.oneOf || value.anyOf) {
+      const variants = value.oneOf || value.anyOf;
+      return value.properties ? value : { ...value, ...schema(variants.find((part) => schema(part).type !== 'null') || variants[0]) };
+    }
     return value;
   };
   const typeOf = (raw) => {
     const value = schema(raw);
+    if (value.oneOf || value.anyOf) return [...new Set((value.oneOf || value.anyOf).map((part) => typeOf(part)))].join(' | ');
     if (value.type === 'array') return `array[${typeOf(value.items)}]`;
+    if (Array.isArray(value.type)) return value.type.join(' | ');
     if (value.type) return value.type;
     if (value.properties) return 'object';
     if (value.const !== undefined) return typeof value.const;
@@ -40,10 +45,14 @@
   };
   const field = (name, raw, required, depth) => {
     const value = schema(raw);
-    const nested = depth < 2 && (value.properties || (value.type === 'array' && schema(value.items).properties));
+    const variants = value.oneOf || value.anyOf;
+    const nested = depth < 6 && (value.properties || (value.type === 'array' && schema(value.items).properties));
     const nestedSchema = value.type === 'array' ? schema(value.items) : value;
     const extra = [value.format && `Format: ${value.format}`, value.enum && `Allowed: ${value.enum.join(', ')}`, value.default !== undefined && `Default: ${value.default}`].filter(Boolean).join(' · ');
-    return `<div class="field-row"><div class="field-heading"><span class="field-name">${escape(name)}</span><span class="type-pill">${escape(typeOf(raw))}</span>${required ? '<span class="required-label">required</span>' : ''}</div>${value.description ? `<p class="field-description">${escape(value.description)}</p>` : ''}${extra ? `<p class="field-extra">${escape(extra)}</p>` : ''}${nested ? `<div class="nested-fields">${fields(nestedSchema, nestedSchema.required || [], depth + 1)}</div>` : ''}</div>`;
+    const children = depth < 6 && variants?.some((part) => schema(part).properties)
+      ? `<details class="nested-fields" ${depth < 2 ? 'open' : ''}><summary>Variants of ${escape(name)}</summary>${variants.map((part, index) => `<div class="field-variant"><strong>Option ${index + 1}: ${escape(typeOf(part))}</strong>${schema(part).properties ? fields(part, schema(part).required || [], depth + 1) : ''}</div>`).join('')}</details>`
+      : nested ? `<details class="nested-fields" ${depth < 2 ? 'open' : ''}><summary>Fields in ${escape(name)}</summary>${fields(nestedSchema, nestedSchema.required || [], depth + 1)}</details>` : '';
+    return `<div class="field-row"><div class="field-heading"><span class="field-name">${escape(name)}</span><span class="type-pill">${escape(typeOf(raw))}</span>${required ? '<span class="required-label">required</span>' : ''}</div>${value.description ? `<p class="field-description">${escape(value.description)}</p>` : ''}${extra ? `<p class="field-extra">${escape(extra)}</p>` : ''}${children}</div>`;
   };
   const paramFields = (operation, location) => {
     const params = (operation.parameters || []).map(parameter).filter((item) => item.in === location);
@@ -60,7 +69,11 @@
     const response = schema(raw);
     const entry = Object.entries(response.content || {})[0];
     const details = entry ? fields(entry[1].schema, schema(entry[1].schema).required || []) : '';
-    return `<section class="response-block"><h3><span class="response-status">${escape(status)}</span>${escape(response.description || '')}</h3>${details}</section>`;
+    const keys = schema(entry?.[1]?.schema).properties?.errorKey?.enum || [];
+    const examples = entry?.[1]?.examples || {};
+    const exampleList = Object.values(examples).map((item) => `<details class="response-example"><summary>${escape(item.summary || 'Example')}</summary><pre>${escape(JSON.stringify(item.value, null, 2))}</pre></details>`).join('');
+    const title = (response.description || '').split(' Possible error keys:')[0];
+    return `<section class="response-block"><h3><span class="response-status ${status.startsWith('4') || status.startsWith('5') ? 'error' : ''}">${escape(status)}</span>${escape(title)}</h3>${keys.length ? `<p class="error-key-label">Possible errorKey values</p><div class="error-key-list">${keys.map((key) => `<code>${escape(key)}</code>`).join('')}</div>` : ''}${details}${exampleList ? `<div class="response-examples"><h4>Examples</h4>${exampleList}</div>` : ''}</section>`;
   }).join('') || '<p class="empty-content">No responses are specified.</p>';
   const authContent = (operation) => {
     const alternatives = operation.security ?? state.spec.security ?? [];
