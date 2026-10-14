@@ -19,11 +19,6 @@
         <span>AWS DDD<span class="brand-suffix">/ API</span></span>
       </a>
       <button class="menu-button" id="menu-button" type="button" aria-label="Open endpoint navigation" aria-expanded="false">☰</button>
-      <label class="search-box" for="search-input">
-        <span class="search-icon" aria-hidden="true"></span>
-        <input id="search-input" type="search" placeholder="Search endpoints" autocomplete="off" aria-label="Search endpoints">
-        <kbd>⌘ K</kbd>
-      </label>
       <nav class="header-actions" aria-label="Site links">
         <a href="./openapi.yaml" target="_blank" rel="noopener">OpenAPI YAML</a>
         <a href="https://github.com/LeungYuLap19/AWS_DDD_API_docs" target="_blank" rel="noopener">GitHub</a>
@@ -39,6 +34,11 @@
 
     <div class="app-shell" id="reference-view">
       <aside class="sidebar" id="sidebar" aria-label="Endpoint navigation">
+        <label class="search-box" for="search-input">
+          <span class="search-icon" aria-hidden="true"></span>
+          <input id="search-input" type="search" placeholder="Filter endpoints" autocomplete="off" aria-label="Filter endpoints">
+          <kbd>Ctrl K</kbd>
+        </label>
         <div class="sidebar-intro">
           <span class="eyebrow">AWS DDD API</span>
           <span class="sidebar-title">API Reference</span>
@@ -60,17 +60,31 @@
         </section>
       </main>
 
-      <aside class="code-panel" id="code-panel" aria-label="Request examples">
+      <aside class="code-panel" id="code-panel" aria-label="Request and response examples">
+        <div class="code-context">
+          <span class="code-context-label">Language</span>
+          <span class="language-chip">⌘ <strong>Shell / cURL</strong></span>
+        </div>
+        <div class="credentials" id="credentials"></div>
         <div class="code-panel-heading">
-          <span>Example request</span>
+          <span>Request</span>
           <button class="copy-button" id="copy-button" type="button" aria-label="Copy example">Copy</button>
         </div>
         <div class="code-tabs" role="tablist" aria-label="Example format">
-          <button class="code-tab active" data-code="json" type="button" role="tab" aria-selected="true">JSON</button>
-          <button class="code-tab" data-code="curl" type="button" role="tab" aria-selected="false">cURL</button>
+          <button class="code-tab active" data-code="curl" type="button" role="tab" aria-selected="true">cURL</button>
+          <button class="code-tab" data-code="json" type="button" role="tab" aria-selected="false">JSON</button>
         </div>
         <pre class="code-block"><code id="example-code">Select an endpoint to see its request.</code></pre>
+        <div class="code-actions"><button class="try-button" id="code-try-button" type="button">Try it out</button></div>
         <div class="code-hint" id="code-hint"></div>
+        <div class="code-panel-heading result-heading">
+          <label for="response-status">Response example</label>
+          <div class="result-controls">
+            <select id="response-status" aria-label="Response status"></select>
+            <button class="copy-button" id="copy-response-button" type="button" aria-label="Copy response example">Copy</button>
+          </div>
+        </div>
+        <pre class="code-block response-code-block"><code id="response-code">Select an endpoint to see its response.</code></pre>
       </aside>
     </div>
 

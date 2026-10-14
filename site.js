@@ -5,8 +5,21 @@
   const code = $('#example-code');
   const search = $('#search-input');
   const methods = new Set(['get', 'post', 'put', 'patch', 'delete']);
-  const state = { spec: null, operations: [], active: null, tab: 'request', codeTab: 'json', query: '', groups: new Set(), tryOpen: false };
+  const state = { spec: null, operations: [], active: null, tab: 'request', codeTab: 'curl', responseStatus: '', query: '', groups: new Set(), tryOpen: false };
   const escape = (value) => String(value ?? '').replace(/[&<>"']/g, (char) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[char]);
+  const highlightJson = (value) => {
+    const source = String(value);
+    const tokens = /"(?:\\.|[^"\\])*"(?=\s*:)|"(?:\\.|[^"\\])*"|-?\d+(?:\.\d+)?|\b(?:true|false|null)\b/g;
+    let html = '';
+    let end = 0;
+    for (const match of source.matchAll(tokens)) {
+      html += escape(source.slice(end, match.index));
+      const kind = match[0][0] === '"' ? /^\s*:/.test(source.slice(match.index + match[0].length)) ? 'key' : 'string' : /^-?\d/.test(match[0]) ? 'number' : 'literal';
+      html += `<span class="code-${kind}">${escape(match[0])}</span>`;
+      end = match.index + match[0].length;
+    }
+    return html + escape(source.slice(end));
+  };
   const label = (value) => String(value).replace(/[-_]/g, ' ').replace(/\b\w/g, (char) => char.toUpperCase()).replace(/\b(Iam|Api)\b/g, (word) => word.toUpperCase());
   const schema = (value) => {
     if (!value || typeof value !== 'object') return {};
@@ -86,19 +99,19 @@
     const headers = (operation.parameters || []).map(parameter).filter((item) => item.in === 'header' && item.required);
     return (cards || '<p class="empty-content">No authorization scheme is required by this operation.</p>') + (headers.length ? `<section><div class="content-subhead"><h3>Required headers</h3></div><div class="field-list">${headers.map((item) => field(item.name, { ...item.schema, description: item.description }, true, 0)).join('')}</div></section>` : '');
   };
-  const example = (raw, depth = 0) => {
+  const example = (raw, depth = 0, includeAll = false) => {
     const value = schema(raw);
-    if (depth > 4) return null;
+    if (depth > 6) return null;
     if (value.example !== undefined) return value.example;
     if (value.default !== undefined) return value.default;
     if (value.const !== undefined) return value.const;
     if (value.enum?.length) return value.enum[0];
-    if (value.type === 'array') return [example(value.items, depth + 1)];
+    if (value.type === 'array') return [example(value.items, depth + 1, includeAll)];
     if (value.type === 'object' || value.properties) {
       const entries = Object.entries(value.properties || {});
       const required = new Set([...(value.required || []), ...((value.oneOf || value.anyOf)?.[0]?.required || [])]);
       const chosen = entries.filter(([name]) => required.has(name));
-      return Object.fromEntries((chosen.length ? chosen : entries.slice(0, 2)).slice(0, 10).map(([name, prop]) => [name, example(prop, depth + 1)]));
+      return Object.fromEntries((includeAll ? entries : (chosen.length ? chosen : entries.slice(0, 2)).slice(0, 10)).map(([name, prop]) => [name, example(prop, depth + 1, includeAll)]));
     }
     if (value.type === 'integer' || value.type === 'number') return 0;
     if (value.type === 'boolean') return true;
@@ -139,13 +152,28 @@
     const request = body(item.operation);
     const json = request ? JSON.stringify(example(request.schema), null, 2) : '// No request body';
     const source = state.codeTab === 'json' ? json : curlExample(item);
-    code.textContent = source;
+    code.innerHTML = state.codeTab === 'json' ? highlightJson(source) : escape(source);
     $('#code-hint').textContent = state.codeTab === 'json' ? (request ? `Generated from the ${request.mime} schema. Replace placeholders with real values.` : 'Use the cURL tab for a complete request example.') : 'Replace server, path, credentials, and placeholder values before sending.';
     document.querySelectorAll('[data-code]').forEach((button) => {
       const active = button.dataset.code === state.codeTab;
       button.classList.toggle('active', active);
       button.setAttribute('aria-selected', String(active));
     });
+    const schemes = [...new Set((item.operation.security ?? state.spec.security ?? []).flatMap((part) => Object.keys(part)))];
+    $('#credentials').innerHTML = schemes.length ? `<span class="credentials-label">Credentials</span>${schemes.map((name) => {
+      const scheme = state.spec.components?.securitySchemes?.[name] || {};
+      const header = scheme.type === 'http' ? 'Authorization' : scheme.name || name;
+      const value = scheme.type === 'http' ? 'Bearer &lt;token&gt;' : `&lt;${escape(name)}&gt;`;
+      return `<div class="credential-line"><span>${escape(header)}</span><code>${value}</code></div>`;
+    }).join('')}` : '';
+    const responses = Object.keys(item.operation.responses || {});
+    if (!responses.includes(state.responseStatus)) state.responseStatus = responses[0] || '';
+    $('#response-status').innerHTML = responses.map((status) => `<option value="${escape(status)}">${escape(status)} ${status.startsWith('2') ? 'Success' : 'Error'}</option>`).join('');
+    $('#response-status').value = state.responseStatus;
+    const response = schema(item.operation.responses?.[state.responseStatus]);
+    const media = Object.values(response.content || {})[0];
+    const sample = Object.values(media?.examples || {})[0]?.value ?? media?.example ?? (media?.schema ? example(media.schema, 0, true) : null);
+    $('#response-code').innerHTML = sample === null ? '// No response body' : highlightJson(JSON.stringify(sample, null, 2));
   };
   const renderOperation = () => {
     const item = state.active;
@@ -153,7 +181,7 @@
     const group = label(item.tag);
     const tabs = [['request', 'Request'], ['responses', 'Responses'], ['auth', 'Auth']];
     const detail = state.tab === 'request' ? requestContent(operation) : state.tab === 'responses' ? responseContent(operation) : authContent(operation);
-    content.innerHTML = `<div class="group-heading"><span class="eyebrow">Resources / ${escape(group)}</span><h1>${escape(group)}</h1><p>${state.operations.filter((entry) => entry.tag === item.tag).length} documented operations in this group.</p></div><div class="endpoint-heading"><h2>${escape(operation.summary || `${item.method.toUpperCase()} ${item.path}`)}</h2><p>${description(operation.description)}</p><div class="route-line"><span class="method-badge ${item.method}">${item.method.toUpperCase()}</span><code>${escape(item.path)}</code><button class="try-button" type="button" data-try aria-expanded="${state.tryOpen}" aria-controls="inline-explorer">${state.tryOpen ? 'Hide request' : 'Try it out'} ↗</button><span class="route-id">${escape(item.id)}</span></div></div><div class="content-tabs" role="tablist" aria-label="Endpoint details">${tabs.map(([key, title]) => `<button type="button" class="content-tab ${state.tab === key ? 'active' : ''}" data-tab="${key}" role="tab" aria-selected="${state.tab === key}">${title}</button>`).join('')}</div><div class="tab-content" role="tabpanel">${detail}</div>`;
+    content.innerHTML = `<div class="group-heading"><span class="eyebrow">API Reference / ${escape(group)}</span></div><div class="endpoint-heading"><h2>${escape(operation.summary || `${item.method.toUpperCase()} ${item.path}`)}</h2><div class="route-line"><span class="method-badge ${item.method}">${item.method.toUpperCase()}</span><code>${escape(item.path)}</code><button class="try-button" type="button" data-try aria-expanded="${state.tryOpen}" aria-controls="inline-explorer">${state.tryOpen ? 'Hide request' : 'Try it out'} ↗</button><span class="route-id">${escape(item.id)}</span></div><p>${description(operation.description)}</p></div><div class="content-tabs" role="tablist" aria-label="Endpoint details">${tabs.map(([key, title]) => `<button type="button" class="content-tab ${state.tab === key ? 'active' : ''}" data-tab="${key}" role="tab" aria-selected="${state.tab === key}">${title}</button>`).join('')}</div><div class="tab-content" role="tabpanel">${detail}</div>`;
     renderCode();
   };
   const renderNav = () => {
@@ -172,9 +200,11 @@
     if (!item) return;
     state.active = item;
     state.tab = 'request';
-    state.codeTab = body(item.operation)?.mime === 'application/json' ? 'json' : 'curl';
+    state.codeTab = 'curl';
+    state.responseStatus = '';
     state.groups.add(item.tag);
     renderNav();
+    nav.querySelector('.nav-item.active')?.scrollIntoView({ block: 'center' });
     renderOperation();
     if (state.tryOpen) renderTry();
     $('#reference-main').scrollTop = 0;
@@ -214,6 +244,8 @@
     }
   });
   document.querySelectorAll('[data-code]').forEach((button) => button.addEventListener('click', () => { state.codeTab = button.dataset.code; renderCode(); }));
+  $('#response-status').addEventListener('change', (event) => { state.responseStatus = event.target.value; renderCode(); });
+  $('#code-try-button').addEventListener('click', () => content.querySelector('[data-try]')?.click());
   search.addEventListener('input', () => { state.query = search.value.trim(); renderNav(); });
   $('#menu-button').addEventListener('click', () => {
     const open = $('#sidebar').classList.toggle('mobile-open');
@@ -225,6 +257,13 @@
       $('#copy-button').textContent = 'Copied';
       setTimeout(() => { $('#copy-button').textContent = 'Copy'; }, 1500);
     } catch { $('#copy-button').textContent = 'Copy failed'; }
+  });
+  $('#copy-response-button').addEventListener('click', async () => {
+    try {
+      await navigator.clipboard.writeText($('#response-code').textContent);
+      $('#copy-response-button').textContent = 'Copied';
+      setTimeout(() => { $('#copy-response-button').textContent = 'Copy'; }, 1500);
+    } catch { $('#copy-response-button').textContent = 'Copy failed'; }
   });
   document.addEventListener('keydown', (event) => {
     if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === 'k') { event.preventDefault(); search.focus(); }
