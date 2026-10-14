@@ -1,0 +1,5 @@
+# Local documentation generation and audit artifacts
+_*.py
+_*.cjs
+_schemas.json
+_responses.json
