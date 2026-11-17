@@ -1322,41 +1322,41 @@ paths:
       - name: page
         in: query
         required: false
-        schema: &id109
+        schema: &id113
           type: number
       - name: limit
         in: query
         required: false
-        schema: &id110
+        schema: &id114
           type: number
       - name: eventType
         in: query
         required: false
-        schema: &id111
+        schema: &id115
           type: string
           maxLength: 120
           pattern: ^[a-z][a-z0-9_.]*$
       - name: actorUserId
         in: query
         required: false
-        schema: &id112
+        schema: &id116
           type: string
       - name: resourceType
         in: query
         required: false
-        schema: &id113
+        schema: &id117
           type: string
           maxLength: 80
           pattern: ^[a-z][a-z0-9_]*$
       - name: resourceId
         in: query
         required: false
-        schema: &id114
+        schema: &id118
           type: string
       - name: outcome
         in: query
         required: false
-        schema: &id115
+        schema: &id119
           type: string
           enum:
           - succeeded
@@ -1366,15 +1366,15 @@ paths:
       - name: from
         in: query
         required: false
-        schema: &id116 {}
+        schema: &id120 {}
       - name: to
         in: query
         required: false
-        schema: &id117 {}
+        schema: &id121 {}
       - name: sortOrder
         in: query
         required: false
-        schema: &id118
+        schema: &id122
           default: desc
           type: string
           enum:
@@ -6847,14 +6847,14 @@ paths:
                       properties:
                         orderId:
                           type: string
-                        orderReference: &id044
+                        orderReference: &id048
                           type: string
-                        purchaseType: &id045
+                        purchaseType: &id049
                           const: physical_order
                           type: string
-                        status: &id046
+                        status: &id050
                           type: string
-                        pricing: &id047
+                        pricing: &id051
                           type: object
                           required:
                           - itemAmount
@@ -6874,7 +6874,7 @@ paths:
                             currency:
                               type: string
                               const: HKD
-                        items: &id048
+                        items: &id052
                           type: array
                           items:
                             type: object
@@ -6968,12 +6968,12 @@ paths:
                             - subject
                             - pricing
                             additionalProperties: false
-                        createdAt: &id049
+                        createdAt: &id053
                           type:
                           - string
                           - 'null'
                           format: date-time
-                        updatedAt: &id050
+                        updatedAt: &id054
                           type:
                           - string
                           - 'null'
@@ -7190,7 +7190,7 @@ paths:
       - name: status
         in: query
         required: false
-        schema: &id053
+        schema: &id057
           type: string
           enum:
           - awaiting_payment
@@ -7208,7 +7208,7 @@ paths:
       - name: sortBy
         in: query
         required: false
-        schema: &id054
+        schema: &id058
           default: updatedAt
           type: string
           enum:
@@ -7218,7 +7218,7 @@ paths:
       - name: sortOrder
         in: query
         required: false
-        schema: &id055
+        schema: &id059
           default: desc
           type: string
           enum:
@@ -9178,6 +9178,23 @@ paths:
           $ref: '#/components/responses/ClientError'
         5XX:
           $ref: '#/components/responses/ServerError'
+      parameters:
+      - name: app
+        in: query
+        required: true
+        schema:
+          type: string
+          enum:
+          - phealthos
+          - phealthos-edge
+      - name: checkoutId
+        in: query
+        required: true
+        schema:
+          type: string
+          minLength: 1
+          maxLength: 128
+          pattern: ^[A-Za-z0-9_-]+$
     post:
       tags:
       - commerce-payments
@@ -9364,6 +9381,29 @@ paths:
           $ref: '#/components/responses/ClientError'
         5XX:
           $ref: '#/components/responses/ServerError'
+      parameters:
+      - name: app
+        in: query
+        required: true
+        schema:
+          type: string
+          enum:
+          - phealthos
+          - phealthos-edge
+      - name: checkoutId
+        in: query
+        required: true
+        schema:
+          type: string
+          minLength: 1
+          maxLength: 128
+          pattern: ^[A-Za-z0-9_-]+$
+      requestBody:
+        required: false
+        content:
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/commerce_payments_src_zodSchema_paSysRecurringSchema_ts_paSysTokenizationCallbackSchema'
   /commerce/payments/outbox/{eventId}/replay:
     post:
       tags:
@@ -10739,7 +10779,7 @@ paths:
       - name: page
         in: query
         required: false
-        schema: &id137
+        schema: &id141
           default: 1
           type: integer
           minimum: 1
@@ -10747,7 +10787,7 @@ paths:
       - name: limit
         in: query
         required: false
-        schema: &id138
+        schema: &id142
           default: 30
           type: integer
           minimum: 1
@@ -10755,7 +10795,7 @@ paths:
       - name: status
         in: query
         required: false
-        schema: &id139
+        schema: &id143
           type: string
           enum:
           - new
@@ -10765,21 +10805,21 @@ paths:
       - name: deploymentId
         in: query
         required: false
-        schema: &id140
+        schema: &id144
           type: string
           minLength: 1
           maxLength: 128
       - name: appVersion
         in: query
         required: false
-        schema: &id141
+        schema: &id145
           type: string
           minLength: 1
           maxLength: 64
       - name: submitterRole
         in: query
         required: false
-        schema: &id142
+        schema: &id146
           type: string
           enum:
           - user
@@ -10789,19 +10829,19 @@ paths:
       - name: assignedDeveloperId
         in: query
         required: false
-        schema: &id143
+        schema: &id147
           type: string
       - name: submittedFrom
         in: query
         required: false
-        schema: &id144
+        schema: &id148
           type: string
           format: date-time
           pattern: ^(?:(?:\d\d[2468][048]|\d\d[13579][26]|\d\d0[48]|[02468][048]00|[13579][26]00)-02-29|\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\d|30)|(?:02)-(?:0[1-9]|1\d|2[0-8])))T(?:(?:[01]\d|2[0-3]):[0-5]\d(?::[0-5]\d(?:\.\d+)?)?(?:Z|([+-](?:[01]\d|2[0-3]):[0-5]\d)))$
       - name: submittedTo
         in: query
         required: false
-        schema: &id145
+        schema: &id149
           type: string
           format: date-time
           pattern: ^(?:(?:\d\d[2468][048]|\d\d[13579][26]|\d\d0[48]|[02468][048]00|[13579][26]00)-02-29|\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\d|30)|(?:02)-(?:0[1-9]|1\d|2[0-8])))T(?:(?:[01]\d|2[0-3]):[0-5]\d(?::[0-5]\d(?:\.\d+)?)?(?:Z|([+-](?:[01]\d|2[0-3]):[0-5]\d)))$
@@ -19133,21 +19173,21 @@ paths:
       - name: page
         in: query
         required: false
-        schema: &id080
+        schema: &id084
           type: number
       - name: limit
         in: query
         required: false
-        schema: &id081
+        schema: &id085
           type: number
       - name: search
         in: query
         required: false
-        schema: &id082 {}
+        schema: &id086 {}
       - name: type
         in: query
         required: false
-        schema: &id083
+        schema: &id087
           type: string
           enum:
           - ngo
@@ -19156,7 +19196,7 @@ paths:
       - name: status
         in: query
         required: false
-        schema: &id084
+        schema: &id088
           type: string
           enum:
           - provisioning
@@ -19166,7 +19206,7 @@ paths:
       - name: sortBy
         in: query
         required: false
-        schema: &id085
+        schema: &id089
           default: createdAt
           type: string
           enum:
@@ -19177,7 +19217,7 @@ paths:
       - name: sortOrder
         in: query
         required: false
-        schema: &id086
+        schema: &id090
           default: desc
           type: string
           enum:
@@ -23320,7 +23360,7 @@ paths:
         required: true
         content:
           application/json:
-            schema: &id043
+            schema: &id047
               $ref: '#/components/schemas/camera_src_zodSchema_cameraSchema_ts_cameraRegisterRequestSchema'
   /organizations/{organizationId}/client/outbox:
     post:
@@ -26951,7 +26991,7 @@ paths:
         required: true
         content:
           application/json:
-            schema: &id058
+            schema: &id062
               $ref: '#/components/schemas/notifications_src_zodSchema_contactChallengeBodySchema_ts_createContactChallengeBodySchema'
   /organizations/{organizationId}/notifications/contact/challenges/verify:
     post:
@@ -27242,7 +27282,7 @@ paths:
         required: true
         content:
           application/json:
-            schema: &id059
+            schema: &id063
               $ref: '#/components/schemas/notifications_src_zodSchema_contactChallengeBodySchema_ts_verifyContactChallengeBodySchema'
   /organizations/{organizationId}/notifications/system:
     get:
@@ -27572,17 +27612,17 @@ paths:
       - name: page
         in: query
         required: false
-        schema: &id060
+        schema: &id064
           type: number
       - name: limit
         in: query
         required: false
-        schema: &id061
+        schema: &id065
           type: number
       - name: status
         in: query
         required: false
-        schema: &id062
+        schema: &id066
           default: all
           type: string
           enum:
@@ -27592,12 +27632,12 @@ paths:
       - name: petId
         in: query
         required: false
-        schema: &id063
+        schema: &id067
           type: string
       - name: type
         in: query
         required: false
-        schema: &id064
+        schema: &id068
           type: string
           enum:
           - pet_behavior_anomaly
@@ -27608,7 +27648,7 @@ paths:
       - name: sortBy
         in: query
         required: false
-        schema: &id065
+        schema: &id069
           default: createdAt
           type: string
           enum:
@@ -27617,7 +27657,7 @@ paths:
       - name: sortOrder
         in: query
         required: false
-        schema: &id066
+        schema: &id070
           default: desc
           type: string
           enum:
@@ -27872,6 +27912,38 @@ paths:
         required: true
         schema:
           type: string
+      - name: page
+        in: query
+        required: false
+        schema: &id150
+          type: number
+      - name: limit
+        in: query
+        required: false
+        schema: &id151
+          type: number
+      - name: search
+        in: query
+        required: false
+        schema: &id152 {}
+      - name: sortBy
+        in: query
+        required: false
+        schema: &id153
+          default: createdAt
+          type: string
+          enum:
+          - createdAt
+          - name
+      - name: sortOrder
+        in: query
+        required: false
+        schema: &id154
+          default: desc
+          type: string
+          enum:
+          - asc
+          - desc
     post:
       tags:
       - pet-placement
@@ -28150,6 +28222,12 @@ paths:
         required: true
         schema:
           type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/pet_placement_src_zodSchema_placementSchemas_ts_createSiteBodySchema'
   /organizations/{organizationId}/placement-sites/{siteId}:
     get:
       tags:
@@ -28736,6 +28814,12 @@ paths:
         required: true
         schema:
           type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/pet_placement_src_zodSchema_placementSchemas_ts_updateSiteBodySchema'
     delete:
       tags:
       - pet-placement
@@ -29017,6 +29101,12 @@ paths:
         required: true
         schema:
           type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/pet_placement_src_zodSchema_placementSchemas_ts_deleteSiteBodySchema'
   /organizations/{organizationId}/pets/{petId}/placement:
     get:
       tags:
@@ -29588,7 +29678,7 @@ paths:
                     - petId
                 additionalProperties: true
         '400':
-          description: 'HTTP 400. Possible error keys: common.invalidBodyParams, common.invalidPathParam, common.invalidQueryParams.'
+          description: 'HTTP 400. Possible error keys: common.invalidPathParam, common.invalidQueryParams.'
           content:
             application/json:
               schema:
@@ -29603,7 +29693,6 @@ paths:
                   errorKey:
                     type: string
                     enum:
-                    - common.invalidBodyParams
                     - common.invalidPathParam
                     - common.invalidQueryParams
                     description: Stable key for frontend handling; error text is localized.
@@ -29617,12 +29706,6 @@ paths:
                     additionalProperties: true
                 additionalProperties: false
               examples:
-                common_invalidBodyParams:
-                  summary: common.invalidBodyParams
-                  value:
-                    success: false
-                    errorKey: common.invalidBodyParams
-                    error: Invalid request body parameters
                 common_invalidPathParam:
                   summary: common.invalidPathParam
                   value:
@@ -29778,13 +29861,6 @@ paths:
       x-permission-keys:
       - pet.placement.clear_any
       - pet.placement.clear
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/pet_placement_src_zodSchema_placementSchemas_ts_assignPlacementBodySchema'
-      x-request-schema-source: functions/pet-placement/src/zodSchema/placementSchemas.ts#assignPlacementBodySchema
       parameters:
       - name: organizationId
         in: path
@@ -30033,6 +30109,25 @@ paths:
           $ref: '#/components/responses/ClientError'
         5XX:
           $ref: '#/components/responses/ServerError'
+      parameters:
+      - name: page
+        in: query
+        required: false
+        schema: &id024
+          type: number
+      - name: limit
+        in: query
+        required: false
+        schema: &id025
+          type: number
+      - name: search
+        in: query
+        required: false
+        schema: &id026 {}
+      - name: active
+        in: query
+        required: false
+        schema: &id027 {}
     post:
       tags:
       - reference-catalogs
@@ -30301,6 +30396,12 @@ paths:
           $ref: '#/components/responses/ServerError'
       x-permission-keys:
       - pet.animal_species.create
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/reference_catalogs_src_zodSchema_catalogSchemas_ts_createSpeciesBodySchema'
   /reference-data/animal-species/{speciesId}:
     patch:
       tags:
@@ -30618,6 +30719,12 @@ paths:
         required: true
         schema:
           type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/reference_catalogs_src_zodSchema_catalogSchemas_ts_updateSpeciesBodySchema'
   /reference-data/anthelmintic-brands:
     get:
       tags:
@@ -30840,6 +30947,23 @@ paths:
           $ref: '#/components/responses/ServerError'
       x-permission-keys:
       - pet.anthelmintic_brand.list_all
+      parameters:
+      - name: page
+        in: query
+        required: false
+        schema: *id024
+      - name: limit
+        in: query
+        required: false
+        schema: *id025
+      - name: search
+        in: query
+        required: false
+        schema: *id026
+      - name: active
+        in: query
+        required: false
+        schema: *id027
     post:
       tags:
       - reference-catalogs
@@ -31090,6 +31214,12 @@ paths:
           $ref: '#/components/responses/ServerError'
       x-permission-keys:
       - pet.anthelmintic_brand.create
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/reference_catalogs_src_zodSchema_catalogSchemas_ts_createBrandBodySchema'
   /reference-data/anthelmintic-brands/{brandId}:
     patch:
       tags:
@@ -31355,6 +31485,12 @@ paths:
         required: true
         schema:
           type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/reference_catalogs_src_zodSchema_catalogSchemas_ts_updateBrandBodySchema'
   /organizations/{organizationId}/ownership-events:
     get:
       tags:
@@ -31677,12 +31813,12 @@ paths:
       - name: page
         in: query
         required: false
-        schema: &id025
+        schema: &id029
           type: number
       - name: limit
         in: query
         required: false
-        schema: &id026
+        schema: &id030
           type: number
   /organizations/{organizationId}/permissions:
     get:
@@ -32656,21 +32792,21 @@ paths:
       - name: page
         in: query
         required: false
-        schema: &id067
+        schema: &id071
           type: number
       - name: limit
         in: query
         required: false
-        schema: &id068
+        schema: &id072
           type: number
       - name: search
         in: query
         required: false
-        schema: &id069 {}
+        schema: &id073 {}
       - name: sortBy
         in: query
         required: false
-        schema: &id070
+        schema: &id074
           default: updatedAt
           type: string
           enum:
@@ -32682,7 +32818,7 @@ paths:
       - name: sortOrder
         in: query
         required: false
-        schema: &id071
+        schema: &id075
           default: desc
           type: string
           enum:
@@ -34260,17 +34396,17 @@ paths:
       - name: page
         in: query
         required: false
-        schema: &id036
+        schema: &id040
           type: number
       - name: limit
         in: query
         required: false
-        schema: &id037
+        schema: &id041
           type: number
       - name: status
         in: query
         required: false
-        schema: &id038
+        schema: &id042
           type: string
           enum:
           - provisioning
@@ -34280,7 +34416,7 @@ paths:
       - name: sortOrder
         in: query
         required: false
-        schema: &id039
+        schema: &id043
           default: desc
           type: string
           enum:
@@ -34918,28 +35054,28 @@ paths:
       - name: page
         in: query
         required: false
-        schema: &id087
+        schema: &id091
           type: number
       - name: limit
         in: query
         required: false
-        schema: &id088
+        schema: &id092
           type: number
       - name: search
         in: query
         required: false
-        schema: &id089 {}
+        schema: &id093 {}
       - name: domainKey
         in: query
         required: false
-        schema: &id090
+        schema: &id094
           type: string
           maxLength: 80
           pattern: ^[a-z][a-z0-9_]*$
       - name: context
         in: query
         required: false
-        schema: &id091
+        schema: &id095
           type: string
           enum:
           - personal
@@ -34948,7 +35084,7 @@ paths:
       - name: status
         in: query
         required: false
-        schema: &id092
+        schema: &id096
           type: string
           enum:
           - draft
@@ -34958,7 +35094,7 @@ paths:
       - name: sortBy
         in: query
         required: false
-        schema: &id093
+        schema: &id097
           default: key
           type: string
           enum:
@@ -34969,7 +35105,7 @@ paths:
       - name: sortOrder
         in: query
         required: false
-        schema: &id094
+        schema: &id098
           default: desc
           type: string
           enum:
@@ -35691,21 +35827,21 @@ paths:
       - name: page
         in: query
         required: false
-        schema: &id102
+        schema: &id106
           type: number
       - name: limit
         in: query
         required: false
-        schema: &id103
+        schema: &id107
           type: number
       - name: search
         in: query
         required: false
-        schema: &id104 {}
+        schema: &id108 {}
       - name: organizationType
         in: query
         required: false
-        schema: &id105
+        schema: &id109
           type: string
           enum:
           - ngo
@@ -35714,7 +35850,7 @@ paths:
       - name: status
         in: query
         required: false
-        schema: &id106
+        schema: &id110
           type: string
           enum:
           - draft
@@ -35724,7 +35860,7 @@ paths:
       - name: sortBy
         in: query
         required: false
-        schema: &id107
+        schema: &id111
           default: code
           type: string
           enum:
@@ -35735,7 +35871,7 @@ paths:
       - name: sortOrder
         in: query
         required: false
-        schema: &id108
+        schema: &id112
           default: desc
           type: string
           enum:
@@ -37197,21 +37333,21 @@ paths:
       - name: page
         in: query
         required: false
-        schema: &id095
+        schema: &id099
           type: number
       - name: limit
         in: query
         required: false
-        schema: &id096
+        schema: &id100
           type: number
       - name: search
         in: query
         required: false
-        schema: &id097 {}
+        schema: &id101 {}
       - name: scope
         in: query
         required: false
-        schema: &id098
+        schema: &id102
           type: string
           enum:
           - personal
@@ -37220,7 +37356,7 @@ paths:
       - name: status
         in: query
         required: false
-        schema: &id099
+        schema: &id103
           type: string
           enum:
           - draft
@@ -37230,7 +37366,7 @@ paths:
       - name: sortBy
         in: query
         required: false
-        schema: &id100
+        schema: &id104
           default: code
           type: string
           enum:
@@ -37241,7 +37377,7 @@ paths:
       - name: sortOrder
         in: query
         required: false
-        schema: &id101
+        schema: &id105
           default: desc
           type: string
           enum:
@@ -39941,17 +40077,17 @@ paths:
       - name: page
         in: query
         required: false
-        schema: &id119
+        schema: &id123
           type: number
       - name: limit
         in: query
         required: false
-        schema: &id120
+        schema: &id124
           type: number
       - name: kind
         in: query
         required: false
-        schema: &id121
+        schema: &id125
           type: string
           enum:
           - lost
@@ -39959,18 +40095,18 @@ paths:
       - name: district
         in: query
         required: false
-        schema: &id122
+        schema: &id126
           type: string
           minLength: 1
           maxLength: 120
       - name: search
         in: query
         required: false
-        schema: &id123 {}
+        schema: &id127 {}
       - name: sortBy
         in: query
         required: false
-        schema: &id124
+        schema: &id128
           default: createdAt
           type: string
           enum:
@@ -39980,7 +40116,7 @@ paths:
       - name: sortOrder
         in: query
         required: false
-        schema: &id125
+        schema: &id129
           default: desc
           type: string
           enum:
@@ -43734,11 +43870,11 @@ paths:
                         - moving
                         - resting
                         properties:
-                          eating: &id024
+                          eating: &id028
                             type: integer
-                          drinking: *id024
-                          moving: *id024
-                          resting: *id024
+                          drinking: *id028
+                          moving: *id028
+                          resting: *id028
                     additionalProperties: true
                     required:
                     - petId
@@ -43905,14 +44041,14 @@ paths:
       - name: from
         in: query
         required: true
-        schema: &id129
+        schema: &id133
           type: string
           minLength: 1
           maxLength: 64
       - name: to
         in: query
         required: true
-        schema: &id130
+        schema: &id134
           type: string
           minLength: 1
           maxLength: 64
@@ -44147,21 +44283,21 @@ paths:
       - name: from
         in: query
         required: true
-        schema: &id131
+        schema: &id135
           type: string
           minLength: 1
           maxLength: 64
       - name: to
         in: query
         required: true
-        schema: &id132
+        schema: &id136
           type: string
           minLength: 1
           maxLength: 64
       - name: bucket
         in: query
         required: false
-        schema: &id133
+        schema: &id137
           default: 1d
           type: string
           enum:
@@ -45600,11 +45736,11 @@ paths:
       - name: page
         in: query
         required: false
-        schema: *id025
+        schema: *id029
       - name: limit
         in: query
         required: false
-        schema: *id026
+        schema: *id030
   /pets/{petId}/ownership-transfers:
     post:
       tags:
@@ -46315,17 +46451,17 @@ paths:
       - name: page
         in: query
         required: false
-        schema: &id134
+        schema: &id138
           type: number
       - name: limit
         in: query
         required: false
-        schema: &id135
+        schema: &id139
           type: number
       - name: depth
         in: query
         required: false
-        schema: &id136
+        schema: &id140
           default: 3
           type: integer
           minimum: 1
@@ -47856,13 +47992,13 @@ paths:
                                   - createdAt
                                   - updatedAt
                                   properties:
-                                    serviceId: &id027
+                                    serviceId: &id031
                                       type: string
-                                    petId: *id027
-                                    organizationId: *id027
-                                    accessAgreementId: *id027
-                                    service: *id027
-                                    occurredAt: &id028
+                                    petId: *id031
+                                    organizationId: *id031
+                                    accessAgreementId: *id031
+                                    service: *id031
+                                    occurredAt: &id032
                                       type: string
                                       format: date-time
                                     completedAt:
@@ -47877,8 +48013,8 @@ paths:
                                       - accountClass
                                       - organizationId
                                       properties:
-                                        userId: *id027
-                                        accountClass: *id027
+                                        userId: *id031
+                                        accountClass: *id031
                                         organizationId:
                                           type:
                                           - string
@@ -47889,16 +48025,16 @@ paths:
                                       - in_progress
                                       - completed
                                       - cancelled
-                                    statusChangedAt: *id028
-                                    summary: *id027
+                                    statusChangedAt: *id032
+                                    summary: *id031
                                     details:
                                       type:
                                       - object
                                       - 'null'
                                       additionalProperties: true
                                       description: Validated client JSON object, at most 16 KiB and six levels deep.
-                                    createdAt: *id028
-                                    updatedAt: *id028
+                                    createdAt: *id032
+                                    updatedAt: *id032
                               pagination:
                                 type: object
                                 properties:
@@ -48113,17 +48249,17 @@ paths:
       - name: page
         in: query
         required: false
-        schema: &id029
+        schema: &id033
           type: number
       - name: limit
         in: query
         required: false
-        schema: &id030
+        schema: &id034
           type: number
       - name: sortBy
         in: query
         required: false
-        schema: &id031
+        schema: &id035
           default: occurredAt
           type: string
           enum:
@@ -48471,15 +48607,15 @@ paths:
       - name: page
         in: query
         required: false
-        schema: *id029
+        schema: *id033
       - name: limit
         in: query
         required: false
-        schema: *id030
+        schema: *id034
       - name: sortBy
         in: query
         required: false
-        schema: *id031
+        schema: *id035
     post:
       tags:
       - pet-medical
@@ -49195,15 +49331,15 @@ paths:
       - name: page
         in: query
         required: false
-        schema: *id029
+        schema: *id033
       - name: limit
         in: query
         required: false
-        schema: *id030
+        schema: *id034
       - name: sortBy
         in: query
         required: false
-        schema: *id031
+        schema: *id035
     post:
       tags:
       - pet-medical
@@ -49911,15 +50047,15 @@ paths:
       - name: page
         in: query
         required: false
-        schema: *id029
+        schema: *id033
       - name: limit
         in: query
         required: false
-        schema: *id030
+        schema: *id034
       - name: sortBy
         in: query
         required: false
-        schema: *id031
+        schema: *id035
     post:
       tags:
       - pet-medical
@@ -50588,15 +50724,15 @@ paths:
       - name: page
         in: query
         required: false
-        schema: *id029
+        schema: *id033
       - name: limit
         in: query
         required: false
-        schema: *id030
+        schema: *id034
       - name: sortBy
         in: query
         required: false
-        schema: *id031
+        schema: *id035
     post:
       tags:
       - pet-medical
@@ -50983,13 +51119,13 @@ paths:
                           - createdAt
                           - updatedAt
                           properties:
-                            serviceId: &id032
+                            serviceId: &id036
                               type: string
-                            petId: *id032
-                            organizationId: *id032
-                            accessAgreementId: *id032
-                            service: *id032
-                            occurredAt: &id033
+                            petId: *id036
+                            organizationId: *id036
+                            accessAgreementId: *id036
+                            service: *id036
+                            occurredAt: &id037
                               type: string
                               format: date-time
                             completedAt:
@@ -51004,8 +51140,8 @@ paths:
                               - accountClass
                               - organizationId
                               properties:
-                                userId: *id032
-                                accountClass: *id032
+                                userId: *id036
+                                accountClass: *id036
                                 organizationId:
                                   type:
                                   - string
@@ -51016,16 +51152,16 @@ paths:
                               - in_progress
                               - completed
                               - cancelled
-                            statusChangedAt: *id033
-                            summary: *id032
+                            statusChangedAt: *id037
+                            summary: *id036
                             details:
                               type:
                               - object
                               - 'null'
                               additionalProperties: true
                               description: Validated client JSON object, at most 16 KiB and six levels deep.
-                            createdAt: *id033
-                            updatedAt: *id033
+                            createdAt: *id037
+                            updatedAt: *id037
                       pagination:
                         type: object
                         properties:
@@ -51293,13 +51429,13 @@ paths:
                         - createdAt
                         - updatedAt
                         properties:
-                          serviceId: &id034
+                          serviceId: &id038
                             type: string
-                          petId: *id034
-                          organizationId: *id034
-                          accessAgreementId: *id034
-                          service: *id034
-                          occurredAt: &id035
+                          petId: *id038
+                          organizationId: *id038
+                          accessAgreementId: *id038
+                          service: *id038
+                          occurredAt: &id039
                             type: string
                             format: date-time
                           completedAt:
@@ -51314,8 +51450,8 @@ paths:
                             - accountClass
                             - organizationId
                             properties:
-                              userId: *id034
-                              accountClass: *id034
+                              userId: *id038
+                              accountClass: *id038
                               organizationId:
                                 type:
                                 - string
@@ -51326,16 +51462,16 @@ paths:
                             - in_progress
                             - completed
                             - cancelled
-                          statusChangedAt: *id035
-                          summary: *id034
+                          statusChangedAt: *id039
+                          summary: *id038
                           details:
                             type:
                             - object
                             - 'null'
                             additionalProperties: true
                             description: Validated client JSON object, at most 16 KiB and six levels deep.
-                          createdAt: *id035
-                          updatedAt: *id035
+                          createdAt: *id039
+                          updatedAt: *id039
                     additionalProperties: true
                     required:
                     - serviceRecord
@@ -51918,15 +52054,15 @@ paths:
       - name: page
         in: query
         required: false
-        schema: *id029
+        schema: *id033
       - name: limit
         in: query
         required: false
-        schema: *id030
+        schema: *id034
       - name: sortBy
         in: query
         required: false
-        schema: *id031
+        schema: *id035
     post:
       tags:
       - pet-medical
@@ -52606,17 +52742,17 @@ paths:
       - name: page
         in: query
         required: false
-        schema: &id126
+        schema: &id130
           type: number
       - name: limit
         in: query
         required: false
-        schema: &id127
+        schema: &id131
           type: number
       - name: kind
         in: query
         required: false
-        schema: &id128
+        schema: &id132
           type: string
           enum:
           - lost
@@ -53881,19 +54017,19 @@ paths:
       - name: page
         in: query
         required: false
-        schema: *id036
+        schema: *id040
       - name: limit
         in: query
         required: false
-        schema: *id037
+        schema: *id041
       - name: status
         in: query
         required: false
-        schema: *id038
+        schema: *id042
       - name: sortOrder
         in: query
         required: false
-        schema: *id039
+        schema: *id043
   /ptags/{ptagId}:
     get:
       tags:
@@ -56680,13 +56816,13 @@ paths:
                         - createdAt
                         - updatedAt
                         properties:
-                          serviceId: &id040
+                          serviceId: &id044
                             type: string
-                          petId: *id040
-                          organizationId: *id040
-                          accessAgreementId: *id040
-                          service: *id040
-                          occurredAt: &id041
+                          petId: *id044
+                          organizationId: *id044
+                          accessAgreementId: *id044
+                          service: *id044
+                          occurredAt: &id045
                             type: string
                             format: date-time
                           completedAt:
@@ -56701,8 +56837,8 @@ paths:
                             - accountClass
                             - organizationId
                             properties:
-                              userId: *id040
-                              accountClass: *id040
+                              userId: *id044
+                              accountClass: *id044
                               organizationId:
                                 type:
                                 - string
@@ -56713,16 +56849,16 @@ paths:
                             - in_progress
                             - completed
                             - cancelled
-                          statusChangedAt: *id041
-                          summary: *id040
+                          statusChangedAt: *id045
+                          summary: *id044
                           details:
                             type:
                             - object
                             - 'null'
                             additionalProperties: true
                             description: Validated client JSON object, at most 16 KiB and six levels deep.
-                          createdAt: *id041
-                          updatedAt: *id041
+                          createdAt: *id045
+                          updatedAt: *id045
                     additionalProperties: true
                     required:
                     - serviceRecord
@@ -58655,7 +58791,7 @@ paths:
         required: true
         content:
           application/json:
-            schema: &id072
+            schema: &id076
               $ref: '#/components/schemas/commerce_subscriptions_src_zodSchema_subscriptionPaymentContractSchema_ts_cancelSubscriptionRequestSchema'
   /users:
     get:
@@ -58903,21 +59039,21 @@ paths:
       - name: page
         in: query
         required: false
-        schema: &id073
+        schema: &id077
           type: number
       - name: limit
         in: query
         required: false
-        schema: &id074
+        schema: &id078
           type: number
       - name: search
         in: query
         required: false
-        schema: &id075 {}
+        schema: &id079 {}
       - name: accountClass
         in: query
         required: false
-        schema: &id076
+        schema: &id080
           type: string
           enum:
           - personal
@@ -58926,7 +59062,7 @@ paths:
       - name: status
         in: query
         required: false
-        schema: &id077
+        schema: &id081
           type: string
           enum:
           - pending_verification
@@ -58936,7 +59072,7 @@ paths:
       - name: sortBy
         in: query
         required: false
-        schema: &id078
+        schema: &id082
           default: createdAt
           type: string
           enum:
@@ -58947,7 +59083,7 @@ paths:
       - name: sortOrder
         in: query
         required: false
-        schema: &id079
+        schema: &id083
           default: desc
           type: string
           enum:
@@ -61701,21 +61837,21 @@ paths:
                           - sourceRevision
                           - deploymentIds
                           properties:
-                            cameraId: &id042
+                            cameraId: &id046
                               type: string
-                            did: *id042
-                            name: *id042
+                            did: *id046
+                            name: *id046
                             sourceType:
                               type: string
                               enum:
                               - rtsp
                               - xiaomi
-                            sourceFingerprint: *id042
+                            sourceFingerprint: *id046
                             sourceRevision:
                               type: integer
                             deploymentIds:
                               type: array
-                              items: *id042
+                              items: *id046
                     additionalProperties: true
                     required:
                     - cameras
@@ -61958,7 +62094,7 @@ paths:
         required: true
         content:
           application/json:
-            schema: *id043
+            schema: *id047
   /users/{userId}/close:
     post:
       tags:
@@ -62584,13 +62720,13 @@ paths:
                       properties:
                         orderId:
                           type: string
-                        orderReference: *id044
-                        purchaseType: *id045
-                        status: *id046
-                        pricing: *id047
-                        items: *id048
-                        createdAt: *id049
-                        updatedAt: *id050
+                        orderReference: *id048
+                        purchaseType: *id049
+                        status: *id050
+                        pricing: *id051
+                        items: *id052
+                        createdAt: *id053
+                        updatedAt: *id054
                         ptagIds:
                           type: array
                           items:
@@ -62606,21 +62742,21 @@ paths:
                               const: sf_express
                             trackingNumber:
                               type: string
-                            shippedAt: &id051
+                            shippedAt: &id055
                               type: string
                               format: date-time
-                            deliveredAt: *id051
+                            deliveredAt: *id055
                         payment:
                           type: object
                           required:
                           - merchantReference
                           - status
                           properties:
-                            merchantReference: &id052
+                            merchantReference: &id056
                               type: string
-                            status: *id052
-                            requestedNetwork: *id052
-                            providerRequestReference: *id052
+                            status: *id056
+                            requestedNetwork: *id056
+                            providerRequestReference: *id056
                             resultAt:
                               type: string
                               format: date-time
@@ -62816,15 +62952,15 @@ paths:
       - name: status
         in: query
         required: false
-        schema: *id053
+        schema: *id057
       - name: sortBy
         in: query
         required: false
-        schema: *id054
+        schema: *id058
       - name: sortOrder
         in: query
         required: false
-        schema: *id055
+        schema: *id059
   /users/{userId}/devices:
     get:
       tags:
@@ -63135,13 +63271,13 @@ paths:
                             - healthAlerts
                             - additionalAiModelAvailable
                             properties:
-                              dailyBehaviorReminders: &id056
+                              dailyBehaviorReminders: &id060
                                 type: boolean
-                              behaviorTrendRecords: *id056
-                              userPrivacyProtection: *id056
-                              dailyHighlight: *id056
-                              healthAlerts: *id056
-                              additionalAiModelAvailable: *id056
+                              behaviorTrendRecords: *id060
+                              userPrivacyProtection: *id060
+                              dailyHighlight: *id060
+                              healthAlerts: *id060
+                              additionalAiModelAvailable: *id060
                           priceHkd:
                             type: number
                           intervalDays:
@@ -63401,13 +63537,13 @@ paths:
                             - healthAlerts
                             - additionalAiModelAvailable
                             properties:
-                              dailyBehaviorReminders: &id057
+                              dailyBehaviorReminders: &id061
                                 type: boolean
-                              behaviorTrendRecords: *id057
-                              userPrivacyProtection: *id057
-                              dailyHighlight: *id057
-                              healthAlerts: *id057
-                              additionalAiModelAvailable: *id057
+                              behaviorTrendRecords: *id061
+                              userPrivacyProtection: *id061
+                              dailyHighlight: *id061
+                              healthAlerts: *id061
+                              additionalAiModelAvailable: *id061
                           priceHkd:
                             type: number
                           intervalDays:
@@ -65143,7 +65279,7 @@ paths:
         required: true
         content:
           application/json:
-            schema: *id058
+            schema: *id062
   /users/{userId}/notifications/contact/challenges/verify:
     post:
       tags:
@@ -65433,7 +65569,7 @@ paths:
         required: true
         content:
           application/json:
-            schema: *id059
+            schema: *id063
   /users/{userId}/notifications/system:
     get:
       tags:
@@ -65762,31 +65898,31 @@ paths:
       - name: page
         in: query
         required: false
-        schema: *id060
+        schema: *id064
       - name: limit
         in: query
         required: false
-        schema: *id061
+        schema: *id065
       - name: status
         in: query
         required: false
-        schema: *id062
+        schema: *id066
       - name: petId
         in: query
         required: false
-        schema: *id063
+        schema: *id067
       - name: type
         in: query
         required: false
-        schema: *id064
+        schema: *id068
       - name: sortBy
         in: query
         required: false
-        schema: *id065
+        schema: *id069
       - name: sortOrder
         in: query
         required: false
-        schema: *id066
+        schema: *id070
   /users/{userId}/ownership-events:
     get:
       tags:
@@ -66109,11 +66245,11 @@ paths:
       - name: page
         in: query
         required: false
-        schema: *id025
+        schema: *id029
       - name: limit
         in: query
         required: false
-        schema: *id026
+        schema: *id030
   /users/{userId}/pets:
     get:
       tags:
@@ -66374,23 +66510,23 @@ paths:
       - name: page
         in: query
         required: false
-        schema: *id067
+        schema: *id071
       - name: limit
         in: query
         required: false
-        schema: *id068
+        schema: *id072
       - name: search
         in: query
         required: false
-        schema: *id069
+        schema: *id073
       - name: sortBy
         in: query
         required: false
-        schema: *id070
+        schema: *id074
       - name: sortOrder
         in: query
         required: false
-        schema: *id071
+        schema: *id075
     post:
       tags:
       - pet-profile
@@ -67205,19 +67341,19 @@ paths:
       - name: page
         in: query
         required: false
-        schema: *id036
+        schema: *id040
       - name: limit
         in: query
         required: false
-        schema: *id037
+        schema: *id041
       - name: status
         in: query
         required: false
-        schema: *id038
+        schema: *id042
       - name: sortOrder
         in: query
         required: false
-        schema: *id039
+        schema: *id043
   /users/{userId}/sessions/revoke:
     post:
       tags:
@@ -68447,6 +68583,12 @@ paths:
         required: true
         schema:
           type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/commerce_subscriptions_src_zodSchema_promoSchemas_ts_redeemPromoSchema'
   /subscriptions/promo-codes:
     get:
       tags:
@@ -68883,6 +69025,12 @@ paths:
           $ref: '#/components/responses/ServerError'
       x-permission-keys:
       - subscription.promo_code.create
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/commerce_subscriptions_src_zodSchema_promoSchemas_ts_createPromoCodeSchema'
   /subscriptions/promo-codes/{promoCodeId}:
     patch:
       tags:
@@ -69194,6 +69342,12 @@ paths:
         required: true
         schema:
           type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/commerce_subscriptions_src_zodSchema_promoSchemas_ts_updatePromoCodeSchema'
   /users/{userId}/subscriptions/cancel:
     post:
       tags:
@@ -69495,7 +69649,7 @@ paths:
         required: true
         content:
           application/json:
-            schema: *id072
+            schema: *id076
   /users/{userId}/subscriptions/purchase:
     post:
       tags:
@@ -74281,13 +74435,13 @@ components:
     iam_user_src_zodSchema_listUsersQuerySchema_ts_listUsersQuerySchema:
       type: object
       properties:
-        page: *id073
-        limit: *id074
-        search: *id075
-        accountClass: *id076
-        status: *id077
-        sortBy: *id078
-        sortOrder: *id079
+        page: *id077
+        limit: *id078
+        search: *id079
+        accountClass: *id080
+        status: *id081
+        sortBy: *id082
+        sortOrder: *id083
       required:
       - page
       - limit
@@ -74298,13 +74452,13 @@ components:
     iam_organization_src_zodSchema_organizationSchemas_ts_listOrganizationsQuerySchema:
       type: object
       properties:
-        page: *id080
-        limit: *id081
-        search: *id082
-        type: *id083
-        status: *id084
-        sortBy: *id085
-        sortOrder: *id086
+        page: *id084
+        limit: *id085
+        search: *id086
+        type: *id087
+        status: *id088
+        sortBy: *id089
+        sortOrder: *id090
       required:
       - page
       - limit
@@ -74331,14 +74485,14 @@ components:
     iam_policy_src_zodSchema_policySchemas_ts_listPermissionsQuerySchema:
       type: object
       properties:
-        page: *id087
-        limit: *id088
-        search: *id089
-        domainKey: *id090
-        context: *id091
-        status: *id092
-        sortBy: *id093
-        sortOrder: *id094
+        page: *id091
+        limit: *id092
+        search: *id093
+        domainKey: *id094
+        context: *id095
+        status: *id096
+        sortBy: *id097
+        sortOrder: *id098
       required:
       - page
       - limit
@@ -74349,13 +74503,13 @@ components:
     iam_policy_src_zodSchema_policySchemas_ts_listRoleDefaultsQuerySchema:
       type: object
       properties:
-        page: *id095
-        limit: *id096
-        search: *id097
-        scope: *id098
-        status: *id099
-        sortBy: *id100
-        sortOrder: *id101
+        page: *id099
+        limit: *id100
+        search: *id101
+        scope: *id102
+        status: *id103
+        sortBy: *id104
+        sortOrder: *id105
       required:
       - page
       - limit
@@ -74366,13 +74520,13 @@ components:
     iam_policy_src_zodSchema_policySchemas_ts_listOrganizationDefaultsQuerySchema:
       type: object
       properties:
-        page: *id102
-        limit: *id103
-        search: *id104
-        organizationType: *id105
-        status: *id106
-        sortBy: *id107
-        sortOrder: *id108
+        page: *id106
+        limit: *id107
+        search: *id108
+        organizationType: *id109
+        status: *id110
+        sortBy: *id111
+        sortOrder: *id112
       required:
       - page
       - limit
@@ -74383,16 +74537,16 @@ components:
     iam_policy_src_zodSchema_policySchemas_ts_listAuditsQuerySchema:
       type: object
       properties:
-        page: *id109
-        limit: *id110
-        eventType: *id111
-        actorUserId: *id112
-        resourceType: *id113
-        resourceId: *id114
-        outcome: *id115
-        from: *id116
-        to: *id117
-        sortOrder: *id118
+        page: *id113
+        limit: *id114
+        eventType: *id115
+        actorUserId: *id116
+        resourceType: *id117
+        resourceId: *id118
+        outcome: *id119
+        from: *id120
+        to: *id121
+        sortOrder: *id122
       required:
       - page
       - limit
@@ -74401,11 +74555,11 @@ components:
     pet_profile_src_zodSchema_listPetsQuerySchema_ts_listPetsQuerySchema:
       type: object
       properties:
-        page: *id067
-        limit: *id068
-        search: *id069
-        sortBy: *id070
-        sortOrder: *id071
+        page: *id071
+        limit: *id072
+        search: *id073
+        sortBy: *id074
+        sortOrder: *id075
       required:
       - page
       - limit
@@ -74416,9 +74570,9 @@ components:
     pet_medical_src_zodSchema_listQuerySchema_ts_medicalListQuerySchema:
       type: object
       properties:
-        page: *id029
-        limit: *id030
-        sortBy: *id031
+        page: *id033
+        limit: *id034
+        sortBy: *id035
       required:
       - page
       - limit
@@ -74427,13 +74581,13 @@ components:
     pet_recovery_src_zodSchema_listQuerySchema_ts_recoveryListQuerySchema:
       type: object
       properties:
-        page: *id119
-        limit: *id120
-        kind: *id121
-        district: *id122
-        search: *id123
-        sortBy: *id124
-        sortOrder: *id125
+        page: *id123
+        limit: *id124
+        kind: *id125
+        district: *id126
+        search: *id127
+        sortBy: *id128
+        sortOrder: *id129
       required:
       - page
       - limit
@@ -74444,9 +74598,9 @@ components:
     pet_recovery_src_zodSchema_listQuerySchema_ts_petRecoveryListQuerySchema:
       type: object
       properties:
-        page: *id126
-        limit: *id127
-        kind: *id128
+        page: *id130
+        limit: *id131
+        kind: *id132
       required:
       - page
       - limit
@@ -74454,8 +74608,8 @@ components:
     pet_ownership_src_zodSchema_historyQuerySchema_ts_historyQuerySchema:
       type: object
       properties:
-        page: *id025
-        limit: *id026
+        page: *id029
+        limit: *id030
       required:
       - page
       - limit
@@ -74472,8 +74626,8 @@ components:
     pet_behavior_src_zodSchema_behaviorReadSchemas_ts_behaviorSummaryQuerySchema:
       type: object
       properties:
-        from: *id129
-        to: *id130
+        from: *id133
+        to: *id134
       required:
       - from
       - to
@@ -74481,9 +74635,9 @@ components:
     pet_behavior_src_zodSchema_behaviorReadSchemas_ts_behaviorTimelineQuerySchema:
       type: object
       properties:
-        from: *id131
-        to: *id132
-        bucket: *id133
+        from: *id135
+        to: *id136
+        bucket: *id137
       required:
       - from
       - to
@@ -74492,9 +74646,9 @@ components:
     pet_profile_src_zodSchema_pedigreeSchemas_ts_readPedigreeQuerySchema:
       type: object
       properties:
-        page: *id134
-        limit: *id135
-        depth: *id136
+        page: *id138
+        limit: *id139
+        depth: *id140
       required:
       - page
       - limit
@@ -74503,10 +74657,10 @@ components:
     ptag_src_zodSchema_ptagSchemas_ts_listPtagsQuerySchema:
       type: object
       properties:
-        page: *id036
-        limit: *id037
-        status: *id038
-        sortOrder: *id039
+        page: *id040
+        limit: *id041
+        status: *id042
+        sortOrder: *id043
       required:
       - page
       - limit
@@ -74517,9 +74671,9 @@ components:
       properties:
         page: {}
         limit: {}
-        status: *id053
-        sortBy: *id054
-        sortOrder: *id055
+        status: *id057
+        sortBy: *id058
+        sortOrder: *id059
       required:
       - sortBy
       - sortOrder
@@ -74527,15 +74681,15 @@ components:
     support_src_zodSchema_bugReportSchema_ts_bugReportListQuerySchema:
       type: object
       properties:
-        page: *id137
-        limit: *id138
-        status: *id139
-        deploymentId: *id140
-        appVersion: *id141
-        submitterRole: *id142
-        assignedDeveloperId: *id143
-        submittedFrom: *id144
-        submittedTo: *id145
+        page: *id141
+        limit: *id142
+        status: *id143
+        deploymentId: *id144
+        appVersion: *id145
+        submitterRole: *id146
+        assignedDeveloperId: *id147
+        submittedFrom: *id148
+        submittedTo: *id149
       required:
       - page
       - limit
@@ -74543,13 +74697,13 @@ components:
     notifications_src_zodSchema_inboxQuerySchema_ts_inboxQuerySchema:
       type: object
       properties:
-        page: *id060
-        limit: *id061
-        status: *id062
-        petId: *id063
-        type: *id064
-        sortBy: *id065
-        sortOrder: *id066
+        page: *id064
+        limit: *id065
+        status: *id066
+        petId: *id067
+        type: *id068
+        sortBy: *id069
+        sortOrder: *id070
       required:
       - page
       - limit
@@ -74557,6 +74711,333 @@ components:
       - sortBy
       - sortOrder
       additionalProperties: false
+    commerce_subscriptions_src_zodSchema_promoSchemas_ts_redeemPromoSchema:
+      type: object
+      properties:
+        code:
+          type: string
+          pattern: ^[A-Z0-9]{4,32}$
+      required:
+      - code
+      additionalProperties: false
+    commerce_subscriptions_src_zodSchema_promoSchemas_ts_createPromoCodeSchema:
+      type: object
+      properties:
+        code:
+          type: string
+          pattern: ^[A-Z0-9]{4,32}$
+        planCode:
+          type: string
+          enum:
+          - basic
+          - pro
+          - travel
+        durationDays:
+          type: integer
+          minimum: 1
+          maximum: 366
+        expiresAt:
+          type: string
+          format: date-time
+          pattern: ^(?:(?:\d\d[2468][048]|\d\d[13579][26]|\d\d0[48]|[02468][048]00|[13579][26]00)-02-29|\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\d|30)|(?:02)-(?:0[1-9]|1\d|2[0-8])))T(?:(?:[01]\d|2[0-3]):[0-5]\d(?::[0-5]\d(?:\.\d+)?)?(?:Z|([+-](?:[01]\d|2[0-3]):[0-5]\d)))$
+        maxRedemptions:
+          type: integer
+          minimum: 1
+          maximum: 1000000
+      required:
+      - code
+      - planCode
+      - durationDays
+      - expiresAt
+      - maxRedemptions
+      additionalProperties: false
+    commerce_subscriptions_src_zodSchema_promoSchemas_ts_updatePromoCodeSchema:
+      type: object
+      properties:
+        active:
+          type: boolean
+        expiresAt:
+          type: string
+          format: date-time
+          pattern: ^(?:(?:\d\d[2468][048]|\d\d[13579][26]|\d\d0[48]|[02468][048]00|[13579][26]00)-02-29|\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\d|30)|(?:02)-(?:0[1-9]|1\d|2[0-8])))T(?:(?:[01]\d|2[0-3]):[0-5]\d(?::[0-5]\d(?:\.\d+)?)?(?:Z|([+-](?:[01]\d|2[0-3]):[0-5]\d)))$
+        maxRedemptions:
+          type: integer
+          minimum: 1
+          maximum: 1000000
+      additionalProperties: false
+    pet_placement_src_zodSchema_placementSchemas_ts_createSiteBodySchema:
+      type: object
+      properties:
+        name:
+          type: string
+          minLength: 1
+          maxLength: 100
+        areas:
+          default: []
+          maxItems: 200
+          type: array
+          items:
+            type: object
+            properties:
+              name:
+                type: string
+                minLength: 1
+                maxLength: 100
+            required:
+            - name
+            additionalProperties: false
+      required:
+      - name
+      - areas
+      additionalProperties: false
+    pet_placement_src_zodSchema_placementSchemas_ts_updateSiteBodySchema:
+      type: object
+      properties:
+        expectedRevision:
+          type: string
+          pattern: ^(0|[1-9]\d{0,18})$
+        name:
+          type: string
+          minLength: 1
+          maxLength: 100
+        areas:
+          maxItems: 200
+          type: array
+          items:
+            type: object
+            properties:
+              areaId:
+                type: string
+              name:
+                type: string
+                minLength: 1
+                maxLength: 100
+            required:
+            - name
+            additionalProperties: false
+      required:
+      - expectedRevision
+      additionalProperties: false
+    pet_placement_src_zodSchema_placementSchemas_ts_deleteSiteBodySchema:
+      type: object
+      properties:
+        expectedRevision:
+          type: string
+          pattern: ^(0|[1-9]\d{0,18})$
+      required:
+      - expectedRevision
+      additionalProperties: false
+    reference_catalogs_src_zodSchema_catalogSchemas_ts_createSpeciesBodySchema:
+      type: object
+      properties:
+        key:
+          type: string
+          maxLength: 64
+          pattern: ^[a-z0-9]+(?:_[a-z0-9]+)*$
+        active:
+          default: true
+          type: boolean
+        breeds:
+          default: []
+          maxItems: 1000
+          type: array
+          items:
+            type: object
+            properties:
+              key:
+                type: string
+                maxLength: 64
+                pattern: ^[a-z0-9]+(?:_[a-z0-9]+)*$
+              active:
+                default: true
+                type: boolean
+            required:
+            - key
+            - active
+            additionalProperties: false
+      required:
+      - key
+      - active
+      - breeds
+      additionalProperties: false
+    reference_catalogs_src_zodSchema_catalogSchemas_ts_updateSpeciesBodySchema:
+      type: object
+      properties:
+        active:
+          type: boolean
+        breeds:
+          maxItems: 1000
+          type: array
+          items:
+            type: object
+            properties:
+              key:
+                type: string
+                maxLength: 64
+                pattern: ^[a-z0-9]+(?:_[a-z0-9]+)*$
+              active:
+                default: true
+                type: boolean
+            required:
+            - key
+            - active
+            additionalProperties: false
+      additionalProperties: false
+    reference_catalogs_src_zodSchema_catalogSchemas_ts_createBrandBodySchema:
+      type: object
+      properties:
+        key:
+          type: string
+          maxLength: 64
+          pattern: ^[a-z0-9]+(?:_[a-z0-9]+)*$
+        active:
+          default: true
+          type: boolean
+      required:
+      - key
+      - active
+      additionalProperties: false
+    reference_catalogs_src_zodSchema_catalogSchemas_ts_updateBrandBodySchema:
+      type: object
+      properties:
+        active:
+          type: boolean
+      required:
+      - active
+      additionalProperties: false
+    pet_placement_src_zodSchema_placementSchemas_ts_listSitesQuerySchema:
+      type: object
+      properties:
+        page: *id150
+        limit: *id151
+        search: *id152
+        sortBy: *id153
+        sortOrder: *id154
+      required:
+      - page
+      - limit
+      - search
+      - sortBy
+      - sortOrder
+      additionalProperties: false
+    reference_catalogs_src_zodSchema_catalogSchemas_ts_catalogListQuerySchema:
+      type: object
+      properties:
+        page: *id024
+        limit: *id025
+        search: *id026
+        active: *id027
+      required:
+      - page
+      - limit
+      - search
+      additionalProperties: false
+    commerce_payments_src_zodSchema_paSysRecurringSchema_ts_paSysTokenizationCallbackSchema:
+      oneOf:
+      - type: object
+        properties:
+          merchant_reference:
+            type: string
+            minLength: 1
+            maxLength: 36
+          card_type: {}
+          card_first6:
+            type: string
+            pattern: ^\d{6}$
+          card_last4:
+            type: string
+            pattern: ^\d{4}$
+          card_expiry_month:
+            type: string
+            pattern: ^\d{1,2}$
+          card_expiry_year:
+            type: string
+            pattern: ^\d{2}(?:\d{2})?$
+          issuer_country:
+            type: string
+            minLength: 2
+            maxLength: 3
+          issuer:
+            type: string
+            maxLength: 128
+          provider_reference:
+            type: string
+            minLength: 1
+            maxLength: 255
+          eci:
+            type: string
+            minLength: 1
+            maxLength: 32
+          sign:
+            type: string
+            pattern: ^[a-fA-F0-9]{128}$
+          status:
+            type: string
+            const: '1'
+          tokenization_id:
+            type: string
+            minLength: 1
+            maxLength: 36
+        required:
+        - merchant_reference
+        - card_type
+        - card_last4
+        - sign
+        - status
+        - tokenization_id
+        additionalProperties: false
+      - type: object
+        properties:
+          merchant_reference:
+            type: string
+            minLength: 1
+            maxLength: 36
+          status:
+            type: string
+            const: '2'
+          tokenization_id:
+            type: string
+            minLength: 1
+            maxLength: 36
+          card_type: {}
+          card_first6:
+            type: string
+            pattern: ^\d{6}$
+          card_last4:
+            type: string
+            pattern: ^\d{4}$
+          card_expiry_month:
+            type: string
+            pattern: ^\d{1,2}$
+          card_expiry_year:
+            type: string
+            pattern: ^\d{2}(?:\d{2})?$
+          issuer_country:
+            type: string
+            minLength: 2
+            maxLength: 3
+          issuer:
+            type: string
+            maxLength: 128
+          provider_reference:
+            type: string
+            minLength: 1
+            maxLength: 255
+          eci:
+            type: string
+            minLength: 1
+            maxLength: 32
+          fail_reason:
+            type: string
+            maxLength: 255
+          sign:
+            type: string
+            pattern: ^[a-fA-F0-9]{128}$
+        required:
+        - merchant_reference
+        - status
+        - sign
+        additionalProperties: false
     Response_checkoutDraftSchema:
       type: object
       properties:
@@ -75249,13 +75730,13 @@ components:
         access:
           const: public
           type: string
-        orderReference: *id044
-        purchaseType: *id045
-        status: *id046
-        pricing: *id047
-        items: *id048
-        createdAt: *id049
-        updatedAt: *id050
+        orderReference: *id048
+        purchaseType: *id049
+        status: *id050
+        pricing: *id051
+        items: *id052
+        createdAt: *id053
+        updatedAt: *id054
         payment:
           type: object
           properties:
@@ -75297,13 +75778,13 @@ components:
           type: string
         quoteId:
           type: string
-        orderReference: *id044
-        purchaseType: *id045
-        status: *id046
-        pricing: *id047
-        items: *id048
-        createdAt: *id049
-        updatedAt: *id050
+        orderReference: *id048
+        purchaseType: *id049
+        status: *id050
+        pricing: *id051
+        items: *id052
+        createdAt: *id053
+        updatedAt: *id054
         customer:
           type: object
           required:
@@ -75369,9 +75850,9 @@ components:
           required:
           - name
           properties:
-            name: &id146
+            name: &id155
               type: string
-            contact: *id146
+            contact: *id155
         ptags:
           type: array
           items:
@@ -75391,11 +75872,11 @@ components:
           - merchantReference
           - status
           properties:
-            merchantReference: &id147
+            merchantReference: &id156
               type: string
-            status: *id147
-            requestedNetwork: *id147
-            providerRequestReference: *id147
+            status: *id156
+            requestedNetwork: *id156
+            providerRequestReference: *id156
             resultAt:
               type: string
               format: date-time
@@ -75410,10 +75891,10 @@ components:
               const: sf_express
             trackingNumber:
               type: string
-            shippedAt: &id148
+            shippedAt: &id157
               type: string
               format: date-time
-            deliveredAt: *id148
+            deliveredAt: *id157
       required:
       - access
       - customer
