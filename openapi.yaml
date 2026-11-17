@@ -4,7 +4,7 @@ openapi: 3.1.0
 info:
   title: AWS DDD API
   version: '2026-11-17'
-  description: The 228 implemented HTTP operations of the API. Paths, gateway credentials, request validation, and
+  description: The 229 implemented HTTP operations of the API. Paths, gateway credentials, request validation, and
     permission keys are checked against current source. Deferred and preview/smoke routes are omitted. Success responses
     document handler payload fields. Each documented HTTP error status lists the stable errorKey values emitted
     by the reachable handler and validation branches; error text is localized. Gateway-generated responses and upstream
@@ -39670,7 +39670,10 @@ paths:
       summary: Public Lookup
       operationId: R171
       description: 'Public lookup when someone scans a PTag: returns the public details of the pet the tag is assigned
-        to. Private owner and pet data are not returned. Public PTag lookup returns an allowlisted pet projection.'
+        to and the owner''s public `contacts`. A personal owner''s contacts are their `publicContacts` (empty unless
+        they added some); an organization owner''s are its profile phone and email. Contacts are empty when the
+        owner account or organization is not active. Login identifiers and private pet data are not returned. Public
+        PTag lookup returns an allowlisted pet projection.'
       security: []
       x-source-router: functions/ptag/src/router.ts
       responses:
@@ -39727,10 +39730,26 @@ paths:
                         - breed
                         - sex
                         - lifeStateKey
+                      contacts:
+                        type: array
+                        items:
+                          type: object
+                          properties:
+                            type:
+                              type: string
+                              enum:
+                              - phone
+                              - email
+                            value:
+                              type: string
+                          required:
+                          - type
+                          - value
                     additionalProperties: true
                     required:
                     - tagCode
                     - pet
+                    - contacts
                 additionalProperties: true
         '400':
           description: 'HTTP 400. Possible error keys: common.invalidPathParam, common.invalidQueryParams.'
@@ -45417,6 +45436,403 @@ paths:
         required: true
         schema:
           type: string
+  /pets/{petId}/legacy-transfer-history:
+    get:
+      tags:
+      - pet-ownership
+      summary: List Legacy Transfer History
+      operationId: R250
+      description: 'Lists transfer records imported from the legacy system for a pet, newest `effectiveAt` first
+        with unknown dates last, with page/limit pagination. Rows are read-only historical evidence (`source: "legacy_import"`),
+        separate from ownership events: unknown parties are `{ type: "unknown", id: null }`, a null `recordedBy`
+        or `effectiveAt` means unknown, and `details` holds the reported names, contacts, place, notes, and completion
+        claim as recorded. The current pet owner sees all rows; an account named as `fromOwner` or `toOwner` sees
+        only those rows; internal callers with the `_any` key see any pet.'
+      security:
+      - bearerAuth: []
+        apiKeyAuth: []
+      x-source-router: functions/pet-ownership/src/router.ts
+      responses:
+        '200':
+          description: List Legacy Transfer History succeeded.
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                - success
+                properties:
+                  success:
+                    const: true
+                  message:
+                    type: string
+                  requestId:
+                    type: string
+                  data:
+                    type: object
+                    properties:
+                      legacyTransfers:
+                        type: array
+                        items:
+                          type: object
+                          properties:
+                            historyId:
+                              type: string
+                            petId:
+                              type: string
+                            source:
+                              type: string
+                            fromOwner:
+                              type: object
+                              properties:
+                                type:
+                                  type: string
+                                  enum:
+                                  - unknown
+                                  - personal
+                                  - organization
+                                id:
+                                  type:
+                                  - string
+                                  - 'null'
+                              required:
+                              - type
+                              - id
+                            toOwner:
+                              type: object
+                              properties:
+                                type:
+                                  type: string
+                                  enum:
+                                  - unknown
+                                  - personal
+                                  - organization
+                                id:
+                                  type:
+                                  - string
+                                  - 'null'
+                              required:
+                              - type
+                              - id
+                            recordedBy:
+                              type:
+                              - object
+                              - 'null'
+                              properties:
+                                userId:
+                                  type: string
+                                accountClass:
+                                  type: string
+                                  enum:
+                                  - personal
+                                  - organization_staff
+                                  - internal_staff
+                                organizationId:
+                                  type:
+                                  - string
+                                  - 'null'
+                              required:
+                              - userId
+                              - accountClass
+                              - organizationId
+                            reasonKey:
+                              type: string
+                              enum:
+                              - unknown
+                              - transfer
+                            effectiveAt:
+                              type:
+                              - string
+                              - 'null'
+                              format: date-time
+                            details:
+                              type: object
+                              properties:
+                                reportedParty:
+                                  type:
+                                  - object
+                                  - 'null'
+                                  properties:
+                                    displayName:
+                                      type:
+                                      - string
+                                      - 'null'
+                                    phone:
+                                      type:
+                                      - string
+                                      - 'null'
+                                  required:
+                                  - displayName
+                                  - phone
+                                reportedRecipientContact:
+                                  type:
+                                  - object
+                                  - 'null'
+                                  properties:
+                                    phone:
+                                      type:
+                                      - string
+                                      - 'null'
+                                    email:
+                                      type:
+                                      - string
+                                      - 'null'
+                                  required:
+                                  - phone
+                                  - email
+                                placeDescription:
+                                  type:
+                                  - string
+                                  - 'null'
+                                notes:
+                                  type:
+                                  - string
+                                  - 'null'
+                                reportedCompleted:
+                                  oneOf:
+                                  - type: boolean
+                                    const: false
+                                  - type: boolean
+                                    const: true
+                              required:
+                              - reportedParty
+                              - reportedRecipientContact
+                              - placeDescription
+                              - notes
+                              - reportedCompleted
+                            createdAt:
+                              type: string
+                              format: date-time
+                          required:
+                          - historyId
+                          - petId
+                          - source
+                          - fromOwner
+                          - toOwner
+                          - recordedBy
+                          - reasonKey
+                          - effectiveAt
+                          - details
+                          - createdAt
+                      pagination:
+                        type: object
+                        properties:
+                          page:
+                            type: number
+                          limit:
+                            type: number
+                          total:
+                            type: number
+                          totalPages:
+                            type: number
+                        required:
+                        - page
+                        - limit
+                        - total
+                        - totalPages
+                    additionalProperties: true
+                    required:
+                    - legacyTransfers
+                    - pagination
+                additionalProperties: true
+        '400':
+          description: 'HTTP 400. Possible error keys: common.invalidPathParam, common.invalidQueryParams.'
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                - success
+                - errorKey
+                - error
+                properties:
+                  success:
+                    const: false
+                  errorKey:
+                    type: string
+                    enum:
+                    - common.invalidPathParam
+                    - common.invalidQueryParams
+                    description: Stable key for frontend handling; error text is localized.
+                  error:
+                    type: string
+                    description: Localized human-readable message.
+                  requestId:
+                    type: string
+                  details:
+                    type: object
+                    additionalProperties: true
+                additionalProperties: false
+              examples:
+                common_invalidPathParam:
+                  summary: common.invalidPathParam
+                  value:
+                    success: false
+                    errorKey: common.invalidPathParam
+                    error: Invalid path parameter
+                common_invalidQueryParams:
+                  summary: common.invalidQueryParams
+                  value:
+                    success: false
+                    errorKey: common.invalidQueryParams
+                    error: Invalid query parameters
+        '401':
+          description: 'HTTP 401. Possible error keys: common.unauthorized.'
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                - success
+                - errorKey
+                - error
+                properties:
+                  success:
+                    const: false
+                  errorKey:
+                    type: string
+                    enum:
+                    - common.unauthorized
+                    description: Stable key for frontend handling; error text is localized.
+                  error:
+                    type: string
+                    description: Localized human-readable message.
+                  requestId:
+                    type: string
+                  details:
+                    type: object
+                    additionalProperties: true
+                additionalProperties: false
+              examples:
+                common_unauthorized:
+                  summary: common.unauthorized
+                  value:
+                    success: false
+                    errorKey: common.unauthorized
+                    error: Authentication required. Please log in.
+        '403':
+          description: 'HTTP 403. Possible error keys: common.forbidden.'
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                - success
+                - errorKey
+                - error
+                properties:
+                  success:
+                    const: false
+                  errorKey:
+                    type: string
+                    enum:
+                    - common.forbidden
+                    description: Stable key for frontend handling; error text is localized.
+                  error:
+                    type: string
+                    description: Localized human-readable message.
+                  requestId:
+                    type: string
+                  details:
+                    type: object
+                    additionalProperties: true
+                additionalProperties: false
+              examples:
+                common_forbidden:
+                  summary: common.forbidden
+                  value:
+                    success: false
+                    errorKey: common.forbidden
+                    error: Forbidden
+        '404':
+          description: 'HTTP 404. Possible error keys: common.notFound.'
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                - success
+                - errorKey
+                - error
+                properties:
+                  success:
+                    const: false
+                  errorKey:
+                    type: string
+                    enum:
+                    - common.notFound
+                    description: Stable key for frontend handling; error text is localized.
+                  error:
+                    type: string
+                    description: Localized human-readable message.
+                  requestId:
+                    type: string
+                  details:
+                    type: object
+                    additionalProperties: true
+                additionalProperties: false
+              examples:
+                common_notFound:
+                  summary: common.notFound
+                  value:
+                    success: false
+                    errorKey: common.notFound
+                    error: The requested resource was not found
+        '429':
+          description: 'HTTP 429. Possible error keys: common.rateLimited.'
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                - success
+                - errorKey
+                - error
+                properties:
+                  success:
+                    const: false
+                  errorKey:
+                    type: string
+                    enum:
+                    - common.rateLimited
+                    description: Stable key for frontend handling; error text is localized.
+                  error:
+                    type: string
+                    description: Localized human-readable message.
+                  requestId:
+                    type: string
+                  details:
+                    type: object
+                    additionalProperties: true
+                additionalProperties: false
+              examples:
+                common_rateLimited:
+                  summary: common.rateLimited
+                  value:
+                    success: false
+                    errorKey: common.rateLimited
+                    error: Too many requests. Please try again later.
+        4XX:
+          $ref: '#/components/responses/ClientError'
+        5XX:
+          $ref: '#/components/responses/ServerError'
+      x-permission-keys:
+      - pet.legacy_transfer.list_any
+      - pet.legacy_transfer.list
+      parameters:
+      - name: petId
+        in: path
+        required: true
+        schema:
+          type: string
+      - name: page
+        in: query
+        required: false
+        schema: *id029
+      - name: limit
+        in: query
+        required: false
+        schema: *id030
   /pets/{petId}/ownership-events:
     get:
       tags:
@@ -59098,8 +59514,8 @@ paths:
       - iam-user
       summary: Read User
       operationId: R017
-      description: Returns one user's account class, status, identifiers, and profile. Users may read themselves;
-        internal callers may read any user.
+      description: Returns one user's account class, status, identifiers, and profile, including the ordered `publicContacts`.
+        Users may read themselves; internal callers may read any user.
       security:
       - bearerAuth: []
         apiKeyAuth: []
@@ -59212,6 +59628,21 @@ paths:
                                 type:
                                 - string
                                 - 'null'
+                              publicContacts:
+                                type: array
+                                items:
+                                  type: object
+                                  properties:
+                                    type:
+                                      type: string
+                                      enum:
+                                      - phone
+                                      - email
+                                    value:
+                                      type: string
+                                  required:
+                                  - type
+                                  - value
                           status:
                             type: string
                             enum:
@@ -59437,9 +59868,12 @@ paths:
       - iam-user
       summary: Update User
       operationId: R018
-      description: 'Updates the user''s profile: name parts, birth date, gender, and district. Send JSON to change
-        fields or clear the avatar with `avatarAssetId: null`, or send multipart form data with one `avatar` image
-        file and the JSON fields to replace the avatar.'
+      description: 'Updates the user''s profile: name parts, birth date, gender, district, and `publicContacts`.
+        `publicContacts` is the complete ordered list (up to five `{ type: "phone" | "email", value }` entries)
+        shown on public pet lookups such as a PTag scan; phones must be E.164, emails are lowercased, duplicates
+        are rejected, and an empty list removes all public contacts. Send JSON to change fields or clear the avatar
+        with `avatarAssetId: null`, or send multipart form data with one `avatar` image file and the JSON fields
+        to replace the avatar.'
       security:
       - bearerAuth: []
         apiKeyAuth: []
@@ -59548,6 +59982,21 @@ paths:
                                 type:
                                 - string
                                 - 'null'
+                              publicContacts:
+                                type: array
+                                items:
+                                  type: object
+                                  properties:
+                                    type:
+                                      type: string
+                                      enum:
+                                      - phone
+                                      - email
+                                    value:
+                                      type: string
+                                  required:
+                                  - type
+                                  - value
                           status:
                             type: string
                             enum:
@@ -72635,6 +73084,37 @@ components:
               - type: string
                 maxLength: 120
               - type: 'null'
+            publicContacts:
+              maxItems: 5
+              type: array
+              items:
+                oneOf:
+                - type: object
+                  properties:
+                    type:
+                      type: string
+                      const: phone
+                    value:
+                      type: string
+                      pattern: ^\+[1-9]\d{1,14}$
+                  required:
+                  - type
+                  - value
+                  additionalProperties: false
+                - type: object
+                  properties:
+                    type:
+                      type: string
+                      const: email
+                    value:
+                      type: string
+                      maxLength: 254
+                      format: email
+                      pattern: ^(?!\.)(?!.*\.\.)([A-Za-z0-9_'+\-\.]*)[A-Za-z0-9_+-]@([A-Za-z0-9][A-Za-z0-9\-]*\.)+[A-Za-z]{2,}$
+                  required:
+                  - type
+                  - value
+                  additionalProperties: false
             avatarAssetId:
               type: 'null'
           additionalProperties: false
