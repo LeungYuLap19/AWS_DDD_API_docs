@@ -2506,7 +2506,9 @@ paths:
       summary: Create Internal Membership
       operationId: R012
       description: Creates an internal staff account in the pending verification state with an active internal membership
-        and role. The new user proves the email through the login code flow to activate the account.
+        and role. The new user proves the email through the login code flow to activate the account. A `reason`
+        is required when the role is an administrator role (`internal_admin`, `internal_developer`); without it
+        the request returns 400 `common.invalidBodyParams`.
       security:
       - bearerAuth: []
         apiKeyAuth: []
@@ -3075,7 +3077,8 @@ paths:
       description: Creates an organization staff account with an email password credential and an active membership
         with the given role in the organization. Organization admins may add staff to their own organization; internal
         callers may add members to any organization. The first member of a provisioning organization must be its
-        admin, and that membership activates the organization.
+        admin, and that membership activates the organization. A `reason` is required when the role is an administrator
+        role (`ngo_admin`, `hotel_admin`, `clinic_admin`); without it the request returns 400 `common.invalidBodyParams`.
       security:
       - bearerAuth: []
         apiKeyAuth: []
