@@ -3,7 +3,7 @@
 openapi: 3.1.0
 info:
   title: AWS DDD API
-  version: '2026-11-18'
+  version: '2026-11-18.1'
   description: The 234 implemented HTTP operations of the API. Paths, gateway credentials, request validation, and
     permission keys are checked against current source. Deferred and preview/smoke routes are omitted. Success responses
     document handler payload fields. Each documented HTTP error status lists the stable errorKey values emitted
@@ -41323,7 +41323,9 @@ paths:
                               - lost
                               - found
                             species:
-                              type: string
+                              type:
+                              - string
+                              - 'null'
                             name:
                               type:
                               - string
@@ -41583,7 +41585,9 @@ paths:
                             - lost
                             - found
                           species:
-                            type: string
+                            type:
+                            - string
+                            - 'null'
                           name:
                             type:
                             - string
@@ -41950,7 +41954,9 @@ paths:
                             - lost
                             - found
                           species:
-                            type: string
+                            type:
+                            - string
+                            - 'null'
                           name:
                             type:
                             - string
@@ -42157,7 +42163,8 @@ paths:
       operationId: R100
       description: 'Edits an active recovery case: description fields, species and breed (re-validated against the
         catalog), photo removal through `mediaAssetIds`, or `status: withdrawn`. Allowed for the linked pet''s current
-        owner or an internal caller; writes an audit event.'
+        owner or an internal caller; writes an audit event. `species` is null on imported cases whose animal is unknown;
+        such a case accepts a breed only together with a species.'
       security:
       - bearerAuth: []
         apiKeyAuth: []
@@ -42192,7 +42199,9 @@ paths:
                             - lost
                             - found
                           species:
-                            type: string
+                            type:
+                            - string
+                            - 'null'
                           name:
                             type:
                             - string
@@ -42560,7 +42569,9 @@ paths:
                             - lost
                             - found
                           species:
-                            type: string
+                            type:
+                            - string
+                            - 'null'
                           name:
                             type:
                             - string
@@ -54278,7 +54289,9 @@ paths:
                               - lost
                               - found
                             species:
-                              type: string
+                              type:
+                              - string
+                              - 'null'
                             name:
                               type:
                               - string
