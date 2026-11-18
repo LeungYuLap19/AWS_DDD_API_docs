@@ -6608,7 +6608,8 @@ paths:
       summary: Verify Shop Code
       operationId: R179
       description: Public check of a partner shop discount code before checkout. Send a shop code as JSON, or a
-        PDF file as multipart form data; the PDF is read in memory and not stored.
+        PDF file as multipart form data; the PDF is read in memory and not stored. Multipart requests are limited to
+        5 MiB total, including multipart overhead.
       security: []
       x-source-router: functions/commerce-catalog/src/router.ts
       responses:
@@ -6795,6 +6796,7 @@ paths:
           $ref: '#/components/responses/ServerError'
       requestBody:
         required: true
+        description: Multipart request body must not exceed 5 MiB total, including boundaries and other fields.
         content:
           application/json:
             schema:
@@ -6809,12 +6811,15 @@ paths:
                 file:
                   type: string
                   format: binary
-                  description: PDF, at most 5 MiB.
+                  description: PDF file. The complete multipart request body is limited to 5 MiB.
               anyOf:
               - required:
                 - shopCode
               - required:
                 - file
+            encoding:
+              file:
+                contentType: application/pdf
       x-request-schema-source: functions/commerce-catalog/src/zodSchema/verifyShopCodeBodySchema.ts#verifyShopCodeBodySchema
   /commerce/orders:
     get:
@@ -40152,7 +40157,7 @@ paths:
       description: Creates a lost or found report. Anyone may report without signing in; with a valid bearer token
         the reporter is recorded, and only the pet's current owner may link a `petId`. `species` is a required animal
         species catalog key and `breed` must belong to it. Send JSON, or multipart form data with a `payload` JSON
-        field and one to three `photos` files.
+        field and one to three `photos` files. Photos must be JPEG, PNG, GIF, or WebP, at most 4 MiB each.
       security: []
       x-source-router: functions/pet-recovery/src/router.ts
       responses:
@@ -40496,6 +40501,9 @@ paths:
           multipart/form-data:
             schema:
               $ref: '#/components/schemas/PetRecoveryCreateMultipart'
+            encoding:
+              photos:
+                contentType: image/jpeg, image/png, image/gif, image/webp
       x-request-schema-source: functions/pet-recovery/src/zodSchema/caseSchemas.ts#createCaseSchema
   /pets/recovery-cases/{caseId}:
     get:
@@ -42113,7 +42121,8 @@ paths:
       summary: Update Pet
       operationId: R065
       description: Updates pet profile fields with the current `expectedRevision`. Send JSON, or multipart form
-        data with a `payload` JSON field and up to three `photos` files to add photos; `photoAssetIds` reorders
+        data with a `payload` JSON field and up to three `photos` files to add photos (JPEG, PNG, GIF, or WebP,
+        at most 4 MiB each); `photoAssetIds` reorders
         or removes existing photos. Changing `species` or `breed` re-validates the pair against the catalog, so
         a kept breed must belong to the new species. A stale revision returns 409.
       security:
@@ -42563,6 +42572,9 @@ paths:
           multipart/form-data:
             schema:
               $ref: '#/components/schemas/PetUpdateMultipart'
+            encoding:
+              photos:
+                contentType: image/jpeg, image/png, image/gif, image/webp
   /pets/{petId}/access-agreements:
     get:
       tags:
@@ -60337,6 +60349,9 @@ paths:
           multipart/form-data:
             schema:
               $ref: '#/components/schemas/UserUpdateMultipart'
+            encoding:
+              avatar:
+                contentType: image/jpeg, image/png, image/gif, image/webp
       x-request-schema-source: functions/iam-user/src/zodSchema/updateUserBodySchema.ts#updateUserBodySchema
       parameters:
       - name: userId
@@ -73855,6 +73870,7 @@ components:
           type: array
           minItems: 1
           maxItems: 3
+          description: One to three image files; JPEG, PNG, GIF, or WebP, at most 4 MiB per file.
           items:
             type: string
             format: binary
@@ -73871,6 +73887,7 @@ components:
           type: array
           minItems: 1
           maxItems: 3
+          description: One to three image files; JPEG, PNG, GIF, or WebP, at most 4 MiB per file.
           items:
             type: string
             format: binary
@@ -73885,6 +73902,7 @@ components:
         avatar:
           type: string
           format: binary
+          description: JPEG, PNG, GIF, or WebP image, at most 4 MiB.
     pet_profile_src_zodSchema_pedigreeSchemas_ts_putPedigreeBodySchema:
       type: object
       properties:
