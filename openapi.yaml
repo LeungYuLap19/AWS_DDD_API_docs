@@ -40493,6 +40493,9 @@ paths:
           application/json:
             schema:
               $ref: '#/components/schemas/pet_recovery_src_zodSchema_caseSchemas_ts_createCaseSchema'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PetRecoveryCreateMultipart'
       x-request-schema-source: functions/pet-recovery/src/zodSchema/caseSchemas.ts#createCaseSchema
   /pets/recovery-cases/{caseId}:
     get:
@@ -60331,6 +60334,9 @@ paths:
           application/json:
             schema:
               $ref: '#/components/schemas/iam_user_src_zodSchema_updateUserBodySchema_ts_updateUserBodySchema'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/UserUpdateMultipart'
       x-request-schema-source: functions/iam-user/src/zodSchema/updateUserBodySchema.ts#updateUserBodySchema
       parameters:
       - name: userId
@@ -73852,6 +73858,33 @@ components:
           items:
             type: string
             format: binary
+    PetRecoveryCreateMultipart:
+      type: object
+      required:
+      - payload
+      - photos
+      properties:
+        payload:
+          type: string
+          description: JSON encoded createCaseSchema payload.
+        photos:
+          type: array
+          minItems: 1
+          maxItems: 3
+          items:
+            type: string
+            format: binary
+    UserUpdateMultipart:
+      type: object
+      required:
+      - avatar
+      properties:
+        payload:
+          type: string
+          description: JSON encoded partial updateUserBodySchema payload; omit or use an empty object for avatar-only updates.
+        avatar:
+          type: string
+          format: binary
     pet_profile_src_zodSchema_pedigreeSchemas_ts_putPedigreeBodySchema:
       type: object
       properties:
