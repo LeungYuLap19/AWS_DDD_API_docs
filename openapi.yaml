@@ -3,8 +3,8 @@
 openapi: 3.1.0
 info:
   title: AWS DDD API
-  version: '2026-11-17'
-  description: The 229 implemented HTTP operations of the API. Paths, gateway credentials, request validation, and
+  version: '2026-11-18'
+  description: The 234 implemented HTTP operations of the API. Paths, gateway credentials, request validation, and
     permission keys are checked against current source. Deferred and preview/smoke routes are omitted. Success responses
     document handler payload fields. Each documented HTTP error status lists the stable errorKey values emitted
     by the reachable handler and validation branches; error text is localized. Gateway-generated responses and upstream
@@ -31499,6 +31499,1399 @@ paths:
           application/json:
             schema:
               $ref: '#/components/schemas/reference_catalogs_src_zodSchema_catalogSchemas_ts_updateBrandBodySchema'
+  /reference-data/adoption-listings:
+    get:
+      tags:
+      - reference-catalogs
+      summary: List Adoption Listings
+      operationId: R251
+      description: 'Public browse of external adoption listings, newest first. Matches the production list: rows from Arc
+        Dog Shelter, Tolobunny, and HKRABBIT and rows without images are hidden here but stay readable by ID. Filters take
+        comma-separated values (max 20): `species` and `sex` use the normalized keys, `site` matches `siteName`, and `age`
+        takes the month buckets 幼年 (<12), 青年 (12-36), 成年 (48-72), and 老年 (>84). `search` matches breed, species, or remark.
+        Listings link to partner sites and are not in-system pets.'
+      security: []
+      x-source-router: functions/reference-catalogs/src/router.ts
+      responses:
+        '200':
+          description: List Adoption Listings succeeded.
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                - success
+                - data
+                properties:
+                  success:
+                    const: true
+                  message:
+                    type: string
+                  requestId:
+                    type: string
+                  data:
+                    type: object
+                    properties:
+                      listings:
+                        type: array
+                        items:
+                          type: object
+                          properties:
+                            listingId:
+                              type: string
+                            name:
+                              type:
+                              - string
+                              - 'null'
+                            species:
+                              type: string
+                              enum:
+                              - cat
+                              - dog
+                              - rabbit
+                              - turtle
+                              - snake
+                              - mouse
+                              - bird
+                              - other
+                              - unknown
+                            sex:
+                              type: string
+                              enum:
+                              - female
+                              - male
+                              - unknown
+                            ageMonths:
+                              type:
+                              - integer
+                              - 'null'
+                            breed:
+                              type:
+                              - string
+                              - 'null'
+                            imageUrls:
+                              type: array
+                              items:
+                                type: string
+                          required:
+                          - listingId
+                          - name
+                          - species
+                          - sex
+                          - ageMonths
+                          - breed
+                          - imageUrls
+                      pagination:
+                        type: object
+                        properties:
+                          page:
+                            type: number
+                          limit:
+                            type: number
+                          total:
+                            type: number
+                          totalPages:
+                            type: number
+                        required:
+                        - page
+                        - limit
+                        - total
+                        - totalPages
+                    additionalProperties: true
+                    required:
+                    - listings
+                    - pagination
+                additionalProperties: true
+        '400':
+          description: 'HTTP 400. Possible error keys: common.invalidQueryParams.'
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                - success
+                - errorKey
+                - error
+                properties:
+                  success:
+                    const: false
+                  errorKey:
+                    type: string
+                    enum:
+                    - common.invalidQueryParams
+                    description: Stable key for frontend handling; error text is localized.
+                  error:
+                    type: string
+                    description: Localized human-readable message.
+                  requestId:
+                    type: string
+                  details:
+                    type: object
+                    additionalProperties: true
+                additionalProperties: false
+              examples:
+                common_invalidQueryParams:
+                  summary: common.invalidQueryParams
+                  value:
+                    success: false
+                    errorKey: common.invalidQueryParams
+                    error: Invalid query parameters
+        '429':
+          description: 'HTTP 429. Possible error keys: common.rateLimited.'
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                - success
+                - errorKey
+                - error
+                properties:
+                  success:
+                    const: false
+                  errorKey:
+                    type: string
+                    enum:
+                    - common.rateLimited
+                    description: Stable key for frontend handling; error text is localized.
+                  error:
+                    type: string
+                    description: Localized human-readable message.
+                  requestId:
+                    type: string
+                  details:
+                    type: object
+                    additionalProperties: true
+                additionalProperties: false
+              examples:
+                common_rateLimited:
+                  summary: common.rateLimited
+                  value:
+                    success: false
+                    errorKey: common.rateLimited
+                    error: Too many requests. Please try again later.
+        4XX:
+          $ref: '#/components/responses/ClientError'
+        5XX:
+          $ref: '#/components/responses/ServerError'
+      parameters:
+      - name: page
+        in: query
+        required: false
+        schema:
+          type: number
+      - name: limit
+        in: query
+        required: false
+        schema:
+          type: number
+          maximum: 50
+      - name: search
+        in: query
+        required: false
+        schema:
+          type: string
+          maxLength: 100
+      - name: species
+        in: query
+        required: false
+        schema:
+          type: string
+          description: 'Comma-separated: cat, dog, rabbit, turtle, snake, mouse, bird, other, unknown'
+          examples:
+          - cat,dog
+      - name: site
+        in: query
+        required: false
+        schema:
+          type: string
+          description: Comma-separated siteName values
+      - name: sex
+        in: query
+        required: false
+        schema:
+          type: string
+          description: 'Comma-separated: female, male, unknown'
+          examples:
+          - female,male
+      - name: age
+        in: query
+        required: false
+        schema:
+          type: string
+          description: 'Comma-separated: 幼年, 青年, 成年, 老年'
+    post:
+      tags:
+      - reference-catalogs
+      summary: Create Adoption Listing
+      operationId: R252
+      description: Internal write for the adoption crawler. Requires `siteName` and an http(s) `listingUrl`; other fields
+        default to null, `unknown`, or `[]`, and an omitted `sourceCreatedAt` is the write time. Text is sanitized and
+        trimmed (empty becomes null), and duplicate image URLs are dropped. `chipNumber` is stored but never returned.
+        A duplicate `listingUrl` returns 409.
+      security:
+      - bearerAuth: []
+        apiKeyAuth: []
+      x-source-router: functions/reference-catalogs/src/router.ts
+      responses:
+        '201':
+          description: Create Adoption Listing succeeded.
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                - success
+                - data
+                properties:
+                  success:
+                    const: true
+                  message:
+                    type: string
+                  requestId:
+                    type: string
+                  data:
+                    type: object
+                    properties:
+                      listing:
+                        type: object
+                        properties:
+                          listingId:
+                            type: string
+                          name:
+                            type:
+                            - string
+                            - 'null'
+                          species:
+                            type: string
+                            enum:
+                            - cat
+                            - dog
+                            - rabbit
+                            - turtle
+                            - snake
+                            - mouse
+                            - bird
+                            - other
+                            - unknown
+                          sex:
+                            type: string
+                            enum:
+                            - female
+                            - male
+                            - unknown
+                          ageMonths:
+                            type:
+                            - integer
+                            - 'null'
+                          breed:
+                            type:
+                            - string
+                            - 'null'
+                          imageUrls:
+                            type: array
+                            items:
+                              type: string
+                          siteName:
+                            type: string
+                          listingUrl:
+                            type: string
+                          sterilization:
+                            type: string
+                            enum:
+                            - 'yes'
+                            - 'no'
+                            - unknown
+                          remark:
+                            type:
+                            - string
+                            - 'null'
+                          sourceCreatedAt:
+                            type:
+                            - string
+                            - 'null'
+                            format: date-time
+                          revision:
+                            type: string
+                        required:
+                        - listingId
+                        - name
+                        - species
+                        - sex
+                        - ageMonths
+                        - breed
+                        - imageUrls
+                        - siteName
+                        - listingUrl
+                        - sterilization
+                        - remark
+                        - sourceCreatedAt
+                        - revision
+                    additionalProperties: true
+                    required:
+                    - listing
+                additionalProperties: true
+        '400':
+          description: 'HTTP 400. Possible error keys: common.invalidBodyParams, common.invalidQueryParams, common.missingBodyParams.'
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                - success
+                - errorKey
+                - error
+                properties:
+                  success:
+                    const: false
+                  errorKey:
+                    type: string
+                    enum:
+                    - common.invalidBodyParams
+                    - common.invalidQueryParams
+                    - common.missingBodyParams
+                    description: Stable key for frontend handling; error text is localized.
+                  error:
+                    type: string
+                    description: Localized human-readable message.
+                  requestId:
+                    type: string
+                  details:
+                    type: object
+                    additionalProperties: true
+                additionalProperties: false
+              examples:
+                common_invalidBodyParams:
+                  summary: common.invalidBodyParams
+                  value:
+                    success: false
+                    errorKey: common.invalidBodyParams
+                    error: Invalid request body parameters
+                common_invalidQueryParams:
+                  summary: common.invalidQueryParams
+                  value:
+                    success: false
+                    errorKey: common.invalidQueryParams
+                    error: Invalid query parameters
+                common_missingBodyParams:
+                  summary: common.missingBodyParams
+                  value:
+                    success: false
+                    errorKey: common.missingBodyParams
+                    error: Missing required request body parameters
+        '401':
+          description: 'HTTP 401. Possible error keys: common.unauthorized.'
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                - success
+                - errorKey
+                - error
+                properties:
+                  success:
+                    const: false
+                  errorKey:
+                    type: string
+                    enum:
+                    - common.unauthorized
+                    description: Stable key for frontend handling; error text is localized.
+                  error:
+                    type: string
+                    description: Localized human-readable message.
+                  requestId:
+                    type: string
+                  details:
+                    type: object
+                    additionalProperties: true
+                additionalProperties: false
+              examples:
+                common_unauthorized:
+                  summary: common.unauthorized
+                  value:
+                    success: false
+                    errorKey: common.unauthorized
+                    error: Authentication required. Please log in.
+        '403':
+          description: 'HTTP 403. Possible error keys: common.forbidden.'
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                - success
+                - errorKey
+                - error
+                properties:
+                  success:
+                    const: false
+                  errorKey:
+                    type: string
+                    enum:
+                    - common.forbidden
+                    description: Stable key for frontend handling; error text is localized.
+                  error:
+                    type: string
+                    description: Localized human-readable message.
+                  requestId:
+                    type: string
+                  details:
+                    type: object
+                    additionalProperties: true
+                additionalProperties: false
+              examples:
+                common_forbidden:
+                  summary: common.forbidden
+                  value:
+                    success: false
+                    errorKey: common.forbidden
+                    error: Forbidden
+        '409':
+          description: 'HTTP 409. Possible error keys: common.conflict.'
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                - success
+                - errorKey
+                - error
+                properties:
+                  success:
+                    const: false
+                  errorKey:
+                    type: string
+                    enum:
+                    - common.conflict
+                    description: Stable key for frontend handling; error text is localized.
+                  error:
+                    type: string
+                    description: Localized human-readable message.
+                  requestId:
+                    type: string
+                  details:
+                    type: object
+                    additionalProperties: true
+                additionalProperties: false
+              examples:
+                common_conflict:
+                  summary: common.conflict
+                  value:
+                    success: false
+                    errorKey: common.conflict
+                    error: Conflict
+        '429':
+          description: 'HTTP 429. Possible error keys: common.rateLimited.'
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                - success
+                - errorKey
+                - error
+                properties:
+                  success:
+                    const: false
+                  errorKey:
+                    type: string
+                    enum:
+                    - common.rateLimited
+                    description: Stable key for frontend handling; error text is localized.
+                  error:
+                    type: string
+                    description: Localized human-readable message.
+                  requestId:
+                    type: string
+                  details:
+                    type: object
+                    additionalProperties: true
+                additionalProperties: false
+              examples:
+                common_rateLimited:
+                  summary: common.rateLimited
+                  value:
+                    success: false
+                    errorKey: common.rateLimited
+                    error: Too many requests. Please try again later.
+        4XX:
+          $ref: '#/components/responses/ClientError'
+        5XX:
+          $ref: '#/components/responses/ServerError'
+      x-permission-keys:
+      - pet.adoption_listing.create
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/reference_catalogs_src_zodSchema_adoptionListingSchemas_ts_createAdoptionListingBodySchema'
+      x-request-schema-source: functions/reference-catalogs/src/zodSchema/adoptionListingSchemas.ts#createAdoptionListingBodySchema
+  /reference-data/adoption-listings/{listingId}:
+    get:
+      tags:
+      - reference-catalogs
+      summary: Read Adoption Listing
+      operationId: R253
+      description: Public detail of one external adoption listing, including rows hidden from the list. Returns the partner
+        `listingUrl`, `siteName`, remark, and the `revision` needed for internal writes; `chipNumber` is never returned.
+      security: []
+      x-source-router: functions/reference-catalogs/src/router.ts
+      responses:
+        '200':
+          description: Read Adoption Listing succeeded.
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                - success
+                - data
+                properties:
+                  success:
+                    const: true
+                  message:
+                    type: string
+                  requestId:
+                    type: string
+                  data:
+                    type: object
+                    properties:
+                      listing:
+                        type: object
+                        properties:
+                          listingId:
+                            type: string
+                          name:
+                            type:
+                            - string
+                            - 'null'
+                          species:
+                            type: string
+                            enum:
+                            - cat
+                            - dog
+                            - rabbit
+                            - turtle
+                            - snake
+                            - mouse
+                            - bird
+                            - other
+                            - unknown
+                          sex:
+                            type: string
+                            enum:
+                            - female
+                            - male
+                            - unknown
+                          ageMonths:
+                            type:
+                            - integer
+                            - 'null'
+                          breed:
+                            type:
+                            - string
+                            - 'null'
+                          imageUrls:
+                            type: array
+                            items:
+                              type: string
+                          siteName:
+                            type: string
+                          listingUrl:
+                            type: string
+                          sterilization:
+                            type: string
+                            enum:
+                            - 'yes'
+                            - 'no'
+                            - unknown
+                          remark:
+                            type:
+                            - string
+                            - 'null'
+                          sourceCreatedAt:
+                            type:
+                            - string
+                            - 'null'
+                            format: date-time
+                          revision:
+                            type: string
+                        required:
+                        - listingId
+                        - name
+                        - species
+                        - sex
+                        - ageMonths
+                        - breed
+                        - imageUrls
+                        - siteName
+                        - listingUrl
+                        - sterilization
+                        - remark
+                        - sourceCreatedAt
+                        - revision
+                    additionalProperties: true
+                    required:
+                    - listing
+                additionalProperties: true
+        '400':
+          description: 'HTTP 400. Possible error keys: common.invalidPathParam, common.invalidQueryParams.'
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                - success
+                - errorKey
+                - error
+                properties:
+                  success:
+                    const: false
+                  errorKey:
+                    type: string
+                    enum:
+                    - common.invalidPathParam
+                    - common.invalidQueryParams
+                    description: Stable key for frontend handling; error text is localized.
+                  error:
+                    type: string
+                    description: Localized human-readable message.
+                  requestId:
+                    type: string
+                  details:
+                    type: object
+                    additionalProperties: true
+                additionalProperties: false
+              examples:
+                common_invalidPathParam:
+                  summary: common.invalidPathParam
+                  value:
+                    success: false
+                    errorKey: common.invalidPathParam
+                    error: Invalid path parameter
+                common_invalidQueryParams:
+                  summary: common.invalidQueryParams
+                  value:
+                    success: false
+                    errorKey: common.invalidQueryParams
+                    error: Invalid query parameters
+        '404':
+          description: 'HTTP 404. Possible error keys: common.notFound.'
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                - success
+                - errorKey
+                - error
+                properties:
+                  success:
+                    const: false
+                  errorKey:
+                    type: string
+                    enum:
+                    - common.notFound
+                    description: Stable key for frontend handling; error text is localized.
+                  error:
+                    type: string
+                    description: Localized human-readable message.
+                  requestId:
+                    type: string
+                  details:
+                    type: object
+                    additionalProperties: true
+                additionalProperties: false
+              examples:
+                common_notFound:
+                  summary: common.notFound
+                  value:
+                    success: false
+                    errorKey: common.notFound
+                    error: The requested resource was not found
+        '429':
+          description: 'HTTP 429. Possible error keys: common.rateLimited.'
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                - success
+                - errorKey
+                - error
+                properties:
+                  success:
+                    const: false
+                  errorKey:
+                    type: string
+                    enum:
+                    - common.rateLimited
+                    description: Stable key for frontend handling; error text is localized.
+                  error:
+                    type: string
+                    description: Localized human-readable message.
+                  requestId:
+                    type: string
+                  details:
+                    type: object
+                    additionalProperties: true
+                additionalProperties: false
+              examples:
+                common_rateLimited:
+                  summary: common.rateLimited
+                  value:
+                    success: false
+                    errorKey: common.rateLimited
+                    error: Too many requests. Please try again later.
+        4XX:
+          $ref: '#/components/responses/ClientError'
+        5XX:
+          $ref: '#/components/responses/ServerError'
+      parameters:
+      - name: listingId
+        in: path
+        required: true
+        schema:
+          type: string
+    patch:
+      tags:
+      - reference-catalogs
+      summary: Update Adoption Listing
+      operationId: R254
+      description: Internal write for the adoption crawler. Requires `expectedRevision` and at least one field; applies
+        the same validation as create and increments `revision`. A stale revision or a duplicate `listingUrl` returns 409;
+        a missing listing returns 404.
+      security:
+      - bearerAuth: []
+        apiKeyAuth: []
+      x-source-router: functions/reference-catalogs/src/router.ts
+      responses:
+        '200':
+          description: Update Adoption Listing succeeded.
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                - success
+                - data
+                properties:
+                  success:
+                    const: true
+                  message:
+                    type: string
+                  requestId:
+                    type: string
+                  data:
+                    type: object
+                    properties:
+                      listing:
+                        type: object
+                        properties:
+                          listingId:
+                            type: string
+                          name:
+                            type:
+                            - string
+                            - 'null'
+                          species:
+                            type: string
+                            enum:
+                            - cat
+                            - dog
+                            - rabbit
+                            - turtle
+                            - snake
+                            - mouse
+                            - bird
+                            - other
+                            - unknown
+                          sex:
+                            type: string
+                            enum:
+                            - female
+                            - male
+                            - unknown
+                          ageMonths:
+                            type:
+                            - integer
+                            - 'null'
+                          breed:
+                            type:
+                            - string
+                            - 'null'
+                          imageUrls:
+                            type: array
+                            items:
+                              type: string
+                          siteName:
+                            type: string
+                          listingUrl:
+                            type: string
+                          sterilization:
+                            type: string
+                            enum:
+                            - 'yes'
+                            - 'no'
+                            - unknown
+                          remark:
+                            type:
+                            - string
+                            - 'null'
+                          sourceCreatedAt:
+                            type:
+                            - string
+                            - 'null'
+                            format: date-time
+                          revision:
+                            type: string
+                        required:
+                        - listingId
+                        - name
+                        - species
+                        - sex
+                        - ageMonths
+                        - breed
+                        - imageUrls
+                        - siteName
+                        - listingUrl
+                        - sterilization
+                        - remark
+                        - sourceCreatedAt
+                        - revision
+                    additionalProperties: true
+                    required:
+                    - listing
+                additionalProperties: true
+        '400':
+          description: 'HTTP 400. Possible error keys: common.invalidBodyParams, common.invalidPathParam, common.invalidQueryParams,
+            common.missingBodyParams.'
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                - success
+                - errorKey
+                - error
+                properties:
+                  success:
+                    const: false
+                  errorKey:
+                    type: string
+                    enum:
+                    - common.invalidBodyParams
+                    - common.invalidPathParam
+                    - common.invalidQueryParams
+                    - common.missingBodyParams
+                    description: Stable key for frontend handling; error text is localized.
+                  error:
+                    type: string
+                    description: Localized human-readable message.
+                  requestId:
+                    type: string
+                  details:
+                    type: object
+                    additionalProperties: true
+                additionalProperties: false
+              examples:
+                common_invalidBodyParams:
+                  summary: common.invalidBodyParams
+                  value:
+                    success: false
+                    errorKey: common.invalidBodyParams
+                    error: Invalid request body parameters
+                common_invalidPathParam:
+                  summary: common.invalidPathParam
+                  value:
+                    success: false
+                    errorKey: common.invalidPathParam
+                    error: Invalid path parameter
+                common_invalidQueryParams:
+                  summary: common.invalidQueryParams
+                  value:
+                    success: false
+                    errorKey: common.invalidQueryParams
+                    error: Invalid query parameters
+                common_missingBodyParams:
+                  summary: common.missingBodyParams
+                  value:
+                    success: false
+                    errorKey: common.missingBodyParams
+                    error: Missing required request body parameters
+        '401':
+          description: 'HTTP 401. Possible error keys: common.unauthorized.'
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                - success
+                - errorKey
+                - error
+                properties:
+                  success:
+                    const: false
+                  errorKey:
+                    type: string
+                    enum:
+                    - common.unauthorized
+                    description: Stable key for frontend handling; error text is localized.
+                  error:
+                    type: string
+                    description: Localized human-readable message.
+                  requestId:
+                    type: string
+                  details:
+                    type: object
+                    additionalProperties: true
+                additionalProperties: false
+              examples:
+                common_unauthorized:
+                  summary: common.unauthorized
+                  value:
+                    success: false
+                    errorKey: common.unauthorized
+                    error: Authentication required. Please log in.
+        '403':
+          description: 'HTTP 403. Possible error keys: common.forbidden.'
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                - success
+                - errorKey
+                - error
+                properties:
+                  success:
+                    const: false
+                  errorKey:
+                    type: string
+                    enum:
+                    - common.forbidden
+                    description: Stable key for frontend handling; error text is localized.
+                  error:
+                    type: string
+                    description: Localized human-readable message.
+                  requestId:
+                    type: string
+                  details:
+                    type: object
+                    additionalProperties: true
+                additionalProperties: false
+              examples:
+                common_forbidden:
+                  summary: common.forbidden
+                  value:
+                    success: false
+                    errorKey: common.forbidden
+                    error: Forbidden
+        '404':
+          description: 'HTTP 404. Possible error keys: common.notFound.'
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                - success
+                - errorKey
+                - error
+                properties:
+                  success:
+                    const: false
+                  errorKey:
+                    type: string
+                    enum:
+                    - common.notFound
+                    description: Stable key for frontend handling; error text is localized.
+                  error:
+                    type: string
+                    description: Localized human-readable message.
+                  requestId:
+                    type: string
+                  details:
+                    type: object
+                    additionalProperties: true
+                additionalProperties: false
+              examples:
+                common_notFound:
+                  summary: common.notFound
+                  value:
+                    success: false
+                    errorKey: common.notFound
+                    error: The requested resource was not found
+        '409':
+          description: 'HTTP 409. Possible error keys: common.conflict.'
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                - success
+                - errorKey
+                - error
+                properties:
+                  success:
+                    const: false
+                  errorKey:
+                    type: string
+                    enum:
+                    - common.conflict
+                    description: Stable key for frontend handling; error text is localized.
+                  error:
+                    type: string
+                    description: Localized human-readable message.
+                  requestId:
+                    type: string
+                  details:
+                    type: object
+                    additionalProperties: true
+                additionalProperties: false
+              examples:
+                common_conflict:
+                  summary: common.conflict
+                  value:
+                    success: false
+                    errorKey: common.conflict
+                    error: Conflict
+        '429':
+          description: 'HTTP 429. Possible error keys: common.rateLimited.'
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                - success
+                - errorKey
+                - error
+                properties:
+                  success:
+                    const: false
+                  errorKey:
+                    type: string
+                    enum:
+                    - common.rateLimited
+                    description: Stable key for frontend handling; error text is localized.
+                  error:
+                    type: string
+                    description: Localized human-readable message.
+                  requestId:
+                    type: string
+                  details:
+                    type: object
+                    additionalProperties: true
+                additionalProperties: false
+              examples:
+                common_rateLimited:
+                  summary: common.rateLimited
+                  value:
+                    success: false
+                    errorKey: common.rateLimited
+                    error: Too many requests. Please try again later.
+        4XX:
+          $ref: '#/components/responses/ClientError'
+        5XX:
+          $ref: '#/components/responses/ServerError'
+      x-permission-keys:
+      - pet.adoption_listing.update
+      parameters:
+      - name: listingId
+        in: path
+        required: true
+        schema:
+          type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/reference_catalogs_src_zodSchema_adoptionListingSchemas_ts_updateAdoptionListingBodySchema'
+      x-request-schema-source: functions/reference-catalogs/src/zodSchema/adoptionListingSchemas.ts#updateAdoptionListingBodySchema
+    delete:
+      tags:
+      - reference-catalogs
+      summary: Delete Adoption Listing
+      operationId: R255
+      description: Internal hard delete guarded by `expectedRevision`. A stale revision returns 409; a missing listing
+        returns 404.
+      security:
+      - bearerAuth: []
+        apiKeyAuth: []
+      x-source-router: functions/reference-catalogs/src/router.ts
+      responses:
+        '200':
+          description: Delete Adoption Listing succeeded.
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                - success
+                - data
+                properties:
+                  success:
+                    const: true
+                  message:
+                    type: string
+                  requestId:
+                    type: string
+                  data:
+                    type: object
+                    properties:
+                      listingId:
+                        type: string
+                    additionalProperties: true
+                    required:
+                    - listingId
+                additionalProperties: true
+        '400':
+          description: 'HTTP 400. Possible error keys: common.invalidBodyParams, common.invalidPathParam, common.invalidQueryParams,
+            common.missingBodyParams.'
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                - success
+                - errorKey
+                - error
+                properties:
+                  success:
+                    const: false
+                  errorKey:
+                    type: string
+                    enum:
+                    - common.invalidBodyParams
+                    - common.invalidPathParam
+                    - common.invalidQueryParams
+                    - common.missingBodyParams
+                    description: Stable key for frontend handling; error text is localized.
+                  error:
+                    type: string
+                    description: Localized human-readable message.
+                  requestId:
+                    type: string
+                  details:
+                    type: object
+                    additionalProperties: true
+                additionalProperties: false
+              examples:
+                common_invalidBodyParams:
+                  summary: common.invalidBodyParams
+                  value:
+                    success: false
+                    errorKey: common.invalidBodyParams
+                    error: Invalid request body parameters
+                common_invalidPathParam:
+                  summary: common.invalidPathParam
+                  value:
+                    success: false
+                    errorKey: common.invalidPathParam
+                    error: Invalid path parameter
+                common_invalidQueryParams:
+                  summary: common.invalidQueryParams
+                  value:
+                    success: false
+                    errorKey: common.invalidQueryParams
+                    error: Invalid query parameters
+                common_missingBodyParams:
+                  summary: common.missingBodyParams
+                  value:
+                    success: false
+                    errorKey: common.missingBodyParams
+                    error: Missing required request body parameters
+        '401':
+          description: 'HTTP 401. Possible error keys: common.unauthorized.'
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                - success
+                - errorKey
+                - error
+                properties:
+                  success:
+                    const: false
+                  errorKey:
+                    type: string
+                    enum:
+                    - common.unauthorized
+                    description: Stable key for frontend handling; error text is localized.
+                  error:
+                    type: string
+                    description: Localized human-readable message.
+                  requestId:
+                    type: string
+                  details:
+                    type: object
+                    additionalProperties: true
+                additionalProperties: false
+              examples:
+                common_unauthorized:
+                  summary: common.unauthorized
+                  value:
+                    success: false
+                    errorKey: common.unauthorized
+                    error: Authentication required. Please log in.
+        '403':
+          description: 'HTTP 403. Possible error keys: common.forbidden.'
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                - success
+                - errorKey
+                - error
+                properties:
+                  success:
+                    const: false
+                  errorKey:
+                    type: string
+                    enum:
+                    - common.forbidden
+                    description: Stable key for frontend handling; error text is localized.
+                  error:
+                    type: string
+                    description: Localized human-readable message.
+                  requestId:
+                    type: string
+                  details:
+                    type: object
+                    additionalProperties: true
+                additionalProperties: false
+              examples:
+                common_forbidden:
+                  summary: common.forbidden
+                  value:
+                    success: false
+                    errorKey: common.forbidden
+                    error: Forbidden
+        '404':
+          description: 'HTTP 404. Possible error keys: common.notFound.'
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                - success
+                - errorKey
+                - error
+                properties:
+                  success:
+                    const: false
+                  errorKey:
+                    type: string
+                    enum:
+                    - common.notFound
+                    description: Stable key for frontend handling; error text is localized.
+                  error:
+                    type: string
+                    description: Localized human-readable message.
+                  requestId:
+                    type: string
+                  details:
+                    type: object
+                    additionalProperties: true
+                additionalProperties: false
+              examples:
+                common_notFound:
+                  summary: common.notFound
+                  value:
+                    success: false
+                    errorKey: common.notFound
+                    error: The requested resource was not found
+        '409':
+          description: 'HTTP 409. Possible error keys: common.conflict.'
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                - success
+                - errorKey
+                - error
+                properties:
+                  success:
+                    const: false
+                  errorKey:
+                    type: string
+                    enum:
+                    - common.conflict
+                    description: Stable key for frontend handling; error text is localized.
+                  error:
+                    type: string
+                    description: Localized human-readable message.
+                  requestId:
+                    type: string
+                  details:
+                    type: object
+                    additionalProperties: true
+                additionalProperties: false
+              examples:
+                common_conflict:
+                  summary: common.conflict
+                  value:
+                    success: false
+                    errorKey: common.conflict
+                    error: Conflict
+        '429':
+          description: 'HTTP 429. Possible error keys: common.rateLimited.'
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                - success
+                - errorKey
+                - error
+                properties:
+                  success:
+                    const: false
+                  errorKey:
+                    type: string
+                    enum:
+                    - common.rateLimited
+                    description: Stable key for frontend handling; error text is localized.
+                  error:
+                    type: string
+                    description: Localized human-readable message.
+                  requestId:
+                    type: string
+                  details:
+                    type: object
+                    additionalProperties: true
+                additionalProperties: false
+              examples:
+                common_rateLimited:
+                  summary: common.rateLimited
+                  value:
+                    success: false
+                    errorKey: common.rateLimited
+                    error: Too many requests. Please try again later.
+        4XX:
+          $ref: '#/components/responses/ClientError'
+        5XX:
+          $ref: '#/components/responses/ServerError'
+      x-permission-keys:
+      - pet.adoption_listing.delete
+      parameters:
+      - name: listingId
+        in: path
+        required: true
+        schema:
+          type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/reference_catalogs_src_zodSchema_adoptionListingSchemas_ts_deleteAdoptionListingBodySchema'
+      x-request-schema-source: functions/reference-catalogs/src/zodSchema/adoptionListingSchemas.ts#deleteAdoptionListingBodySchema
   /organizations/{organizationId}/ownership-events:
     get:
       tags:
@@ -75438,6 +76831,185 @@ components:
           type: boolean
       required:
       - active
+      additionalProperties: false
+    reference_catalogs_src_zodSchema_adoptionListingSchemas_ts_createAdoptionListingBodySchema:
+      type: object
+      properties:
+        siteName:
+          type: string
+          minLength: 1
+          maxLength: 100
+        listingUrl:
+          type: string
+          maxLength: 2048
+          format: uri
+          pattern: ^https?://
+        name:
+          default: null
+          type:
+          - string
+          - 'null'
+          maxLength: 200
+        species:
+          default: unknown
+          type: string
+          enum:
+          - cat
+          - dog
+          - rabbit
+          - turtle
+          - snake
+          - mouse
+          - bird
+          - other
+          - unknown
+        sex:
+          default: unknown
+          type: string
+          enum:
+          - female
+          - male
+          - unknown
+        ageMonths:
+          default: null
+          type:
+          - integer
+          - 'null'
+          minimum: 0
+          maximum: 600
+        breed:
+          default: null
+          type:
+          - string
+          - 'null'
+          maxLength: 100
+        sterilization:
+          default: unknown
+          type: string
+          enum:
+          - 'yes'
+          - 'no'
+          - unknown
+        chipNumber:
+          default: null
+          type:
+          - string
+          - 'null'
+          maxLength: 50
+        imageUrls:
+          default: []
+          type: array
+          maxItems: 20
+          items:
+            type: string
+            maxLength: 2048
+            format: uri
+            pattern: ^https?://
+        remark:
+          default: null
+          type:
+          - string
+          - 'null'
+          maxLength: 5000
+        sourceCreatedAt:
+          type:
+          - string
+          - 'null'
+          format: date-time
+      required:
+      - siteName
+      - listingUrl
+      additionalProperties: false
+    reference_catalogs_src_zodSchema_adoptionListingSchemas_ts_updateAdoptionListingBodySchema:
+      type: object
+      properties:
+        expectedRevision:
+          type: string
+          pattern: ^(0|[1-9]\d{0,18})$
+        siteName:
+          type: string
+          minLength: 1
+          maxLength: 100
+        listingUrl:
+          type: string
+          maxLength: 2048
+          format: uri
+          pattern: ^https?://
+        name:
+          type:
+          - string
+          - 'null'
+          maxLength: 200
+        species:
+          type: string
+          enum:
+          - cat
+          - dog
+          - rabbit
+          - turtle
+          - snake
+          - mouse
+          - bird
+          - other
+          - unknown
+        sex:
+          type: string
+          enum:
+          - female
+          - male
+          - unknown
+        ageMonths:
+          type:
+          - integer
+          - 'null'
+          minimum: 0
+          maximum: 600
+        breed:
+          type:
+          - string
+          - 'null'
+          maxLength: 100
+        sterilization:
+          type: string
+          enum:
+          - 'yes'
+          - 'no'
+          - unknown
+        chipNumber:
+          type:
+          - string
+          - 'null'
+          maxLength: 50
+        imageUrls:
+          type: array
+          maxItems: 20
+          items:
+            type: string
+            maxLength: 2048
+            format: uri
+            pattern: ^https?://
+        remark:
+          type:
+          - string
+          - 'null'
+          maxLength: 5000
+        sourceCreatedAt:
+          type:
+          - string
+          - 'null'
+          format: date-time
+      required:
+      - expectedRevision
+      minProperties: 2
+      additionalProperties: false
+    reference_catalogs_src_zodSchema_adoptionListingSchemas_ts_deleteAdoptionListingBodySchema:
+      type: object
+      properties:
+        expectedRevision:
+          type: string
+          pattern: ^(0|[1-9]\d{0,18})$
+      required:
+      - expectedRevision
       additionalProperties: false
     pet_placement_src_zodSchema_placementSchemas_ts_listSitesQuerySchema:
       type: object
