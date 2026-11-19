@@ -32983,80 +32983,7 @@ paths:
                       ownershipEvents:
                         type: array
                         items:
-                          type: object
-                          properties:
-                            eventId:
-                              type: string
-                            petId:
-                              type: string
-                            fromOwner:
-                              type:
-                              - object
-                              - 'null'
-                              properties:
-                                type:
-                                  type: string
-                                  enum:
-                                  - personal
-                                  - organization
-                                id:
-                                  type: string
-                              required:
-                              - type
-                              - id
-                            toOwner:
-                              type:
-                              - object
-                              - 'null'
-                              properties:
-                                type:
-                                  type: string
-                                  enum:
-                                  - personal
-                                  - organization
-                                id:
-                                  type: string
-                              required:
-                              - type
-                              - id
-                            recordedBy:
-                              type: object
-                              properties:
-                                userId:
-                                  type: string
-                                accountClass:
-                                  type: string
-                                  enum:
-                                  - personal
-                                  - organization_staff
-                                  - internal_staff
-                                organizationId:
-                                  type:
-                                  - string
-                                  - 'null'
-                              required:
-                              - userId
-                              - accountClass
-                              - organizationId
-                            reasonKey:
-                              type: string
-                            effectiveAt:
-                              type:
-                              - string
-                              - 'null'
-                              format: date-time
-                            createdAt:
-                              type: string
-                              format: date-time
-                          required:
-                          - eventId
-                          - petId
-                          - fromOwner
-                          - toOwner
-                          - recordedBy
-                          - reasonKey
-                          - effectiveAt
-                          - createdAt
+                          $ref: '#/components/schemas/PetOwnershipEvent'
                       pagination:
                         type: object
                         properties:
@@ -34287,7 +34214,7 @@ paths:
       - pet-profile
       summary: Create Organization Pet
       operationId: R063
-      description: Creates a pet owned by the organization, with its ownership row and intake event. Requires an
+      description: Creates a pet owned by the organization, with its initial ownership row. Requires an
         `Idempotency-Key` header and the same catalog rules for `species` and `breed` as personal pet creation.
       security:
       - bearerAuth: []
@@ -40825,7 +40752,7 @@ paths:
       - pet-ownership
       summary: Read Ownership Event
       operationId: R105
-      description: Returns one ownership event. Only the pet's current owner or an internal caller may read it.
+      description: Returns a transfer or imported history record. Access requires the current owner, a named registered party, or the internal read_any grant.
       security:
       - bearerAuth: []
         apiKeyAuth: []
@@ -40850,80 +40777,7 @@ paths:
                     type: object
                     properties:
                       ownershipEvent:
-                        type: object
-                        properties:
-                          eventId:
-                            type: string
-                          petId:
-                            type: string
-                          fromOwner:
-                            type:
-                            - object
-                            - 'null'
-                            properties:
-                              type:
-                                type: string
-                                enum:
-                                - personal
-                                - organization
-                              id:
-                                type: string
-                            required:
-                            - type
-                            - id
-                          toOwner:
-                            type:
-                            - object
-                            - 'null'
-                            properties:
-                              type:
-                                type: string
-                                enum:
-                                - personal
-                                - organization
-                              id:
-                                type: string
-                            required:
-                            - type
-                            - id
-                          recordedBy:
-                            type: object
-                            properties:
-                              userId:
-                                type: string
-                              accountClass:
-                                type: string
-                                enum:
-                                - personal
-                                - organization_staff
-                                - internal_staff
-                              organizationId:
-                                type:
-                                - string
-                                - 'null'
-                            required:
-                            - userId
-                            - accountClass
-                            - organizationId
-                          reasonKey:
-                            type: string
-                          effectiveAt:
-                            type:
-                            - string
-                            - 'null'
-                            format: date-time
-                          createdAt:
-                            type: string
-                            format: date-time
-                        required:
-                        - eventId
-                        - petId
-                        - fromOwner
-                        - toOwner
-                        - recordedBy
-                        - reasonKey
-                        - effectiveAt
-                        - createdAt
+                        $ref: '#/components/schemas/PetOwnershipEvent'
                     additionalProperties: true
                     required:
                     - ownershipEvent
@@ -41118,6 +40972,278 @@ paths:
         required: true
         schema:
           type: string
+    patch:
+      tags: [pet-ownership]
+      summary: Correct Ownership Event
+      operationId: R256
+      description: Internal staff with pet.ownership_event.update_any may correct history. The event and its audit entry commit together. Current ownership is unaffected.
+      security:
+      - bearerAuth: []
+        apiKeyAuth: []
+      x-source-router: functions/pet-ownership/src/router.ts
+      x-permission-keys: [pet.ownership_event.update_any]
+      x-request-schema-source: functions/pet-ownership/src/zodSchema/transferBodySchema.ts#patchOwnershipEventSchema
+      parameters:
+      - {name: eventId, in: path, required: true, schema: {type: string}}
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PetOwnershipEventPatch'
+      responses:
+        '200':
+          description: Corrected history and audit entry committed.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [success, data]
+                properties:
+                  success: {const: true}
+                  data:
+                    type: object
+                    required: [ownershipEvent]
+                    properties:
+                      ownershipEvent:
+                        $ref: '#/components/schemas/PetOwnershipEvent'
+        '400':
+          description: 'HTTP 400. Possible error keys: common.invalidBodyParams, common.invalidInput,
+            common.invalidPathParam, common.invalidQueryParams, common.missingBodyParams.'
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                - success
+                - errorKey
+                - error
+                properties:
+                  success:
+                    const: false
+                  errorKey:
+                    type: string
+                    enum:
+                    - common.invalidBodyParams
+                    - common.invalidInput
+                    - common.invalidPathParam
+                    - common.invalidQueryParams
+                    - common.missingBodyParams
+                    description: Stable key for frontend handling; error text is localized.
+                  error:
+                    type: string
+                    description: Localized human-readable message.
+                  requestId:
+                    type: string
+                  details:
+                    type: object
+                    additionalProperties: true
+                additionalProperties: false
+              examples:
+                common_invalidBodyParams:
+                  summary: common.invalidBodyParams
+                  value:
+                    success: false
+                    errorKey: common.invalidBodyParams
+                    error: Invalid request body parameters
+                common_invalidInput:
+                  summary: common.invalidInput
+                  value:
+                    success: false
+                    errorKey: common.invalidInput
+                    error: Invalid input
+                common_invalidPathParam:
+                  summary: common.invalidPathParam
+                  value:
+                    success: false
+                    errorKey: common.invalidPathParam
+                    error: Invalid path parameter
+                common_invalidQueryParams:
+                  summary: common.invalidQueryParams
+                  value:
+                    success: false
+                    errorKey: common.invalidQueryParams
+                    error: Invalid query parameters
+                common_missingBodyParams:
+                  summary: common.missingBodyParams
+                  value:
+                    success: false
+                    errorKey: common.missingBodyParams
+                    error: Missing required request body parameters
+        '401':
+          description: 'HTTP 401. Possible error keys: common.unauthorized.'
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                - success
+                - errorKey
+                - error
+                properties:
+                  success:
+                    const: false
+                  errorKey:
+                    type: string
+                    enum:
+                    - common.unauthorized
+                    description: Stable key for frontend handling; error text is localized.
+                  error:
+                    type: string
+                    description: Localized human-readable message.
+                  requestId:
+                    type: string
+                  details:
+                    type: object
+                    additionalProperties: true
+                additionalProperties: false
+              examples:
+                common_unauthorized:
+                  summary: common.unauthorized
+                  value:
+                    success: false
+                    errorKey: common.unauthorized
+                    error: Authentication required. Please log in.
+        '403':
+          description: 'HTTP 403. Possible error keys: common.forbidden.'
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                - success
+                - errorKey
+                - error
+                properties:
+                  success:
+                    const: false
+                  errorKey:
+                    type: string
+                    enum:
+                    - common.forbidden
+                    description: Stable key for frontend handling; error text is localized.
+                  error:
+                    type: string
+                    description: Localized human-readable message.
+                  requestId:
+                    type: string
+                  details:
+                    type: object
+                    additionalProperties: true
+                additionalProperties: false
+              examples:
+                common_forbidden:
+                  summary: common.forbidden
+                  value:
+                    success: false
+                    errorKey: common.forbidden
+                    error: Forbidden
+        '404':
+          description: 'HTTP 404. Possible error keys: common.notFound.'
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                - success
+                - errorKey
+                - error
+                properties:
+                  success:
+                    const: false
+                  errorKey:
+                    type: string
+                    enum:
+                    - common.notFound
+                    description: Stable key for frontend handling; error text is localized.
+                  error:
+                    type: string
+                    description: Localized human-readable message.
+                  requestId:
+                    type: string
+                  details:
+                    type: object
+                    additionalProperties: true
+                additionalProperties: false
+              examples:
+                common_notFound:
+                  summary: common.notFound
+                  value:
+                    success: false
+                    errorKey: common.notFound
+                    error: The requested resource was not found
+        '409':
+          description: 'HTTP 409. Possible error keys: common.conflict.'
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                - success
+                - errorKey
+                - error
+                properties:
+                  success:
+                    const: false
+                  errorKey:
+                    type: string
+                    enum:
+                    - common.conflict
+                    description: Stable key for frontend handling; error text is localized.
+                  error:
+                    type: string
+                    description: Localized human-readable message.
+                  requestId:
+                    type: string
+                  details:
+                    type: object
+                    additionalProperties: true
+                additionalProperties: false
+              examples:
+                common_conflict:
+                  summary: common.conflict
+                  value:
+                    success: false
+                    errorKey: common.conflict
+                    error: Conflict
+        '429':
+          description: 'HTTP 429. Possible error keys: common.rateLimited.'
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                - success
+                - errorKey
+                - error
+                properties:
+                  success:
+                    const: false
+                  errorKey:
+                    type: string
+                    enum:
+                    - common.rateLimited
+                    description: Stable key for frontend handling; error text is localized.
+                  error:
+                    type: string
+                    description: Localized human-readable message.
+                  requestId:
+                    type: string
+                  details:
+                    type: object
+                    additionalProperties: true
+                additionalProperties: false
+              examples:
+                common_rateLimited:
+                  summary: common.rateLimited
+                  value:
+                    success: false
+                    errorKey: common.rateLimited
+                    error: Too many requests. Please try again later.
+        4XX:
+          $ref: '#/components/responses/ClientError'
+        5XX:
+          $ref: '#/components/responses/ServerError'
   /pets/ptags/{tagCode}:
     get:
       tags:
@@ -47018,411 +47144,13 @@ paths:
         required: true
         schema:
           type: string
-  /pets/{petId}/legacy-transfer-history:
-    get:
-      tags:
-      - pet-ownership
-      summary: List Legacy Transfer History
-      operationId: R250
-      description: 'Lists transfer records imported from the legacy system for a pet, newest `effectiveAt` first
-        with unknown dates last, with page/limit pagination. Rows are read-only historical evidence (`source: "legacy_import"`),
-        separate from ownership events: unknown parties are `{ type: "unknown", id: null }`, a null `recordedBy`
-        or `effectiveAt` means unknown, and `details` holds the reported names, contacts, place, notes, and completion
-        claim as recorded. The current pet owner sees all rows; an account named as `fromOwner` or `toOwner` sees
-        only those rows; internal callers with the `_any` key see any pet.'
-      security:
-      - bearerAuth: []
-        apiKeyAuth: []
-      x-source-router: functions/pet-ownership/src/router.ts
-      responses:
-        '200':
-          description: List Legacy Transfer History succeeded.
-          content:
-            application/json:
-              schema:
-                type: object
-                required:
-                - success
-                properties:
-                  success:
-                    const: true
-                  message:
-                    type: string
-                  requestId:
-                    type: string
-                  data:
-                    type: object
-                    properties:
-                      legacyTransfers:
-                        type: array
-                        items:
-                          type: object
-                          properties:
-                            historyId:
-                              type: string
-                            petId:
-                              type: string
-                            source:
-                              type: string
-                            fromOwner:
-                              type: object
-                              properties:
-                                type:
-                                  type: string
-                                  enum:
-                                  - unknown
-                                  - personal
-                                  - organization
-                                id:
-                                  type:
-                                  - string
-                                  - 'null'
-                              required:
-                              - type
-                              - id
-                            toOwner:
-                              type: object
-                              properties:
-                                type:
-                                  type: string
-                                  enum:
-                                  - unknown
-                                  - personal
-                                  - organization
-                                id:
-                                  type:
-                                  - string
-                                  - 'null'
-                              required:
-                              - type
-                              - id
-                            recordedBy:
-                              type:
-                              - object
-                              - 'null'
-                              properties:
-                                userId:
-                                  type: string
-                                accountClass:
-                                  type: string
-                                  enum:
-                                  - personal
-                                  - organization_staff
-                                  - internal_staff
-                                organizationId:
-                                  type:
-                                  - string
-                                  - 'null'
-                              required:
-                              - userId
-                              - accountClass
-                              - organizationId
-                            reasonKey:
-                              type: string
-                              enum:
-                              - unknown
-                              - transfer
-                            effectiveAt:
-                              type:
-                              - string
-                              - 'null'
-                              format: date-time
-                            details:
-                              type: object
-                              properties:
-                                reportedParty:
-                                  type:
-                                  - object
-                                  - 'null'
-                                  properties:
-                                    displayName:
-                                      type:
-                                      - string
-                                      - 'null'
-                                    phone:
-                                      type:
-                                      - string
-                                      - 'null'
-                                  required:
-                                  - displayName
-                                  - phone
-                                reportedRecipientContact:
-                                  type:
-                                  - object
-                                  - 'null'
-                                  properties:
-                                    phone:
-                                      type:
-                                      - string
-                                      - 'null'
-                                    email:
-                                      type:
-                                      - string
-                                      - 'null'
-                                  required:
-                                  - phone
-                                  - email
-                                placeDescription:
-                                  type:
-                                  - string
-                                  - 'null'
-                                notes:
-                                  type:
-                                  - string
-                                  - 'null'
-                                reportedCompleted:
-                                  oneOf:
-                                  - type: boolean
-                                    const: false
-                                  - type: boolean
-                                    const: true
-                              required:
-                              - reportedParty
-                              - reportedRecipientContact
-                              - placeDescription
-                              - notes
-                              - reportedCompleted
-                            createdAt:
-                              type: string
-                              format: date-time
-                          required:
-                          - historyId
-                          - petId
-                          - source
-                          - fromOwner
-                          - toOwner
-                          - recordedBy
-                          - reasonKey
-                          - effectiveAt
-                          - details
-                          - createdAt
-                      pagination:
-                        type: object
-                        properties:
-                          page:
-                            type: number
-                          limit:
-                            type: number
-                          total:
-                            type: number
-                          totalPages:
-                            type: number
-                        required:
-                        - page
-                        - limit
-                        - total
-                        - totalPages
-                    additionalProperties: true
-                    required:
-                    - legacyTransfers
-                    - pagination
-                additionalProperties: true
-        '400':
-          description: 'HTTP 400. Possible error keys: common.invalidPathParam, common.invalidQueryParams.'
-          content:
-            application/json:
-              schema:
-                type: object
-                required:
-                - success
-                - errorKey
-                - error
-                properties:
-                  success:
-                    const: false
-                  errorKey:
-                    type: string
-                    enum:
-                    - common.invalidPathParam
-                    - common.invalidQueryParams
-                    description: Stable key for frontend handling; error text is localized.
-                  error:
-                    type: string
-                    description: Localized human-readable message.
-                  requestId:
-                    type: string
-                  details:
-                    type: object
-                    additionalProperties: true
-                additionalProperties: false
-              examples:
-                common_invalidPathParam:
-                  summary: common.invalidPathParam
-                  value:
-                    success: false
-                    errorKey: common.invalidPathParam
-                    error: Invalid path parameter
-                common_invalidQueryParams:
-                  summary: common.invalidQueryParams
-                  value:
-                    success: false
-                    errorKey: common.invalidQueryParams
-                    error: Invalid query parameters
-        '401':
-          description: 'HTTP 401. Possible error keys: common.unauthorized.'
-          content:
-            application/json:
-              schema:
-                type: object
-                required:
-                - success
-                - errorKey
-                - error
-                properties:
-                  success:
-                    const: false
-                  errorKey:
-                    type: string
-                    enum:
-                    - common.unauthorized
-                    description: Stable key for frontend handling; error text is localized.
-                  error:
-                    type: string
-                    description: Localized human-readable message.
-                  requestId:
-                    type: string
-                  details:
-                    type: object
-                    additionalProperties: true
-                additionalProperties: false
-              examples:
-                common_unauthorized:
-                  summary: common.unauthorized
-                  value:
-                    success: false
-                    errorKey: common.unauthorized
-                    error: Authentication required. Please log in.
-        '403':
-          description: 'HTTP 403. Possible error keys: common.forbidden.'
-          content:
-            application/json:
-              schema:
-                type: object
-                required:
-                - success
-                - errorKey
-                - error
-                properties:
-                  success:
-                    const: false
-                  errorKey:
-                    type: string
-                    enum:
-                    - common.forbidden
-                    description: Stable key for frontend handling; error text is localized.
-                  error:
-                    type: string
-                    description: Localized human-readable message.
-                  requestId:
-                    type: string
-                  details:
-                    type: object
-                    additionalProperties: true
-                additionalProperties: false
-              examples:
-                common_forbidden:
-                  summary: common.forbidden
-                  value:
-                    success: false
-                    errorKey: common.forbidden
-                    error: Forbidden
-        '404':
-          description: 'HTTP 404. Possible error keys: common.notFound.'
-          content:
-            application/json:
-              schema:
-                type: object
-                required:
-                - success
-                - errorKey
-                - error
-                properties:
-                  success:
-                    const: false
-                  errorKey:
-                    type: string
-                    enum:
-                    - common.notFound
-                    description: Stable key for frontend handling; error text is localized.
-                  error:
-                    type: string
-                    description: Localized human-readable message.
-                  requestId:
-                    type: string
-                  details:
-                    type: object
-                    additionalProperties: true
-                additionalProperties: false
-              examples:
-                common_notFound:
-                  summary: common.notFound
-                  value:
-                    success: false
-                    errorKey: common.notFound
-                    error: The requested resource was not found
-        '429':
-          description: 'HTTP 429. Possible error keys: common.rateLimited.'
-          content:
-            application/json:
-              schema:
-                type: object
-                required:
-                - success
-                - errorKey
-                - error
-                properties:
-                  success:
-                    const: false
-                  errorKey:
-                    type: string
-                    enum:
-                    - common.rateLimited
-                    description: Stable key for frontend handling; error text is localized.
-                  error:
-                    type: string
-                    description: Localized human-readable message.
-                  requestId:
-                    type: string
-                  details:
-                    type: object
-                    additionalProperties: true
-                additionalProperties: false
-              examples:
-                common_rateLimited:
-                  summary: common.rateLimited
-                  value:
-                    success: false
-                    errorKey: common.rateLimited
-                    error: Too many requests. Please try again later.
-        4XX:
-          $ref: '#/components/responses/ClientError'
-        5XX:
-          $ref: '#/components/responses/ServerError'
-      x-permission-keys:
-      - pet.legacy_transfer.list_any
-      - pet.legacy_transfer.list
-      parameters:
-      - name: petId
-        in: path
-        required: true
-        schema:
-          type: string
-      - name: page
-        in: query
-        required: false
-        schema: *id029
-      - name: limit
-        in: query
-        required: false
-        schema: *id030
   /pets/{petId}/ownership-events:
     get:
       tags:
       - pet-ownership
       summary: List Pet Ownership Events
       operationId: R102
-      description: Lists a pet's ownership history, newest first and paginated, with its current ownership and revision.
-        Only the current owner or an internal caller may read it.
+      description: Lists new transfers and imported history. Current owners and internal callers with list_any receive the current state and all events. Former registered parties receive only events naming their account.
       security:
       - bearerAuth: []
         apiKeyAuth: []
@@ -47449,80 +47177,21 @@ paths:
                       ownershipEvents:
                         type: array
                         items:
-                          type: object
+                          $ref: '#/components/schemas/PetOwnershipEvent'
+                      currentOwnership:
+                        description: Present for current owners and callers with list_any. An owner of null means no registered owner.
+                        oneOf:
+                        - type: 'null'
+                        - type: object
+                          required: [petId, owner, effectiveAt, revision]
                           properties:
-                            eventId:
-                              type: string
-                            petId:
-                              type: string
-                            fromOwner:
-                              type:
-                              - object
-                              - 'null'
-                              properties:
-                                type:
-                                  type: string
-                                  enum:
-                                  - personal
-                                  - organization
-                                id:
-                                  type: string
-                              required:
-                              - type
-                              - id
-                            toOwner:
-                              type:
-                              - object
-                              - 'null'
-                              properties:
-                                type:
-                                  type: string
-                                  enum:
-                                  - personal
-                                  - organization
-                                id:
-                                  type: string
-                              required:
-                              - type
-                              - id
-                            recordedBy:
-                              type: object
-                              properties:
-                                userId:
-                                  type: string
-                                accountClass:
-                                  type: string
-                                  enum:
-                                  - personal
-                                  - organization_staff
-                                  - internal_staff
-                                organizationId:
-                                  type:
-                                  - string
-                                  - 'null'
-                              required:
-                              - userId
-                              - accountClass
-                              - organizationId
-                            reasonKey:
-                              type: string
-                            effectiveAt:
-                              type:
-                              - string
-                              - 'null'
-                              format: date-time
-                            createdAt:
-                              type: string
-                              format: date-time
-                          required:
-                          - eventId
-                          - petId
-                          - fromOwner
-                          - toOwner
-                          - recordedBy
-                          - reasonKey
-                          - effectiveAt
-                          - createdAt
+                            petId: {type: string}
+                            owner:
+                              oneOf:
+                              - $ref: '#/components/schemas/RegisteredPetOwner'
+                              - type: 'null'
+                            effectiveAt: {type: string, format: date-time}
+                            revision: {type: string}
                       pagination:
                         type: object
                         properties:
@@ -47748,10 +47417,7 @@ paths:
       - pet-ownership
       summary: Transfer Ownership
       operationId: R106
-      description: Transfers a pet from its current owner to another personal user or organization. Requires an
-        `Idempotency-Key` header and the current ownership `expectedRevision`; a retry with the same key returns
-        the original result. In the same transaction it records an ownership event, revokes the pet's live access
-        agreements, and clears its organization placement.
+      description: Transfers ownership to a registered or external party. An external recipient leaves the pet registered with no registered owner. Internal staff with pet.ownership.reassign supply an external fromOwner and a registered toOwner when assigning a pet with no registered owner. Use the current ownership revision and an Idempotency-Key for each transfer.
       security:
       - bearerAuth: []
         apiKeyAuth: []
@@ -47776,80 +47442,7 @@ paths:
                     type: object
                     properties:
                       ownershipEvent:
-                        type: object
-                        properties:
-                          eventId:
-                            type: string
-                          petId:
-                            type: string
-                          fromOwner:
-                            type:
-                            - object
-                            - 'null'
-                            properties:
-                              type:
-                                type: string
-                                enum:
-                                - personal
-                                - organization
-                              id:
-                                type: string
-                            required:
-                            - type
-                            - id
-                          toOwner:
-                            type:
-                            - object
-                            - 'null'
-                            properties:
-                              type:
-                                type: string
-                                enum:
-                                - personal
-                                - organization
-                              id:
-                                type: string
-                            required:
-                            - type
-                            - id
-                          recordedBy:
-                            type: object
-                            properties:
-                              userId:
-                                type: string
-                              accountClass:
-                                type: string
-                                enum:
-                                - personal
-                                - organization_staff
-                                - internal_staff
-                              organizationId:
-                                type:
-                                - string
-                                - 'null'
-                            required:
-                            - userId
-                            - accountClass
-                            - organizationId
-                          reasonKey:
-                            type: string
-                          effectiveAt:
-                            type:
-                            - string
-                            - 'null'
-                            format: date-time
-                          createdAt:
-                            type: string
-                            format: date-time
-                        required:
-                        - eventId
-                        - petId
-                        - fromOwner
-                        - toOwner
-                        - recordedBy
-                        - reasonKey
-                        - effectiveAt
-                        - createdAt
+                        $ref: '#/components/schemas/PetOwnershipEvent'
                     additionalProperties: true
                     required:
                     - ownershipEvent
@@ -48092,6 +47685,7 @@ paths:
         5XX:
           $ref: '#/components/responses/ServerError'
       x-permission-keys:
+      - pet.ownership.reassign
       - pet.ownership.transfer_any
       - pet.ownership.transfer
       requestBody:
@@ -48102,6 +47696,10 @@ paths:
               $ref: '#/components/schemas/pet_ownership_src_zodSchema_transferBodySchema_ts_transferBodySchema'
       x-request-schema-source: functions/pet-ownership/src/zodSchema/transferBodySchema.ts#transferBodySchema
       parameters:
+      - name: Idempotency-Key
+        in: header
+        required: true
+        schema: {type: string, pattern: '^[A-Za-z0-9_-]{8,128}$'}
       - name: petId
         in: path
         required: true
@@ -67999,80 +67597,7 @@ paths:
                       ownershipEvents:
                         type: array
                         items:
-                          type: object
-                          properties:
-                            eventId:
-                              type: string
-                            petId:
-                              type: string
-                            fromOwner:
-                              type:
-                              - object
-                              - 'null'
-                              properties:
-                                type:
-                                  type: string
-                                  enum:
-                                  - personal
-                                  - organization
-                                id:
-                                  type: string
-                              required:
-                              - type
-                              - id
-                            toOwner:
-                              type:
-                              - object
-                              - 'null'
-                              properties:
-                                type:
-                                  type: string
-                                  enum:
-                                  - personal
-                                  - organization
-                                id:
-                                  type: string
-                              required:
-                              - type
-                              - id
-                            recordedBy:
-                              type: object
-                              properties:
-                                userId:
-                                  type: string
-                                accountClass:
-                                  type: string
-                                  enum:
-                                  - personal
-                                  - organization_staff
-                                  - internal_staff
-                                organizationId:
-                                  type:
-                                  - string
-                                  - 'null'
-                              required:
-                              - userId
-                              - accountClass
-                              - organizationId
-                            reasonKey:
-                              type: string
-                            effectiveAt:
-                              type:
-                              - string
-                              - 'null'
-                              format: date-time
-                            createdAt:
-                              type: string
-                              format: date-time
-                          required:
-                          - eventId
-                          - petId
-                          - fromOwner
-                          - toOwner
-                          - recordedBy
-                          - reasonKey
-                          - effectiveAt
-                          - createdAt
+                          $ref: '#/components/schemas/PetOwnershipEvent'
                       pagination:
                         type: object
                         properties:
@@ -68574,7 +68099,7 @@ paths:
       - pet-profile
       summary: Create User Pet
       operationId: R061
-      description: Creates a pet owned by the personal user, with its ownership row and intake event in one transaction.
+      description: Creates a pet owned by the personal user, with its initial ownership row in one transaction.
         Requires an `Idempotency-Key` header; a retry with the same key and body returns the original pet, and a
         different body returns 409. `species` and an optional `breed` must be active keys from the animal species
         catalog.
@@ -74562,30 +74087,91 @@ components:
       required:
       - cameraId
       additionalProperties: false
+    RegisteredPetOwner:
+      type: object
+      required: [type, id]
+      additionalProperties: false
+      properties:
+        type: {enum: [personal, organization]}
+        id: {type: string, pattern: '^[a-fA-F0-9]{24}$'}
+    ExternalPetTransferParty:
+      description: Private historical contact information for a party outside the system. Provide at least one nonempty field.
+      type: object
+      required: [type]
+      additionalProperties: false
+      properties:
+        type: {const: external}
+        displayName: {type: [string, 'null'], maxLength: 200}
+        phone: {type: [string, 'null'], pattern: '^\+[1-9][0-9]{1,14}$'}
+        email: {type: [string, 'null'], format: email, maxLength: 254}
+    PetTransferParty:
+      oneOf:
+      - $ref: '#/components/schemas/RegisteredPetOwner'
+      - $ref: '#/components/schemas/ExternalPetTransferParty'
+    PetOwnershipEvent:
+      type: object
+      required: [eventId, petId, source, fromOwner, toOwner, recordedBy, reasonKey, effectiveAt, placeDescription, notes, revision, createdAt, updatedAt]
+      properties:
+        eventId: {type: string}
+        petId: {type: string}
+        source: {enum: [system, legacy_import]}
+        fromOwner:
+          oneOf:
+          - $ref: '#/components/schemas/PetTransferParty'
+          - type: 'null'
+        toOwner:
+          oneOf:
+          - $ref: '#/components/schemas/PetTransferParty'
+          - type: 'null'
+        recordedBy:
+          type: [object, 'null']
+          required: [userId, accountClass, organizationId]
+          properties:
+            userId: {type: string}
+            accountClass: {enum: [personal, organization_staff, internal_staff]}
+            organizationId: {type: [string, 'null']}
+        reasonKey: {enum: [transfer, unknown]}
+        effectiveAt: {type: [string, 'null'], format: date-time}
+        placeDescription: {type: [string, 'null']}
+        notes: {type: [string, 'null']}
+        revision: {type: string}
+        createdAt: {type: string, format: date-time}
+        updatedAt: {type: string, format: date-time}
+    PetOwnershipEventPatch:
+      type: object
+      required: [expectedRevision, auditReason]
+      minProperties: 3
+      additionalProperties: false
+      properties:
+        expectedRevision: {type: string, pattern: '^(0|[1-9][0-9]{0,18})$'}
+        auditReason: {type: string, minLength: 1, maxLength: 500}
+        fromOwner:
+          description: Null is allowed for imported evidence only.
+          oneOf:
+          - $ref: '#/components/schemas/PetTransferParty'
+          - type: 'null'
+        toOwner:
+          description: Null is allowed for imported evidence only.
+          oneOf:
+          - $ref: '#/components/schemas/PetTransferParty'
+          - type: 'null'
+        reasonKey: {enum: [transfer, unknown]}
+        effectiveAt: {type: [string, 'null'], format: date-time}
+        placeDescription: {type: [string, 'null'], maxLength: 200}
+        notes: {type: [string, 'null'], maxLength: 2000}
     pet_ownership_src_zodSchema_transferBodySchema_ts_transferBodySchema:
       type: object
-      properties:
-        expectedRevision:
-          type: string
-          pattern: ^(0|[1-9]\d{0,18})$
-        toOwner:
-          type: object
-          properties:
-            type:
-              type: string
-              enum:
-              - personal
-              - organization
-            id:
-              type: string
-          required:
-          - type
-          - id
-          additionalProperties: false
-      required:
-      - expectedRevision
-      - toOwner
+      required: [expectedRevision, toOwner]
       additionalProperties: false
+      properties:
+        expectedRevision: {type: string, pattern: '^(0|[1-9][0-9]{0,18})$'}
+        toOwner:
+          $ref: '#/components/schemas/PetTransferParty'
+        fromOwner:
+          description: Required only when internal staff reassign a pet with no registered owner. Supply the external sender and a registered recipient.
+          $ref: '#/components/schemas/ExternalPetTransferParty'
+        placeDescription: {type: [string, 'null'], maxLength: 200}
+        notes: {type: [string, 'null'], maxLength: 2000}
     pet_profile_src_zodSchema_sourceSchemas_ts_sourceBodySchema:
       type: object
       properties:
