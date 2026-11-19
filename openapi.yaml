@@ -3,8 +3,8 @@
 openapi: 3.1.0
 info:
   title: AWS DDD API
-  version: '2026-11-18.1'
-  description: The 234 implemented HTTP operations of the API. Paths, gateway credentials, request validation, and
+  version: '2026-11-19.1'
+  description: The 237 implemented HTTP operations of the API. Paths, gateway credentials, request validation, and
     permission keys are checked against current source. Deferred and preview/smoke routes are omitted. Success responses
     document handler payload fields. Each documented HTTP error status lists the stable errorKey values emitted
     by the reachable handler and validation branches; error text is localized. Gateway-generated responses and upstream
@@ -27369,6 +27369,7 @@ paths:
                           type: string
                           enum:
                           - pet_behavior_anomaly
+                          - ptag_location_report
                           - subscription_notice
                           - report_ready
                           - system_notice
@@ -27399,8 +27400,11 @@ paths:
                           required:
                           - from
                           - to
+                        locationReportId:
+                          type: [string, 'null']
+                          description: PTag report reference; use protected report endpoint for map URL.
                         evidence:
-                          type: object
+                          type: [object, 'null']
                           properties:
                             eatingSeconds:
                               type: number
@@ -27649,6 +27653,7 @@ paths:
           type: string
           enum:
           - pet_behavior_anomaly
+          - ptag_location_report
           - subscription_notice
           - report_ready
           - system_notice
@@ -41242,6 +41247,231 @@ paths:
                     error: Too many requests. Please try again later.
         4XX:
           $ref: '#/components/responses/ClientError'
+        5XX:
+          $ref: '#/components/responses/ServerError'
+  /pets/ptags/{tagCode}/location-reports:
+    post:
+      summary: Submit PTag location report
+      operationId: createPtagLocationReport
+      tags: [ptag]
+      x-source-router: functions/ptag/src/router.ts
+      description: Public submission, not proof of a physical scan. Resolve an active assigned tag
+        and pet server-side. Commit report and notification signal atomically. The body accepts only
+        mapUrl. Each accepted request creates a new report. Limit 20 per IP per 5 minutes and 3 per
+        tag per 10 minutes. Receipt time is server-generated. WhatsApp/email delivery is asynchronous;
+        this response does not confirm delivery. No client-selected recipient or delivery channel.
+      security: []
+      parameters:
+      - name: tagCode
+        in: path
+        required: true
+        schema: {type: string}
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: false
+              required: [mapUrl]
+              properties:
+                mapUrl:
+                  type: string
+                  format: uri
+                  maxLength: 2048
+                  description: HTTPS Google Maps URL. Allow google.com/www.google.com under /maps,
+                    maps.google.com at / or /maps, maps.app.goo.gl short links, and goo.gl/maps short
+                    links. Credentials, custom ports, unknown hosts, and other Google paths are rejected.
+                  example: https://www.google.com/maps?q=22.3,114.1
+      responses:
+        '201':
+          description: Report accepted; delivery is asynchronous.
+          content:
+            application/json:
+              schema:
+                allOf:
+                - $ref: '#/components/schemas/SuccessEnvelope'
+                - type: object
+                  required: [data]
+                  properties:
+                    data:
+                      type: object
+                      required: [reportId, receivedAt]
+                      properties:
+                        reportId: {type: string}
+                        receivedAt: {type: string, format: date-time}
+        '400':
+          description: 'Invalid path, body, or query. Common keys include common.invalidPathParam, common.invalidBodyParams, common.invalidQueryParams.'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorEnvelope'
+        '404':
+          description: 'Active assigned tag/pet or requested report/pet missing (common.notFound).'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorEnvelope'
+        '429':
+          description: 'Rate limit exceeded (common.rateLimited).'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorEnvelope'
+        5XX:
+          $ref: '#/components/responses/ServerError'
+  /pets/{petId}/ptag-location-reports:
+    get:
+      summary: List pet PTag location reports
+      operationId: listPtagLocationReports
+      tags: [ptag]
+      x-source-router: functions/ptag/src/router.ts
+      description: Requires commerce.ptag_location_report.list with current ownership of the stored
+        pet or explicit internal commerce.ptag_location_report.list_any. Current owners may read
+        that pet's history. Former ownership, tag purchase, and later tag assignment grant no access.
+        Location URLs are sensitive. Unknown query parameters are rejected.
+      security:
+      - bearerAuth: []
+        apiKeyAuth: []
+      parameters:
+      - name: petId
+        in: path
+        required: true
+        schema: {type: string}
+      - name: page
+        in: query
+        schema: {type: integer, minimum: 1, maximum: 1000, default: 1}
+      - name: limit
+        in: query
+        schema: {type: integer, minimum: 1, maximum: 50, default: 20}
+      - name: sortOrder
+        in: query
+        description: Orders by receivedAt and then report ID.
+        schema: {type: string, enum: [asc, desc], default: desc}
+      responses:
+        '200':
+          description: Report history retrieved.
+          content:
+            application/json:
+              schema:
+                allOf:
+                - $ref: '#/components/schemas/SuccessEnvelope'
+                - type: object
+                  required: [data]
+                  properties:
+                    data:
+                      type: object
+                      required: [reports, pagination]
+                      properties:
+                        reports:
+                          type: array
+                          items:
+                            $ref: '#/components/schemas/PtagLocationReport'
+                        pagination:
+                          type: object
+                          required: [page, limit, total, totalPages]
+                          properties:
+                            page: {type: integer}
+                            limit: {type: integer}
+                            total: {type: integer}
+                            totalPages: {type: integer}
+        '400':
+          description: 'Invalid path, body, or query. Common keys include common.invalidPathParam, common.invalidBodyParams, common.invalidQueryParams.'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorEnvelope'
+        '401':
+          description: 'Authentication required.'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorEnvelope'
+        '403':
+          description: 'IAM or current ownership denied (common.forbidden).'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorEnvelope'
+        '404':
+          description: 'Active assigned tag/pet or requested report/pet missing (common.notFound).'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorEnvelope'
+        '429':
+          description: 'Rate limit exceeded (common.rateLimited).'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorEnvelope'
+        5XX:
+          $ref: '#/components/responses/ServerError'
+  /ptag-location-reports/{reportId}:
+    get:
+      summary: Read PTag location report
+      operationId: readPtagLocationReport
+      tags: [ptag]
+      x-source-router: functions/ptag/src/router.ts
+      description: Requires commerce.ptag_location_report.read with current ownership of the stored
+        pet or explicit internal commerce.ptag_location_report.read_any. Current owners may read
+        that pet's history. Former ownership, tag purchase, and later tag assignment grant no access.
+        Location URLs are sensitive. Unknown query parameters are rejected.
+      security:
+      - bearerAuth: []
+        apiKeyAuth: []
+      parameters:
+      - name: reportId
+        in: path
+        required: true
+        schema: {type: string}
+      responses:
+        '200':
+          description: Report history retrieved.
+          content:
+            application/json:
+              schema:
+                allOf:
+                - $ref: '#/components/schemas/SuccessEnvelope'
+                - type: object
+                  required: [data]
+                  properties:
+                    data:
+                      type: object
+                      required: [report]
+                      properties:
+                        report:
+                          $ref: '#/components/schemas/PtagLocationReport'
+        '400':
+          description: 'Invalid path, body, or query. Common keys include common.invalidPathParam, common.invalidBodyParams, common.invalidQueryParams.'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorEnvelope'
+        '401':
+          description: 'Authentication required.'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorEnvelope'
+        '403':
+          description: 'IAM or current ownership denied (common.forbidden).'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorEnvelope'
+        '404':
+          description: 'Active assigned tag/pet or requested report/pet missing (common.notFound).'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorEnvelope'
+        '429':
+          description: 'Rate limit exceeded (common.rateLimited).'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorEnvelope'
         5XX:
           $ref: '#/components/responses/ServerError'
   /pets/ptags/{tagCode}:
@@ -67287,6 +67517,7 @@ paths:
                           type: string
                           enum:
                           - pet_behavior_anomaly
+                          - ptag_location_report
                           - subscription_notice
                           - report_ready
                           - system_notice
@@ -67317,8 +67548,11 @@ paths:
                           required:
                           - from
                           - to
+                        locationReportId:
+                          type: [string, 'null']
+                          description: PTag report reference; use protected report endpoint for map URL.
                         evidence:
-                          type: object
+                          type: [object, 'null']
                           properties:
                             eatingSeconds:
                               type: number
@@ -72002,6 +72236,15 @@ components:
       schema:
         type: string
   schemas:
+    PtagLocationReport:
+      type: object
+      required: [reportId, ptagId, petId, mapUrl, receivedAt]
+      properties:
+        reportId: {type: string, description: MongoDB ObjectId.}
+        ptagId: {type: string, description: Issued PTag ObjectId.}
+        petId: {type: string, description: Pet assignment captured at submission.}
+        mapUrl: {type: string, format: uri, maxLength: 2048}
+        receivedAt: {type: string, format: date-time}
     SuccessEnvelope:
       type: object
       required:
