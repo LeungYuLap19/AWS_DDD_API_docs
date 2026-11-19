@@ -27370,6 +27370,7 @@ paths:
                           enum:
                           - pet_behavior_anomaly
                           - ptag_location_report
+                          - deworm_due
                           - subscription_notice
                           - report_ready
                           - system_notice
@@ -27403,6 +27404,13 @@ paths:
                         locationReportId:
                           type: [string, 'null']
                           description: PTag report reference; use protected report endpoint for map URL.
+                        dewormRecordId:
+                          type: [string, 'null']
+                          description: Source deworm record reference for deworm_due notifications.
+                        dueDate:
+                          type: [string, 'null']
+                          format: date
+                          description: Recorded deworm due date, unchanged by timezone conversion.
                         evidence:
                           type: [object, 'null']
                           properties:
@@ -27654,6 +27662,7 @@ paths:
           enum:
           - pet_behavior_anomaly
           - ptag_location_report
+          - deworm_due
           - subscription_notice
           - report_ready
           - system_notice
@@ -67518,6 +67527,7 @@ paths:
                           enum:
                           - pet_behavior_anomaly
                           - ptag_location_report
+                          - deworm_due
                           - subscription_notice
                           - report_ready
                           - system_notice
@@ -67551,6 +67561,13 @@ paths:
                         locationReportId:
                           type: [string, 'null']
                           description: PTag report reference; use protected report endpoint for map URL.
+                        dewormRecordId:
+                          type: [string, 'null']
+                          description: Source deworm record reference for deworm_due notifications.
+                        dueDate:
+                          type: [string, 'null']
+                          format: date
+                          description: Recorded deworm due date, unchanged by timezone conversion.
                         evidence:
                           type: [object, 'null']
                           properties:
