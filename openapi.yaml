@@ -41327,6 +41327,8 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ErrorEnvelope'
+        4XX:
+          $ref: '#/components/responses/ClientError'
         5XX:
           $ref: '#/components/responses/ServerError'
   /pets/{petId}/ptag-location-reports:
@@ -41414,6 +41416,8 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ErrorEnvelope'
+        4XX:
+          $ref: '#/components/responses/ClientError'
         5XX:
           $ref: '#/components/responses/ServerError'
   /ptag-location-reports/{reportId}:
@@ -41481,6 +41485,8 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ErrorEnvelope'
+        4XX:
+          $ref: '#/components/responses/ClientError'
         5XX:
           $ref: '#/components/responses/ServerError'
   /pets/ptags/{tagCode}:
@@ -50433,9 +50439,7 @@ paths:
           $ref: '#/components/responses/ClientError'
         5XX:
           $ref: '#/components/responses/ServerError'
-      x-permission-keys:
-      - pet.blood_test_record.list_any
-      - pet.blood_test_record.list
+      x-permission-keys: [pet.blood_test_record.list_any, pet.blood_test_record.list]
       parameters:
       - name: petId
         in: path
@@ -50459,8 +50463,12 @@ paths:
       - pet-medical
       summary: Create records blood tests
       operationId: R086
-      description: Adds a blood test record with a CBC date, known FIP history, and analyte results; analyte names
-        must be unique within the record. Writes an audit event.
+      description: >-
+        Adds a blood test record with a CBC date, known FIP history, and analyte results; analyte names must
+        be unique within the record. Writes an audit event. Personal and owning-NGO roles have no default
+        create/update grant. NGO or clinic providers may write through an active pet-specific agreement
+        granting the exact operation. Ownership alone is insufficient; an internal caller needs the exact
+        `_any` permission.
       security:
       - bearerAuth: []
         apiKeyAuth: []
@@ -50779,9 +50787,7 @@ paths:
           $ref: '#/components/responses/ClientError'
         5XX:
           $ref: '#/components/responses/ServerError'
-      x-permission-keys:
-      - pet.blood_test_record.create_any
-      - pet.blood_test_record.create
+      x-permission-keys: [pet.blood_test_record.create_any, pet.blood_test_record.create]
       parameters:
       - name: petId
         in: path
@@ -51156,10 +51162,7 @@ paths:
           $ref: '#/components/responses/ClientError'
         5XX:
           $ref: '#/components/responses/ServerError'
-      x-permission-keys:
-      - pet.deworm_record.list_any
-      - pet.deworm_record.list
-      - deworms
+      x-permission-keys: [pet.deworm_record.list_any, pet.deworm_record.list]
       parameters:
       - name: petId
         in: path
@@ -51183,9 +51186,15 @@ paths:
       - pet-medical
       summary: Create records deworms
       operationId: R083
-      description: 'Adds a deworming record: product brand, type, parasite types, frequency, and next due date.
-        `productBrand` must be an active key from the anthelmintic brand catalog, or `null`. Same caller rules as
-        other medical records; writes an audit event.'
+      description: >-
+        Adds a deworming record: product brand, type, parasite types, frequency, and next due date.
+        `productBrand` must be an active key from the anthelmintic brand catalog, or `null`. Writes an audit
+        event. Personal and owning-NGO roles have no default create/update grant. NGO or clinic providers
+        may write through an active pet-specific agreement granting the exact operation. Ownership alone is
+        insufficient; an internal caller needs the exact `_any` permission. A recorded `nextDueDate` queues
+        one owner reminder on that Asia/Hong_Kong calendar date through in-app, email, and WhatsApp channels
+        using verified notification contacts. No advance or overdue backlog reminders. Clearing or
+        correcting the date suppresses stale queued sends; sent messages remain sent.
       security:
       - bearerAuth: []
         apiKeyAuth: []
@@ -51536,10 +51545,7 @@ paths:
           $ref: '#/components/responses/ClientError'
         5XX:
           $ref: '#/components/responses/ServerError'
-      x-permission-keys:
-      - pet.deworm_record.create_any
-      - pet.deworm_record.create
-      - deworms
+      x-permission-keys: [pet.deworm_record.create_any, pet.deworm_record.create]
       parameters:
       - name: petId
         in: path
@@ -51872,10 +51878,7 @@ paths:
           $ref: '#/components/responses/ClientError'
         5XX:
           $ref: '#/components/responses/ServerError'
-      x-permission-keys:
-      - pet.medical_record.list_any
-      - pet.medical_record.list
-      - medicals
+      x-permission-keys: [pet.medical_record.list_any, pet.medical_record.list]
       parameters:
       - name: petId
         in: path
@@ -51899,8 +51902,11 @@ paths:
       - pet-medical
       summary: Create records medicals
       operationId: R084
-      description: 'Adds a medical visit record: place, practitioner, result, and treatment, with `occurredAt` or
-        `occurredDate`. Writes an audit event.'
+      description: >-
+        Adds a medical visit record: place, practitioner, result, and treatment, with `occurredAt` or
+        `occurredDate`. Writes an audit event. Personal and owning-NGO roles have no default create/update
+        grant. NGO or clinic providers may write through an active pet-specific agreement granting the exact
+        operation. Ownership alone is insufficient; an internal caller needs the exact `_any` permission.
       security:
       - bearerAuth: []
         apiKeyAuth: []
@@ -52209,10 +52215,7 @@ paths:
           $ref: '#/components/responses/ClientError'
         5XX:
           $ref: '#/components/responses/ServerError'
-      x-permission-keys:
-      - pet.medical_record.create_any
-      - pet.medical_record.create
-      - medicals
+      x-permission-keys: [pet.medical_record.create_any, pet.medical_record.create]
       parameters:
       - name: petId
         in: path
@@ -52549,10 +52552,7 @@ paths:
           $ref: '#/components/responses/ClientError'
         5XX:
           $ref: '#/components/responses/ServerError'
-      x-permission-keys:
-      - pet.medication_record.list_any
-      - pet.medication_record.list
-      - medications
+      x-permission-keys: [pet.medication_record.list_any, pet.medication_record.list]
       parameters:
       - name: petId
         in: path
@@ -52576,8 +52576,11 @@ paths:
       - pet-medical
       summary: Create records medications
       operationId: R085
-      description: 'Adds a medication record: drug name, purpose, administration method, remarks, and allergy flag.
-        Writes an audit event.'
+      description: >-
+        Adds a medication record: drug name, purpose, administration method, remarks, and allergy flag.
+        Writes an audit event. Personal and owning-NGO roles have no default create/update grant. NGO or
+        clinic providers may write through an active pet-specific agreement granting the exact operation.
+        Ownership alone is insufficient; an internal caller needs the exact `_any` permission.
       security:
       - bearerAuth: []
         apiKeyAuth: []
@@ -52890,10 +52893,7 @@ paths:
           $ref: '#/components/responses/ClientError'
         5XX:
           $ref: '#/components/responses/ServerError'
-      x-permission-keys:
-      - pet.medication_record.create_any
-      - pet.medication_record.create
-      - medications
+      x-permission-keys: [pet.medication_record.create_any, pet.medication_record.create]
       parameters:
       - name: petId
         in: path
@@ -53879,10 +53879,7 @@ paths:
           $ref: '#/components/responses/ClientError'
         5XX:
           $ref: '#/components/responses/ServerError'
-      x-permission-keys:
-      - pet.vaccine_record.list_any
-      - pet.vaccine_record.list
-      - vaccines
+      x-permission-keys: [pet.vaccine_record.list_any, pet.vaccine_record.list]
       parameters:
       - name: petId
         in: path
@@ -53906,9 +53903,12 @@ paths:
       - pet-medical
       summary: Create records vaccines
       operationId: R082
-      description: Adds a vaccine record (vaccine name, number, position, dose) with `occurredAt` or a date-only
-        `occurredDate`, never both. Allowed for the current owner, an organization whose live agreement grants this
-        key, or an internal caller; writes an audit event.
+      description: >-
+        Adds a vaccine record (vaccine name, number, position, dose) with `occurredAt` or a date-only
+        `occurredDate`, never both. Writes an audit event. Personal and owning-NGO roles have no default
+        create/update grant. NGO or clinic providers may write through an active pet-specific agreement
+        granting the exact operation. Ownership alone is insufficient; an internal caller needs the exact
+        `_any` permission.
       security:
       - bearerAuth: []
         apiKeyAuth: []
@@ -54217,10 +54217,7 @@ paths:
           $ref: '#/components/responses/ClientError'
         5XX:
           $ref: '#/components/responses/ServerError'
-      x-permission-keys:
-      - pet.vaccine_record.create_any
-      - pet.vaccine_record.create
-      - vaccines
+      x-permission-keys: [pet.vaccine_record.create_any, pet.vaccine_record.create]
       parameters:
       - name: petId
         in: path
@@ -57233,7 +57230,11 @@ paths:
       - pet-medical
       summary: Update records blood tests
       operationId: R091
-      description: Corrects fields of a blood test record. Writes an audit event.
+      description: >-
+        Corrects fields of a blood test record. Writes an audit event. Personal and owning-NGO roles have no
+        default create/update grant. NGO or clinic providers may write through an active pet-specific
+        agreement granting the exact operation. Ownership alone is insufficient; an internal caller needs
+        the exact `_any` permission.
       security:
       - bearerAuth: []
         apiKeyAuth: []
@@ -57552,9 +57553,7 @@ paths:
           $ref: '#/components/responses/ClientError'
         5XX:
           $ref: '#/components/responses/ServerError'
-      x-permission-keys:
-      - pet.blood_test_record.update_any
-      - pet.blood_test_record.update
+      x-permission-keys: [pet.blood_test_record.update_any, pet.blood_test_record.update]
       parameters:
       - name: recordId
         in: path
@@ -57573,8 +57572,15 @@ paths:
       - pet-medical
       summary: Update records deworms
       operationId: R088
-      description: Corrects fields of a deworming record. A changed `productBrand` must be an active catalog key;
-        an unchanged brand may stay even if it was disabled later.
+      description: >-
+        Corrects fields of a deworming record. A changed `productBrand` must be an active catalog key; an
+        unchanged brand may stay even if it was disabled later. Personal and owning-NGO roles have no
+        default create/update grant. NGO or clinic providers may write through an active pet-specific
+        agreement granting the exact operation. Ownership alone is insufficient; an internal caller needs
+        the exact `_any` permission. A recorded `nextDueDate` queues one owner reminder on that
+        Asia/Hong_Kong calendar date through in-app, email, and WhatsApp channels using verified
+        notification contacts. No advance or overdue backlog reminders. Clearing or correcting the date
+        suppresses stale queued sends; sent messages remain sent.
       security:
       - bearerAuth: []
         apiKeyAuth: []
@@ -57925,10 +57931,7 @@ paths:
           $ref: '#/components/responses/ClientError'
         5XX:
           $ref: '#/components/responses/ServerError'
-      x-permission-keys:
-      - pet.deworm_record.update_any
-      - pet.deworm_record.update
-      - deworms
+      x-permission-keys: [pet.deworm_record.update_any, pet.deworm_record.update]
       parameters:
       - name: recordId
         in: path
@@ -57947,7 +57950,11 @@ paths:
       - pet-medical
       summary: Update records medicals
       operationId: R089
-      description: Corrects fields of a medical visit record; `null` clears an optional field. Writes an audit event.
+      description: >-
+        Corrects fields of a medical visit record; `null` clears an optional field. Writes an audit event.
+        Personal and owning-NGO roles have no default create/update grant. NGO or clinic providers may write
+        through an active pet-specific agreement granting the exact operation. Ownership alone is
+        insufficient; an internal caller needs the exact `_any` permission.
       security:
       - bearerAuth: []
         apiKeyAuth: []
@@ -58256,10 +58263,7 @@ paths:
           $ref: '#/components/responses/ClientError'
         5XX:
           $ref: '#/components/responses/ServerError'
-      x-permission-keys:
-      - pet.medical_record.update_any
-      - pet.medical_record.update
-      - medicals
+      x-permission-keys: [pet.medical_record.update_any, pet.medical_record.update]
       parameters:
       - name: recordId
         in: path
@@ -58278,7 +58282,11 @@ paths:
       - pet-medical
       summary: Update records medications
       operationId: R090
-      description: Corrects fields of a medication record; `null` clears an optional field. Writes an audit event.
+      description: >-
+        Corrects fields of a medication record; `null` clears an optional field. Writes an audit event.
+        Personal and owning-NGO roles have no default create/update grant. NGO or clinic providers may write
+        through an active pet-specific agreement granting the exact operation. Ownership alone is
+        insufficient; an internal caller needs the exact `_any` permission.
       security:
       - bearerAuth: []
         apiKeyAuth: []
@@ -58591,10 +58599,7 @@ paths:
           $ref: '#/components/responses/ClientError'
         5XX:
           $ref: '#/components/responses/ServerError'
-      x-permission-keys:
-      - pet.medication_record.update_any
-      - pet.medication_record.update
-      - medications
+      x-permission-keys: [pet.medication_record.update_any, pet.medication_record.update]
       parameters:
       - name: recordId
         in: path
@@ -58954,8 +58959,11 @@ paths:
       - pet-medical
       summary: Update records vaccines
       operationId: R087
-      description: Corrects fields of a vaccine record; `null` clears an optional field. Same caller rules as creation;
-        writes an audit event.
+      description: >-
+        Corrects fields of a vaccine record; `null` clears an optional field. Writes an audit event.
+        Personal and owning-NGO roles have no default create/update grant. NGO or clinic providers may write
+        through an active pet-specific agreement granting the exact operation. Ownership alone is
+        insufficient; an internal caller needs the exact `_any` permission.
       security:
       - bearerAuth: []
         apiKeyAuth: []
@@ -59264,10 +59272,7 @@ paths:
           $ref: '#/components/responses/ClientError'
         5XX:
           $ref: '#/components/responses/ServerError'
-      x-permission-keys:
-      - pet.vaccine_record.update_any
-      - pet.vaccine_record.update
-      - vaccines
+      x-permission-keys: [pet.vaccine_record.update_any, pet.vaccine_record.update]
       parameters:
       - name: recordId
         in: path

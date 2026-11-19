@@ -2,7 +2,7 @@
 
 Run `python -m http.server 8000` in this directory and open `http://localhost:8000`, or use the [published GitHub Pages site](https://leungyulap19.github.io/AWS_DDD_API_docs/). Open [openapi.yaml](openapi.yaml) to save the contract for LLM tools and code generators. Choose an endpoint, fill its request fields on the left, and use **Send request** on the right. The preview follows those inputs and offers HTTP, Shell, Node, Ruby, and PHP examples. Success and error response structures are listed below the form. The specification uses OpenAPI 3.1 and YAML 1.2.
 
-The 237 documented operations are every implemented route of the API, each with a description of what it does, who may call it, and the rules that affect clients. Five deferred routes and three preview/smoke routes are omitted. The contract is checked against the current route, validation, and response source. This update adds the recurring subscription flow (checkout status, upgrade quotes, promo codes, and the PA-SYS payment return page), organization placement sites, the animal species and deworming brand catalogs, user public contacts (also returned by the PTag public lookup), the read-only legacy transfer history, and the external adoption listings (public browse and detail, internal crawler writes).
+The 237 documented operations describe implemented routes, callers, and client rules. Five deferred routes and three preview/smoke routes are omitted. The contract covers subscriptions, placement sites, localized species/breed catalogs, public contacts, unified ownership events (including audited internal corrections), recovery image replacement and event-date filters, PTag location reports, and external adoption listings.
 
 For frontend error handling, each operation lists the HTTP statuses its handlers return. Open a `4xx` response to see its JSON fields, the allowed `errorKey` values, and an example for each key. Branch on `errorKey`, not the localized `error` message. The `4XX` and `5XX` entries remain as fallbacks for gateway and unexpected responses. SF Express address payloads are passed through as provider-defined JSON because the Lambda does not validate their fields.
 
@@ -16,3 +16,14 @@ PTag location reports provide public submission and protected pet-history/single
 Submission queues in-app, WhatsApp, and email through the shared outbox trigger. Inbox items
 use `type: ptag_location_report`, `locationReportId`, and `evidence: null`; map URLs require
 authorized report reads. Clients never supply notification recipients.
+
+Deworm reminders use the recorded `nextDueDate` on that Asia/Hong_Kong calendar date, through
+the shared in-app, email, and WhatsApp system. There are no advance or historical backlog reminders.
+Clearing or correcting the due date suppresses stale queued sends; successful channels are not
+resent when another channel retries. Notification contacts must be selected and verified.
+
+SG development IAM removes default create/update for vaccine, deworm, general medical, medication,
+and blood-test records from personal and NGO owner roles. History listing remains available.
+NGO and clinic providers may write through an active pet-specific agreement granting the exact
+operation. Ownership alone grants no clinical write access; internal operations need the exact
+`_any` key. This policy refresh was not applied to production.
