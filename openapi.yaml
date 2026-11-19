@@ -29886,10 +29886,7 @@ paths:
       - reference-catalogs
       summary: List Species
       operationId: R244
-      description: Public catalog of animal species keys with their embedded breed keys and `active` flags, sorted
-        by key. Supports page/limit pagination, `search` on species or breed key, and `active=true|false`. Without
-        the filter, disabled options are included so existing pet records stay resolvable; use `active=true` for
-        selection lists. Keys only; clients own the display labels.
+      description: "Public, unpaginated species catalog including all matching categories and embedded breeds, sorted by key. Query lang=en|zh selects the returned label at both levels; omitted lang defaults to en, and zh means Traditional Chinese. Keys are stable and must be submitted for selections instead of labels. Supports case-insensitive literal search across species/breed keys and both languages, and active=true|false. Without active, disabled categories remain resolvable. For new selections request active=true and exclude inactive breeds. No page, limit, pagination metadata, request body, or header-based language selection."
       security: []
       x-source-router: functions/reference-catalogs/src/router.ts
       responses:
@@ -29940,15 +29937,24 @@ paths:
                                       const: false
                                     - type: boolean
                                       const: true
+                                  label:
+                                    type: string
+                                    minLength: 1
+                                    maxLength: 200
                                 required:
                                 - key
                                 - active
+                                - label
                             createdAt:
                               type: string
                               format: date-time
                             updatedAt:
                               type: string
                               format: date-time
+                            label:
+                              type: string
+                              minLength: 1
+                              maxLength: 200
                           required:
                           - speciesId
                           - key
@@ -29956,26 +29962,10 @@ paths:
                           - breeds
                           - createdAt
                           - updatedAt
-                      pagination:
-                        type: object
-                        properties:
-                          page:
-                            type: number
-                          limit:
-                            type: number
-                          total:
-                            type: number
-                          totalPages:
-                            type: number
-                        required:
-                        - page
-                        - limit
-                        - total
-                        - totalPages
+                          - label
                     additionalProperties: true
                     required:
                     - species
-                    - pagination
                 additionalProperties: true
         '400':
           description: 'HTTP 400. Possible error keys: common.invalidQueryParams.'
@@ -30118,32 +30108,31 @@ paths:
         5XX:
           $ref: '#/components/responses/ServerError'
       parameters:
-      - name: page
-        in: query
-        required: false
-        schema: &id024
-          type: number
-      - name: limit
-        in: query
-        required: false
-        schema: &id025
-          type: number
       - name: search
         in: query
         required: false
         schema: &id026 {}
+        description: "Case-insensitive literal substring of a species/breed key or English/Traditional Chinese label."
       - name: active
         in: query
         required: false
         schema: &id027 {}
+      - in: query
+        name: lang
+        required: false
+        description: Display-label language. zh is Traditional Chinese; defaults to en.
+        schema:
+          type: string
+          enum:
+          - en
+          - zh
+          default: en
     post:
       tags:
       - reference-catalogs
       summary: Create Species
       operationId: R245
-      description: 'Internal catalog management: creates a species with an immutable key (lowercase words joined
-        by underscores) and its breeds. Breed keys must be unique within the species; a duplicate species key returns
-        409.'
+      description: "Internal catalog management: creates a species with an immutable key (lowercase words joined by underscores), both English and Traditional Chinese labels, and optional embedded breeds. Every breed requires its own key and both labels. Labels are sanitized plain text, trimmed, nonempty strings of at most 200 characters; only en and zh are accepted. Returns both labels for catalog administration. Breed keys must be unique within the species; a duplicate species key returns 409."
       security:
       - bearerAuth: []
         apiKeyAuth: []
@@ -30194,15 +30183,48 @@ paths:
                                     const: false
                                   - type: boolean
                                     const: true
+                                labels:
+                                  type: object
+                                  properties:
+                                    en:
+                                      type: string
+                                      minLength: 1
+                                      maxLength: 200
+                                    zh:
+                                      type: string
+                                      minLength: 1
+                                      maxLength: 200
+                                      description: Traditional Chinese display label.
+                                  required:
+                                  - en
+                                  - zh
+                                  additionalProperties: false
                               required:
                               - key
                               - active
+                              - labels
                           createdAt:
                             type: string
                             format: date-time
                           updatedAt:
                             type: string
                             format: date-time
+                          labels:
+                            type: object
+                            properties:
+                              en:
+                                type: string
+                                minLength: 1
+                                maxLength: 200
+                              zh:
+                                type: string
+                                minLength: 1
+                                maxLength: 200
+                                description: Traditional Chinese display label.
+                            required:
+                            - en
+                            - zh
+                            additionalProperties: false
                         required:
                         - speciesId
                         - key
@@ -30210,6 +30232,7 @@ paths:
                         - breeds
                         - createdAt
                         - updatedAt
+                        - labels
                     additionalProperties: true
                     required:
                     - species
@@ -30416,9 +30439,7 @@ paths:
       - reference-catalogs
       summary: Update Species
       operationId: R246
-      description: 'Internal catalog management: changes a species'' `active` flag or replaces its breed list. Every
-        issued breed key must stay in the list, so disable a breed instead of removing it; keys never change. A
-        concurrent change returns 409.'
+      description: "Internal catalog management: edits species labels or active, or replaces its complete breed list. Label-only updates are allowed; supplied labels must contain both en and zh. Each submitted breed also requires both labels. Returns both labels for catalog administration. Every issued breed key must stay in the list, so disable instead of removing it. Reordering and relabeling preserve keys and pet/recovery references. A concurrent change returns 409."
       security:
       - bearerAuth: []
         apiKeyAuth: []
@@ -30469,15 +30490,48 @@ paths:
                                     const: false
                                   - type: boolean
                                     const: true
+                                labels:
+                                  type: object
+                                  properties:
+                                    en:
+                                      type: string
+                                      minLength: 1
+                                      maxLength: 200
+                                    zh:
+                                      type: string
+                                      minLength: 1
+                                      maxLength: 200
+                                      description: Traditional Chinese display label.
+                                  required:
+                                  - en
+                                  - zh
+                                  additionalProperties: false
                               required:
                               - key
                               - active
+                              - labels
                           createdAt:
                             type: string
                             format: date-time
                           updatedAt:
                             type: string
                             format: date-time
+                          labels:
+                            type: object
+                            properties:
+                              en:
+                                type: string
+                                minLength: 1
+                                maxLength: 200
+                              zh:
+                                type: string
+                                minLength: 1
+                                maxLength: 200
+                                description: Traditional Chinese display label.
+                            required:
+                            - en
+                            - zh
+                            additionalProperties: false
                         required:
                         - speciesId
                         - key
@@ -30485,6 +30539,7 @@ paths:
                         - breeds
                         - createdAt
                         - updatedAt
+                        - labels
                     additionalProperties: true
                     required:
                     - species
@@ -30959,11 +31014,13 @@ paths:
       - name: page
         in: query
         required: false
-        schema: *id024
+        schema: &id024
+          type: number
       - name: limit
         in: query
         required: false
-        schema: *id025
+        schema: &id025
+          type: number
       - name: search
         in: query
         required: false
@@ -76774,6 +76831,21 @@ components:
           type: string
           maxLength: 64
           pattern: ^[a-z0-9]+(?:_[a-z0-9]+)*$
+        labels:
+          type: object
+          properties:
+            en:
+              type: string
+              minLength: 1
+              maxLength: 200
+            zh:
+              type: string
+              minLength: 1
+              maxLength: 200
+          required:
+          - en
+          - zh
+          additionalProperties: false
         active:
           default: true
           type: boolean
@@ -76788,21 +76860,50 @@ components:
                 type: string
                 maxLength: 64
                 pattern: ^[a-z0-9]+(?:_[a-z0-9]+)*$
+              labels:
+                type: object
+                properties:
+                  en:
+                    type: string
+                    minLength: 1
+                    maxLength: 200
+                  zh:
+                    type: string
+                    minLength: 1
+                    maxLength: 200
+                required:
+                - en
+                - zh
+                additionalProperties: false
               active:
                 default: true
                 type: boolean
             required:
             - key
-            - active
+            - labels
             additionalProperties: false
       required:
       - key
-      - active
-      - breeds
+      - labels
       additionalProperties: false
     reference_catalogs_src_zodSchema_catalogSchemas_ts_updateSpeciesBodySchema:
       type: object
       properties:
+        labels:
+          type: object
+          properties:
+            en:
+              type: string
+              minLength: 1
+              maxLength: 200
+            zh:
+              type: string
+              minLength: 1
+              maxLength: 200
+          required:
+          - en
+          - zh
+          additionalProperties: false
         active:
           type: boolean
         breeds:
@@ -76815,14 +76916,30 @@ components:
                 type: string
                 maxLength: 64
                 pattern: ^[a-z0-9]+(?:_[a-z0-9]+)*$
+              labels:
+                type: object
+                properties:
+                  en:
+                    type: string
+                    minLength: 1
+                    maxLength: 200
+                  zh:
+                    type: string
+                    minLength: 1
+                    maxLength: 200
+                required:
+                - en
+                - zh
+                additionalProperties: false
               active:
                 default: true
                 type: boolean
             required:
             - key
-            - active
+            - labels
             additionalProperties: false
       additionalProperties: false
+      minProperties: 1
     reference_catalogs_src_zodSchema_catalogSchemas_ts_createBrandBodySchema:
       type: object
       properties:
