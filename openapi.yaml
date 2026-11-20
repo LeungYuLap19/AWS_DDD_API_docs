@@ -2,8 +2,8 @@
 ---
 openapi: 3.1.0
 info:
-  title: AWS DDD API
-  version: '2026-11-20.3'
+  title: PetPetClub API
+  version: '2026-11-20.4'
   description: The 246 implemented HTTP operations of the API. Paths, gateway credentials, request validation, and
     permission keys are checked against current source. Deferred and preview/smoke routes are omitted. Success responses
     document handler payload fields. Each documented HTTP error status lists the stable errorKey values emitted
@@ -6529,18 +6529,6 @@ paths:
                           type: string
                         price:
                           type: number
-                        bankName:
-                          type: string
-                        bankNumber:
-                          type: string
-                        createdAt:
-                          type: string
-                          format: date-time
-                        updatedAt:
-                          type: string
-                          format: date-time
-                        schemaVersion:
-                          type: number
                       required:
                       - _id
                       - shopCode
@@ -6549,11 +6537,23 @@ paths:
                       - shopContact
                       - shopContactPerson
                       - price
-                      - bankName
-                      - bankNumber
-                      - createdAt
-                      - updatedAt
-                      - schemaVersion
+                      additionalProperties: false
+                  pagination:
+                    type: object
+                    required:
+                    - page
+                    - limit
+                    - total
+                    - totalPages
+                    properties:
+                      page:
+                        type: integer
+                      limit:
+                        type: integer
+                      total:
+                        type: integer
+                      totalPages:
+                        type: integer
                 additionalProperties: true
         '400':
           description: 'HTTP 400. Possible error keys: common.invalidQueryParams.'
