@@ -32,5 +32,10 @@ Identifier management adds four self-only routes for current-factor proof, add/r
 new-destination verification, and removal. All require `iam.user.identifier_manage`. Read
 `identifierRevision` from the user before starting. Keep at least one usable login identifier;
 staff retain email. Completion revokes refresh sessions and returns the frontend to login.
-These contracts are implemented locally; deployment, IAM reseed, revision backfill, and live
-verification are pending. Failed delivery does not change the account; restart with fresh proof.
+These contracts deployed to SG development on 2026-11-20, followed by revision backfill, IAM
+refresh, and security-focused live verification. OTP personal replacement and staff password-proof
+phone add/remove and email replacement passed. Session/proof replay, cross-account access,
+revoked permission, invalid revisions, and invalid JWTs were rejected. Failed delivery does not
+change the account; restart with fresh proof. Existing access JWTs expire normally; completion
+revokes all refresh sessions. Concurrency, expiry, provider failures, and rollback also have
+automated coverage; this rollout did not inject those faults into the live database.
