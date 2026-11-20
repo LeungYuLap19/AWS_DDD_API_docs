@@ -60980,6 +60980,9 @@ paths:
                             - personal
                             - organization_staff
                             - internal_staff
+                          identifierRevision:
+                            type: string
+                            pattern: "^(0|[1-9][0-9]*)$"
                           identifiers:
                             type: object
                             properties:
@@ -61097,6 +61100,7 @@ paths:
                         - userId
                         - accountClass
                         - identifiers
+                        - identifierRevision
                         - profile
                         - status
                         - statusChangedAt
@@ -61334,6 +61338,9 @@ paths:
                             - personal
                             - organization_staff
                             - internal_staff
+                          identifierRevision:
+                            type: string
+                            pattern: "^(0|[1-9][0-9]*)$"
                           identifiers:
                             type: object
                             properties:
@@ -61449,6 +61456,7 @@ paths:
                         - userId
                         - accountClass
                         - identifiers
+                        - identifierRevision
                         - profile
                         - status
                         - statusChangedAt
@@ -61770,6 +61778,878 @@ paths:
         required: true
         schema:
           type: string
+  /users/{userId}/identifier-change-challenges:
+    post:
+      tags:
+      - iam-user
+      summary: Create current identifier authorization challenge
+      operationId: createIdentifierChangeChallenge
+      description: Personal/internal accounts only. Send OTP to one currently verified identifier to authorize the
+        exact add/replace/remove intent. This is current-factor proof, separate from the new-destination OTP. Reissuing
+        creates a new challenge and invalidates the previous local challenge. Requires a live refresh session and
+        self target.
+      security:
+      - bearerAuth: []
+        apiKeyAuth: []
+      x-source-router: functions/iam-user/src/router.ts
+      x-permission-keys:
+      - iam.user.identifier_manage
+      parameters:
+      - name: userId
+        in: path
+        required: true
+        schema:
+          type: string
+          pattern: ^[a-fA-F0-9]{24}$
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateIdentifierChangeChallenge'
+      x-request-schema-source: functions/iam-user/src/zodSchema/identifierChangeBodySchema.ts#createChangeAuthorizationSchema
+      responses:
+        '202':
+          description: Create current identifier authorization challenge succeeded.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    const: true
+                  message:
+                    type: string
+                  requestId:
+                    type: string
+                  data:
+                    type: object
+                    properties:
+                      challengeId:
+                        type: string
+                        pattern: ^[a-f0-9]{32}$
+                      channel:
+                        type: string
+                        enum:
+                        - email
+                        - phone
+                      expiresAt:
+                        type: string
+                        format: date-time
+                    required:
+                    - challengeId
+                    - channel
+                    - expiresAt
+                    additionalProperties: false
+                required:
+                - success
+                - data
+                additionalProperties: false
+        '400':
+          description: 'Possible error keys: common.invalidPathParam, common.invalidBodyParams, common.missingBodyParams,
+            iam.user.identifierInvalidCode, iam.user.identifierRequired, iam.user.identifierUnchanged.'
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    const: false
+                  errorKey:
+                    type: string
+                    enum:
+                    - common.invalidPathParam
+                    - common.invalidBodyParams
+                    - common.missingBodyParams
+                    - iam.user.identifierInvalidCode
+                    - iam.user.identifierRequired
+                    - iam.user.identifierUnchanged
+                  error:
+                    type: string
+                  requestId:
+                    type: string
+                required:
+                - success
+                - errorKey
+                - error
+                additionalProperties: false
+        '403':
+          description: 'Possible error keys: common.forbidden.'
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    const: false
+                  errorKey:
+                    type: string
+                    enum:
+                    - common.forbidden
+                  error:
+                    type: string
+                  requestId:
+                    type: string
+                required:
+                - success
+                - errorKey
+                - error
+                additionalProperties: false
+        '404':
+          description: 'Possible error keys: iam.user.notFound.'
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    const: false
+                  errorKey:
+                    type: string
+                    enum:
+                    - iam.user.notFound
+                  error:
+                    type: string
+                  requestId:
+                    type: string
+                required:
+                - success
+                - errorKey
+                - error
+                additionalProperties: false
+        '409':
+          description: 'Possible error keys: iam.user.identifierConflict, iam.user.identifierUnavailable.'
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    const: false
+                  errorKey:
+                    type: string
+                    enum:
+                    - iam.user.identifierConflict
+                    - iam.user.identifierUnavailable
+                  error:
+                    type: string
+                  requestId:
+                    type: string
+                required:
+                - success
+                - errorKey
+                - error
+                additionalProperties: false
+        '429':
+          description: 'Possible error keys: common.rateLimited.'
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    const: false
+                  errorKey:
+                    type: string
+                    enum:
+                    - common.rateLimited
+                  error:
+                    type: string
+                  requestId:
+                    type: string
+                required:
+                - success
+                - errorKey
+                - error
+                additionalProperties: false
+        '503':
+          description: 'Possible error keys: common.serviceUnavailable.'
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    const: false
+                  errorKey:
+                    type: string
+                    enum:
+                    - common.serviceUnavailable
+                  error:
+                    type: string
+                  requestId:
+                    type: string
+                required:
+                - success
+                - errorKey
+                - error
+                additionalProperties: false
+        4XX:
+          $ref: '#/components/responses/ClientError'
+        5XX:
+          $ref: '#/components/responses/ServerError'
+  /users/{userId}/identifier-changes:
+    post:
+      tags:
+      - iam-user
+      summary: Request identifier add or replacement
+      operationId: createIdentifierChange
+      description: Prove current account and send OTP to the proposed destination. Personal/internal accounts submit
+        the action-bound challenge and OTP; organization staff submit their current password. Consume current proof
+        once. Keep existing identifiers, status, memberships, and service access while pending. Delivery failure
+        returns 503 without changing the user; restart needs fresh current-factor proof. Changing an existing channel
+        requires replace; adding requires an absent channel.
+      security:
+      - bearerAuth: []
+        apiKeyAuth: []
+      x-source-router: functions/iam-user/src/router.ts
+      x-permission-keys:
+      - iam.user.identifier_manage
+      parameters:
+      - name: userId
+        in: path
+        required: true
+        schema:
+          type: string
+          pattern: ^[a-fA-F0-9]{24}$
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateIdentifierChange'
+      x-request-schema-source: functions/iam-user/src/zodSchema/identifierChangeBodySchema.ts#createIdentifierChangeSchema
+      responses:
+        '202':
+          description: Request identifier add or replacement succeeded.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    const: true
+                  message:
+                    type: string
+                  requestId:
+                    type: string
+                  data:
+                    type: object
+                    properties:
+                      changeId:
+                        type: string
+                        pattern: ^[a-f0-9]{32}$
+                      channel:
+                        type: string
+                        enum:
+                        - email
+                        - phone
+                      expiresAt:
+                        type: string
+                        format: date-time
+                    required:
+                    - changeId
+                    - channel
+                    - expiresAt
+                    additionalProperties: false
+                required:
+                - success
+                - data
+                additionalProperties: false
+        '400':
+          description: 'Possible error keys: common.invalidPathParam, common.invalidBodyParams, common.missingBodyParams,
+            iam.user.identifierInvalidCode, iam.user.identifierRequired, iam.user.identifierUnchanged.'
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    const: false
+                  errorKey:
+                    type: string
+                    enum:
+                    - common.invalidPathParam
+                    - common.invalidBodyParams
+                    - common.missingBodyParams
+                    - iam.user.identifierInvalidCode
+                    - iam.user.identifierRequired
+                    - iam.user.identifierUnchanged
+                  error:
+                    type: string
+                  requestId:
+                    type: string
+                required:
+                - success
+                - errorKey
+                - error
+                additionalProperties: false
+        '403':
+          description: 'Possible error keys: common.forbidden.'
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    const: false
+                  errorKey:
+                    type: string
+                    enum:
+                    - common.forbidden
+                  error:
+                    type: string
+                  requestId:
+                    type: string
+                required:
+                - success
+                - errorKey
+                - error
+                additionalProperties: false
+        '404':
+          description: 'Possible error keys: iam.user.notFound.'
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    const: false
+                  errorKey:
+                    type: string
+                    enum:
+                    - iam.user.notFound
+                  error:
+                    type: string
+                  requestId:
+                    type: string
+                required:
+                - success
+                - errorKey
+                - error
+                additionalProperties: false
+        '409':
+          description: 'Possible error keys: iam.user.identifierConflict, iam.user.identifierUnavailable.'
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    const: false
+                  errorKey:
+                    type: string
+                    enum:
+                    - iam.user.identifierConflict
+                    - iam.user.identifierUnavailable
+                  error:
+                    type: string
+                  requestId:
+                    type: string
+                required:
+                - success
+                - errorKey
+                - error
+                additionalProperties: false
+        '429':
+          description: 'Possible error keys: common.rateLimited.'
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    const: false
+                  errorKey:
+                    type: string
+                    enum:
+                    - common.rateLimited
+                  error:
+                    type: string
+                  requestId:
+                    type: string
+                required:
+                - success
+                - errorKey
+                - error
+                additionalProperties: false
+        '503':
+          description: 'Possible error keys: common.serviceUnavailable.'
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    const: false
+                  errorKey:
+                    type: string
+                    enum:
+                    - common.serviceUnavailable
+                  error:
+                    type: string
+                  requestId:
+                    type: string
+                required:
+                - success
+                - errorKey
+                - error
+                additionalProperties: false
+        4XX:
+          $ref: '#/components/responses/ClientError'
+        5XX:
+          $ref: '#/components/responses/ServerError'
+  /users/{userId}/identifier-changes/{changeId}/verify:
+    post:
+      tags:
+      - iam-user
+      summary: Verify and complete identifier change
+      operationId: verifyIdentifierChange
+      description: Prove the new destination using the exact changeId and canonical value. Recheck user, session,
+        IAM, revision, destination uniqueness, and staff credential state. Atomically change only the bound identifier,
+        increment revision, revoke all refresh sessions, and insert a security audit. Clear refresh cookie; client
+        returns to normal login. No replacement session is issued. Existing access JWTs remain valid until expiry.
+        Identifier-backed notification contacts resolve the new value; direct and public contacts do not change.
+      security:
+      - bearerAuth: []
+        apiKeyAuth: []
+      x-source-router: functions/iam-user/src/router.ts
+      x-permission-keys:
+      - iam.user.identifier_manage
+      parameters:
+      - name: userId
+        in: path
+        required: true
+        schema:
+          type: string
+          pattern: ^[a-fA-F0-9]{24}$
+      - name: changeId
+        in: path
+        required: true
+        schema:
+          type: string
+          pattern: ^[a-f0-9]{32}$
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/VerifyIdentifierChange'
+      x-request-schema-source: functions/iam-user/src/zodSchema/identifierChangeBodySchema.ts#verifyIdentifierChangeSchema
+      responses:
+        '200':
+          description: Verify and complete identifier change succeeded.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    const: true
+                  message:
+                    type: string
+                  requestId:
+                    type: string
+                  data:
+                    type: object
+                    properties:
+                      userId:
+                        type: string
+                      channel:
+                        type: string
+                        enum:
+                        - email
+                        - phone
+                      identifierRevision:
+                        type: string
+                        pattern: ^(0|[1-9][0-9]*)$
+                        description: Canonical nonnegative Int64 revision from the current user read.
+                      reauthenticationRequired:
+                        const: true
+                    required:
+                    - userId
+                    - channel
+                    - identifierRevision
+                    - reauthenticationRequired
+                    additionalProperties: false
+                required:
+                - success
+                - data
+                additionalProperties: false
+          headers:
+            Set-Cookie:
+              description: Expires the HttpOnly refresh cookie.
+              schema:
+                type: string
+        '400':
+          description: 'Possible error keys: common.invalidPathParam, common.invalidBodyParams, common.missingBodyParams,
+            iam.user.identifierInvalidCode, iam.user.identifierRequired, iam.user.identifierUnchanged.'
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    const: false
+                  errorKey:
+                    type: string
+                    enum:
+                    - common.invalidPathParam
+                    - common.invalidBodyParams
+                    - common.missingBodyParams
+                    - iam.user.identifierInvalidCode
+                    - iam.user.identifierRequired
+                    - iam.user.identifierUnchanged
+                  error:
+                    type: string
+                  requestId:
+                    type: string
+                required:
+                - success
+                - errorKey
+                - error
+                additionalProperties: false
+        '403':
+          description: 'Possible error keys: common.forbidden.'
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    const: false
+                  errorKey:
+                    type: string
+                    enum:
+                    - common.forbidden
+                  error:
+                    type: string
+                  requestId:
+                    type: string
+                required:
+                - success
+                - errorKey
+                - error
+                additionalProperties: false
+        '404':
+          description: 'Possible error keys: iam.user.notFound.'
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    const: false
+                  errorKey:
+                    type: string
+                    enum:
+                    - iam.user.notFound
+                  error:
+                    type: string
+                  requestId:
+                    type: string
+                required:
+                - success
+                - errorKey
+                - error
+                additionalProperties: false
+        '409':
+          description: 'Possible error keys: iam.user.identifierConflict, iam.user.identifierUnavailable.'
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    const: false
+                  errorKey:
+                    type: string
+                    enum:
+                    - iam.user.identifierConflict
+                    - iam.user.identifierUnavailable
+                  error:
+                    type: string
+                  requestId:
+                    type: string
+                required:
+                - success
+                - errorKey
+                - error
+                additionalProperties: false
+        '429':
+          description: 'Possible error keys: common.rateLimited.'
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    const: false
+                  errorKey:
+                    type: string
+                    enum:
+                    - common.rateLimited
+                  error:
+                    type: string
+                  requestId:
+                    type: string
+                required:
+                - success
+                - errorKey
+                - error
+                additionalProperties: false
+        '503':
+          description: 'Possible error keys: common.serviceUnavailable.'
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    const: false
+                  errorKey:
+                    type: string
+                    enum:
+                    - common.serviceUnavailable
+                  error:
+                    type: string
+                  requestId:
+                    type: string
+                required:
+                - success
+                - errorKey
+                - error
+                additionalProperties: false
+        4XX:
+          $ref: '#/components/responses/ClientError'
+        5XX:
+          $ref: '#/components/responses/ServerError'
+  /users/{userId}/identifiers/{channel}:
+    delete:
+      tags:
+      - iam-user
+      summary: Remove one login identifier
+      operationId: removeUserIdentifier
+      description: Fresh current-factor proof must authorize this exact remove action and revision. Personal/internal
+        accounts must retain a verified identifier. Organization staff must retain email for password login; their
+        phone can be removed. Atomically remove, increment revision, revoke all refresh sessions, and audit. Clear
+        refresh cookie and return to normal login. Self-only; no administrator or agreement bypass.
+      security:
+      - bearerAuth: []
+        apiKeyAuth: []
+      x-source-router: functions/iam-user/src/router.ts
+      x-permission-keys:
+      - iam.user.identifier_manage
+      parameters:
+      - name: userId
+        in: path
+        required: true
+        schema:
+          type: string
+          pattern: ^[a-fA-F0-9]{24}$
+      - name: channel
+        in: path
+        required: true
+        schema:
+          type: string
+          enum:
+          - email
+          - phone
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RemoveUserIdentifier'
+      x-request-schema-source: functions/iam-user/src/zodSchema/identifierChangeBodySchema.ts#removeIdentifierSchema
+      responses:
+        '200':
+          description: Remove one login identifier succeeded.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    const: true
+                  message:
+                    type: string
+                  requestId:
+                    type: string
+                  data:
+                    type: object
+                    properties:
+                      userId:
+                        type: string
+                      channel:
+                        type: string
+                        enum:
+                        - email
+                        - phone
+                      identifierRevision:
+                        type: string
+                        pattern: ^(0|[1-9][0-9]*)$
+                        description: Canonical nonnegative Int64 revision from the current user read.
+                      reauthenticationRequired:
+                        const: true
+                    required:
+                    - userId
+                    - channel
+                    - identifierRevision
+                    - reauthenticationRequired
+                    additionalProperties: false
+                required:
+                - success
+                - data
+                additionalProperties: false
+          headers:
+            Set-Cookie:
+              description: Expires the HttpOnly refresh cookie.
+              schema:
+                type: string
+        '400':
+          description: 'Possible error keys: common.invalidPathParam, common.invalidBodyParams, common.missingBodyParams,
+            iam.user.identifierInvalidCode, iam.user.identifierRequired, iam.user.identifierUnchanged.'
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    const: false
+                  errorKey:
+                    type: string
+                    enum:
+                    - common.invalidPathParam
+                    - common.invalidBodyParams
+                    - common.missingBodyParams
+                    - iam.user.identifierInvalidCode
+                    - iam.user.identifierRequired
+                    - iam.user.identifierUnchanged
+                  error:
+                    type: string
+                  requestId:
+                    type: string
+                required:
+                - success
+                - errorKey
+                - error
+                additionalProperties: false
+        '403':
+          description: 'Possible error keys: common.forbidden.'
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    const: false
+                  errorKey:
+                    type: string
+                    enum:
+                    - common.forbidden
+                  error:
+                    type: string
+                  requestId:
+                    type: string
+                required:
+                - success
+                - errorKey
+                - error
+                additionalProperties: false
+        '404':
+          description: 'Possible error keys: iam.user.notFound.'
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    const: false
+                  errorKey:
+                    type: string
+                    enum:
+                    - iam.user.notFound
+                  error:
+                    type: string
+                  requestId:
+                    type: string
+                required:
+                - success
+                - errorKey
+                - error
+                additionalProperties: false
+        '409':
+          description: 'Possible error keys: iam.user.identifierConflict, iam.user.identifierUnavailable.'
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    const: false
+                  errorKey:
+                    type: string
+                    enum:
+                    - iam.user.identifierConflict
+                    - iam.user.identifierUnavailable
+                  error:
+                    type: string
+                  requestId:
+                    type: string
+                required:
+                - success
+                - errorKey
+                - error
+                additionalProperties: false
+        '429':
+          description: 'Possible error keys: common.rateLimited.'
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    const: false
+                  errorKey:
+                    type: string
+                    enum:
+                    - common.rateLimited
+                  error:
+                    type: string
+                  requestId:
+                    type: string
+                required:
+                - success
+                - errorKey
+                - error
+                additionalProperties: false
+        '503':
+          description: 'Possible error keys: common.serviceUnavailable.'
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    const: false
+                  errorKey:
+                    type: string
+                    enum:
+                    - common.serviceUnavailable
+                  error:
+                    type: string
+                  requestId:
+                    type: string
+                required:
+                - success
+                - errorKey
+                - error
+                additionalProperties: false
+        4XX:
+          $ref: '#/components/responses/ClientError'
+        5XX:
+          $ref: '#/components/responses/ServerError'
   /users/{userId}/identifiers/challenges:
     post:
       tags:
@@ -72258,6 +73138,116 @@ components:
       schema:
         type: string
   schemas:
+    IdentifierMutationIntent:
+      type: object
+      properties:
+        action:
+          type: string
+          enum:
+          - add
+          - replace
+          - remove
+        channel:
+          type: string
+          enum:
+          - email
+          - phone
+        value:
+          type: string
+          maxLength: 320
+          description: Required for add/replace; forbidden for remove. Canonical email or E.164 phone.
+        expectedIdentifierRevision:
+          type: string
+          pattern: ^(0|[1-9][0-9]*)$
+          description: Canonical nonnegative Int64 revision from the current user read.
+      required:
+      - action
+      - channel
+      - expectedIdentifierRevision
+      additionalProperties: false
+    IdentifierCurrentProof:
+      oneOf:
+      - type: object
+        properties:
+          method:
+            const: otp
+          challengeId:
+            type: string
+            pattern: ^[a-f0-9]{32}$
+          code:
+            type: string
+            pattern: ^[0-9]{6}$
+        required:
+        - method
+        - challengeId
+        - code
+        additionalProperties: false
+      - type: object
+        properties:
+          method:
+            const: password
+          password:
+            type: string
+            minLength: 1
+            maxLength: 1024
+            writeOnly: true
+        required:
+        - method
+        - password
+        additionalProperties: false
+      description: 'Personal/internal: action-bound current-identifier OTP. Organization staff: current password.'
+    CreateIdentifierChangeChallenge:
+      type: object
+      properties:
+        intent:
+          $ref: '#/components/schemas/IdentifierMutationIntent'
+        proofChannel:
+          type: string
+          enum:
+          - email
+          - phone
+      required:
+      - intent
+      - proofChannel
+      additionalProperties: false
+    CreateIdentifierChange:
+      type: object
+      properties:
+        intent:
+          $ref: '#/components/schemas/IdentifierMutationIntent'
+        currentProof:
+          $ref: '#/components/schemas/IdentifierCurrentProof'
+      required:
+      - intent
+      - currentProof
+      additionalProperties: false
+      description: Only add/replace actions are accepted. Pending request does not modify the stored identifier.
+    VerifyIdentifierChange:
+      type: object
+      properties:
+        value:
+          type: string
+          maxLength: 320
+        code:
+          type: string
+          pattern: ^[0-9]{6}$
+      required:
+      - value
+      - code
+      additionalProperties: false
+    RemoveUserIdentifier:
+      type: object
+      properties:
+        expectedIdentifierRevision:
+          type: string
+          pattern: ^(0|[1-9][0-9]*)$
+          description: Canonical nonnegative Int64 revision from the current user read.
+        currentProof:
+          $ref: '#/components/schemas/IdentifierCurrentProof'
+      required:
+      - expectedIdentifierRevision
+      - currentProof
+      additionalProperties: false
     PtagLocationReport:
       type: object
       required: [reportId, ptagId, petId, mapUrl, receivedAt]
