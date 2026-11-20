@@ -40,11 +40,16 @@ change the account; restart with fresh proof. Personal/internal access JWTs expi
 revokes all refresh sessions. Concurrency, expiry, provider failures, and rollback also have
 automated coverage; this rollout did not inject those faults into the live database.
 
-Organization self password change is implemented locally and documented at `POST /users/{userId}/password-change`.
+Organization self password change is deployed to SG development and documented at `POST /users/{userId}/password-change`.
 Send `currentPassword` and `newPassword` in organization context with the exact IAM key. No email OTP is required.
 Initial credentials set `mustChangePassword: true`; show password replacement before business screens.
-Refresh/logout remain available. New passwords contain 12?72 characters and at most 72 UTF-8 bytes, without trimming.
+Refresh/logout remain available. New passwords contain 12–72 characters and at most 72 UTF-8 bytes, without trimming.
 Success revokes all sessions, clears the refresh cookie, and requires login with the new password.
 Organization access tokens are denied after session revocation. Personal/internal users remain OTP-only.
 The catalog key is organization-only; all six organization defaults and the shared ceiling retain it.
-These password-change changes have not been deployed or reseeded.
+API `93fbaff` deployed successfully, followed by the scoped IAM refresh and security-focused live tests.
+With `mustChangePassword: true`, business reads/writes returned `403 common.passwordChangeRequired`.
+Browser refresh, desktop exchange and desktop refresh retained that flag and restriction; logout worked.
+Password replacement revoked old sessions. Only fresh login with the new password gained normal access.
+Three fixture accounts are closed; four sanitized security audits were verified. One late invalid-refresh
+probe hit the shared IP cooldown; DB readback confirmed every old session was revoked. No production rollout.
