@@ -73633,6 +73633,720 @@ paths:
         required: true
         schema:
           type: string
+  /users/{userId}/notifications/preferences:
+    get:
+      tags:
+      - notifications
+      summary: List effective user notification preferences
+      operationId: listUserNotificationPreferences
+      x-implementation-status: deployed to legacy development
+      x-permission-keys:
+      - notification.user_preference.read
+      security:
+      - bearerAuth: []
+        apiKeyAuth: []
+      description: Returns every registered feature in registry order, without pagination. Missing rows return all-true
+        channels, configured false, and updatedAt null. No writes occur. No query parameters or meaningful request
+        body are accepted. The path user must be the authenticated user, regardless of account class. Normal shared
+        authorization and mustChangePassword restrictions apply. There are no _any alternatives or agreement grants.
+        Deployed to legacy development with IAM refreshed. User PTag/deworm preference gates were live-tested; organization writes and anomaly entitlement were not live-tested.
+      parameters:
+      - name: userId
+        in: path
+        required: true
+        schema:
+          type: string
+          pattern: ^[a-fA-F0-9]{24}$
+      - name: X-Acting-Context
+        in: header
+        required: true
+        schema:
+          type: string
+          enum:
+          - personal
+          - organization
+          - internal
+        description: Normal shared IAM context. User preferences remain self-only in every valid context.
+      - name: X-Acting-Organization
+        in: header
+        required: false
+        schema:
+          type: string
+          pattern: ^[a-fA-F0-9]{24}$
+        description: Required when acting in organization context. For organization preferences, must equal the
+          path organization ID.
+      responses:
+        '200':
+          description: Effective preferences.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NotificationPreferencesResponse'
+        '400':
+          description: 'Possible error keys: common.invalidPathParam, common.invalidQueryParams, common.invalidBodyParams.'
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                - success
+                - errorKey
+                - error
+                properties:
+                  success:
+                    const: false
+                  errorKey:
+                    type: string
+                    enum:
+                    - common.invalidPathParam
+                    - common.invalidQueryParams
+                    - common.invalidBodyParams
+                  error:
+                    type: string
+                  requestId:
+                    type: string
+                  details:
+                    type: object
+                    additionalProperties: true
+                additionalProperties: true
+        '401':
+          description: 'Possible error keys: common.unauthorized.'
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                - success
+                - errorKey
+                - error
+                properties:
+                  success:
+                    const: false
+                  errorKey:
+                    type: string
+                    enum:
+                    - common.unauthorized
+                  error:
+                    type: string
+                  requestId:
+                    type: string
+                  details:
+                    type: object
+                    additionalProperties: true
+                additionalProperties: true
+        '403':
+          description: 'Possible error keys: common.forbidden, common.passwordChangeRequired.'
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                - success
+                - errorKey
+                - error
+                properties:
+                  success:
+                    const: false
+                  errorKey:
+                    type: string
+                    enum:
+                    - common.forbidden
+                    - common.passwordChangeRequired
+                  error:
+                    type: string
+                  requestId:
+                    type: string
+                  details:
+                    type: object
+                    additionalProperties: true
+                additionalProperties: true
+        '429':
+          description: 'Possible error keys: common.rateLimited.'
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                - success
+                - errorKey
+                - error
+                properties:
+                  success:
+                    const: false
+                  errorKey:
+                    type: string
+                    enum:
+                    - common.rateLimited
+                  error:
+                    type: string
+                  requestId:
+                    type: string
+                  details:
+                    type: object
+                    additionalProperties: true
+                additionalProperties: true
+        4XX:
+          description: Gateway or unexpected failure.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorEnvelope'
+        5XX:
+          description: Gateway or unexpected failure.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorEnvelope'
+      x-rate-limit:
+        requestsPerMinute: 120
+        bucket: notification_preference_read
+        scope: ip
+      x-source-router: functions/notifications/src/router.ts
+  /users/{userId}/notifications/preferences/{feature}:
+    put:
+      tags:
+      - notifications
+      summary: Upsert one user notification feature preference
+      operationId: putUserNotificationPreferences
+      x-implementation-status: deployed to legacy development
+      x-permission-keys:
+      - notification.user_preference.update
+      security:
+      - bearerAuth: []
+        apiKeyAuth: []
+      description: Creates or replaces one recipient/feature through atomic upsert. Both creation and replacement
+        return 200. Require all three booleans; reject unknown fields, coercion, missing fields, and query parameters.
+        No separate create key, PATCH, DELETE, or optimistic revision is used. Writing all true restores default
+        behavior. The path user must be the authenticated user, regardless of account class. Normal shared authorization
+        and mustChangePassword restrictions apply. There are no _any alternatives or agreement grants. Implemented
+        locally; deployment and live IAM refresh are pending.
+      parameters:
+      - name: userId
+        in: path
+        required: true
+        schema:
+          type: string
+          pattern: ^[a-fA-F0-9]{24}$
+      - name: X-Acting-Context
+        in: header
+        required: true
+        schema:
+          type: string
+          enum:
+          - personal
+          - organization
+          - internal
+        description: Normal shared IAM context. User preferences remain self-only in every valid context.
+      - name: X-Acting-Organization
+        in: header
+        required: false
+        schema:
+          type: string
+          pattern: ^[a-fA-F0-9]{24}$
+        description: Required when acting in organization context. For organization preferences, must equal the
+          path organization ID.
+      - name: feature
+        in: path
+        required: true
+        schema:
+          $ref: '#/components/schemas/NotificationFeature'
+      responses:
+        '200':
+          description: Effective preferences.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NotificationPreferenceResponse'
+        '400':
+          description: 'Possible error keys: common.invalidPathParam, common.invalidQueryParams, common.invalidBodyParams,
+            common.missingBodyParams.'
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                - success
+                - errorKey
+                - error
+                properties:
+                  success:
+                    const: false
+                  errorKey:
+                    type: string
+                    enum:
+                    - common.invalidPathParam
+                    - common.invalidQueryParams
+                    - common.invalidBodyParams
+                    - common.missingBodyParams
+                  error:
+                    type: string
+                  requestId:
+                    type: string
+                  details:
+                    type: object
+                    additionalProperties: true
+                additionalProperties: true
+        '401':
+          description: 'Possible error keys: common.unauthorized.'
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                - success
+                - errorKey
+                - error
+                properties:
+                  success:
+                    const: false
+                  errorKey:
+                    type: string
+                    enum:
+                    - common.unauthorized
+                  error:
+                    type: string
+                  requestId:
+                    type: string
+                  details:
+                    type: object
+                    additionalProperties: true
+                additionalProperties: true
+        '403':
+          description: 'Possible error keys: common.forbidden, common.passwordChangeRequired.'
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                - success
+                - errorKey
+                - error
+                properties:
+                  success:
+                    const: false
+                  errorKey:
+                    type: string
+                    enum:
+                    - common.forbidden
+                    - common.passwordChangeRequired
+                  error:
+                    type: string
+                  requestId:
+                    type: string
+                  details:
+                    type: object
+                    additionalProperties: true
+                additionalProperties: true
+        '429':
+          description: 'Possible error keys: common.rateLimited.'
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                - success
+                - errorKey
+                - error
+                properties:
+                  success:
+                    const: false
+                  errorKey:
+                    type: string
+                    enum:
+                    - common.rateLimited
+                  error:
+                    type: string
+                  requestId:
+                    type: string
+                  details:
+                    type: object
+                    additionalProperties: true
+                additionalProperties: true
+        4XX:
+          description: Gateway or unexpected failure.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorEnvelope'
+        5XX:
+          description: Gateway or unexpected failure.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorEnvelope'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/NotificationPreferencePut'
+            example:
+              channels:
+                in_app: true
+                email: false
+                whatsapp: true
+      x-rate-limit:
+        requestsPerMinute: 30
+        bucket: notification_preference_update
+        scope: ip
+      x-source-router: functions/notifications/src/router.ts
+      x-request-schema-source: functions/notifications/src/zodSchema/preferenceSchema.ts#preferencePutSchema
+  /organizations/{organizationId}/notifications/preferences:
+    get:
+      tags:
+      - notifications
+      summary: List effective organization notification preferences
+      operationId: listOrganizationNotificationPreferences
+      x-implementation-status: deployed to legacy development
+      x-permission-keys:
+      - notification.organization_preference.read
+      security:
+      - bearerAuth: []
+        apiKeyAuth: []
+      description: Returns every registered feature in registry order, without pagination. Missing rows return all-true
+        channels, configured false, and updatedAt null. No writes occur. No query parameters or meaningful request
+        body are accepted. The path organization must be the selected acting organization. Admin/staff defaults
+        read; only admins default update, with reviewed member overrides possible within the ceiling. Normal shared
+        authorization and mustChangePassword restrictions apply. There are no _any alternatives or agreement grants.
+        Deployed to legacy development with IAM refreshed. User PTag/deworm preference gates were live-tested; organization writes and anomaly entitlement were not live-tested.
+      parameters:
+      - name: organizationId
+        in: path
+        required: true
+        schema:
+          type: string
+          pattern: ^[a-fA-F0-9]{24}$
+      - name: X-Acting-Context
+        in: header
+        required: true
+        schema:
+          type: string
+          enum:
+          - organization
+        description: Must select organization context; internal actors cannot impersonate this organization.
+      - name: X-Acting-Organization
+        in: header
+        required: true
+        schema:
+          type: string
+          pattern: ^[a-fA-F0-9]{24}$
+        description: Required when acting in organization context. For organization preferences, must equal the
+          path organization ID.
+      responses:
+        '200':
+          description: Effective preferences.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NotificationPreferencesResponse'
+        '400':
+          description: 'Possible error keys: common.invalidPathParam, common.invalidQueryParams, common.invalidBodyParams.'
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                - success
+                - errorKey
+                - error
+                properties:
+                  success:
+                    const: false
+                  errorKey:
+                    type: string
+                    enum:
+                    - common.invalidPathParam
+                    - common.invalidQueryParams
+                    - common.invalidBodyParams
+                  error:
+                    type: string
+                  requestId:
+                    type: string
+                  details:
+                    type: object
+                    additionalProperties: true
+                additionalProperties: true
+        '401':
+          description: 'Possible error keys: common.unauthorized.'
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                - success
+                - errorKey
+                - error
+                properties:
+                  success:
+                    const: false
+                  errorKey:
+                    type: string
+                    enum:
+                    - common.unauthorized
+                  error:
+                    type: string
+                  requestId:
+                    type: string
+                  details:
+                    type: object
+                    additionalProperties: true
+                additionalProperties: true
+        '403':
+          description: 'Possible error keys: common.forbidden, common.passwordChangeRequired.'
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                - success
+                - errorKey
+                - error
+                properties:
+                  success:
+                    const: false
+                  errorKey:
+                    type: string
+                    enum:
+                    - common.forbidden
+                    - common.passwordChangeRequired
+                  error:
+                    type: string
+                  requestId:
+                    type: string
+                  details:
+                    type: object
+                    additionalProperties: true
+                additionalProperties: true
+        '429':
+          description: 'Possible error keys: common.rateLimited.'
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                - success
+                - errorKey
+                - error
+                properties:
+                  success:
+                    const: false
+                  errorKey:
+                    type: string
+                    enum:
+                    - common.rateLimited
+                  error:
+                    type: string
+                  requestId:
+                    type: string
+                  details:
+                    type: object
+                    additionalProperties: true
+                additionalProperties: true
+        4XX:
+          description: Gateway or unexpected failure.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorEnvelope'
+        5XX:
+          description: Gateway or unexpected failure.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorEnvelope'
+      x-rate-limit:
+        requestsPerMinute: 120
+        bucket: notification_preference_read
+        scope: ip
+      x-source-router: functions/notifications/src/router.ts
+  /organizations/{organizationId}/notifications/preferences/{feature}:
+    put:
+      tags:
+      - notifications
+      summary: Upsert one organization notification feature preference
+      operationId: putOrganizationNotificationPreferences
+      x-implementation-status: deployed to legacy development
+      x-permission-keys:
+      - notification.organization_preference.update
+      security:
+      - bearerAuth: []
+        apiKeyAuth: []
+      description: Creates or replaces one recipient/feature through atomic upsert. Both creation and replacement
+        return 200. Require all three booleans; reject unknown fields, coercion, missing fields, and query parameters.
+        No separate create key, PATCH, DELETE, or optimistic revision is used. Writing all true restores default
+        behavior. The path organization must be the selected acting organization. Admin/staff defaults read; only
+        admins default update, with reviewed member overrides possible within the ceiling. Normal shared authorization
+        and mustChangePassword restrictions apply. There are no _any alternatives or agreement grants. Implemented
+        locally; deployment and live IAM refresh are pending.
+      parameters:
+      - name: organizationId
+        in: path
+        required: true
+        schema:
+          type: string
+          pattern: ^[a-fA-F0-9]{24}$
+      - name: X-Acting-Context
+        in: header
+        required: true
+        schema:
+          type: string
+          enum:
+          - organization
+        description: Must select organization context; internal actors cannot impersonate this organization.
+      - name: X-Acting-Organization
+        in: header
+        required: true
+        schema:
+          type: string
+          pattern: ^[a-fA-F0-9]{24}$
+        description: Required when acting in organization context. For organization preferences, must equal the
+          path organization ID.
+      - name: feature
+        in: path
+        required: true
+        schema:
+          $ref: '#/components/schemas/NotificationFeature'
+      responses:
+        '200':
+          description: Effective preferences.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NotificationPreferenceResponse'
+        '400':
+          description: 'Possible error keys: common.invalidPathParam, common.invalidQueryParams, common.invalidBodyParams,
+            common.missingBodyParams.'
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                - success
+                - errorKey
+                - error
+                properties:
+                  success:
+                    const: false
+                  errorKey:
+                    type: string
+                    enum:
+                    - common.invalidPathParam
+                    - common.invalidQueryParams
+                    - common.invalidBodyParams
+                    - common.missingBodyParams
+                  error:
+                    type: string
+                  requestId:
+                    type: string
+                  details:
+                    type: object
+                    additionalProperties: true
+                additionalProperties: true
+        '401':
+          description: 'Possible error keys: common.unauthorized.'
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                - success
+                - errorKey
+                - error
+                properties:
+                  success:
+                    const: false
+                  errorKey:
+                    type: string
+                    enum:
+                    - common.unauthorized
+                  error:
+                    type: string
+                  requestId:
+                    type: string
+                  details:
+                    type: object
+                    additionalProperties: true
+                additionalProperties: true
+        '403':
+          description: 'Possible error keys: common.forbidden, common.passwordChangeRequired.'
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                - success
+                - errorKey
+                - error
+                properties:
+                  success:
+                    const: false
+                  errorKey:
+                    type: string
+                    enum:
+                    - common.forbidden
+                    - common.passwordChangeRequired
+                  error:
+                    type: string
+                  requestId:
+                    type: string
+                  details:
+                    type: object
+                    additionalProperties: true
+                additionalProperties: true
+        '429':
+          description: 'Possible error keys: common.rateLimited.'
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                - success
+                - errorKey
+                - error
+                properties:
+                  success:
+                    const: false
+                  errorKey:
+                    type: string
+                    enum:
+                    - common.rateLimited
+                  error:
+                    type: string
+                  requestId:
+                    type: string
+                  details:
+                    type: object
+                    additionalProperties: true
+                additionalProperties: true
+        4XX:
+          description: Gateway or unexpected failure.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorEnvelope'
+        5XX:
+          description: Gateway or unexpected failure.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorEnvelope'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/NotificationPreferencePut'
+            example:
+              channels:
+                in_app: true
+                email: false
+                whatsapp: true
+      x-rate-limit:
+        requestsPerMinute: 30
+        bucket: notification_preference_update
+        scope: ip
+      x-source-router: functions/notifications/src/router.ts
+      x-request-schema-source: functions/notifications/src/zodSchema/preferenceSchema.ts#preferencePutSchema
 components:
   securitySchemes:
     bearerAuth:
@@ -73684,6 +74398,89 @@ components:
       schema:
         type: string
   schemas:
+    NotificationFeature:
+      type: string
+      enum:
+      - pet_behavior_anomaly
+      - ptag_location_report
+      - deworm_due
+      description: Server-registered category. Future categories may concern any business domain.
+    NotificationChannels:
+      type: object
+      additionalProperties: false
+      required:
+      - in_app
+      - email
+      - whatsapp
+      properties:
+        in_app:
+          type: boolean
+        email:
+          type: boolean
+        whatsapp:
+          type: boolean
+    NotificationPreferencePut:
+      type: object
+      additionalProperties: false
+      required:
+      - channels
+      properties:
+        channels:
+          $ref: '#/components/schemas/NotificationChannels'
+    NotificationPreference:
+      type: object
+      additionalProperties: false
+      required:
+      - feature
+      - channels
+      - configured
+      - updatedAt
+      properties:
+        feature:
+          $ref: '#/components/schemas/NotificationFeature'
+        channels:
+          $ref: '#/components/schemas/NotificationChannels'
+        configured:
+          type: boolean
+          description: False when no row exists; effective channels are then all true.
+        updatedAt:
+          type:
+          - string
+          - 'null'
+          format: date-time
+          description: Null for an unconfigured feature.
+    NotificationPreferencesResponse:
+      type: object
+      additionalProperties: false
+      required:
+      - success
+      - data
+      properties:
+        success:
+          const: true
+        message:
+          type: string
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/NotificationPreference'
+        requestId:
+          type: string
+    NotificationPreferenceResponse:
+      type: object
+      additionalProperties: false
+      required:
+      - success
+      - data
+      properties:
+        success:
+          const: true
+        message:
+          type: string
+        data:
+          $ref: '#/components/schemas/NotificationPreference'
+        requestId:
+          type: string
     IdentifierMutationIntent:
       type: object
       properties:
