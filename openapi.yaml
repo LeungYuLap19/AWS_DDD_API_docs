@@ -3,8 +3,8 @@
 openapi: 3.1.0
 info:
   title: AWS DDD API
-  version: '2026-11-19.1'
-  description: The 237 implemented HTTP operations of the API. Paths, gateway credentials, request validation, and
+  version: '2026-11-20.2'
+  description: The 242 implemented HTTP operations of the API. Paths, gateway credentials, request validation, and
     permission keys are checked against current source. Deferred and preview/smoke routes are omitted. Success responses
     document handler payload fields. Each documented HTTP error status lists the stable errorKey values emitted
     by the reachable handler and validation branches; error text is localized. Gateway-generated responses and upstream
@@ -240,7 +240,7 @@ paths:
                     errorKey: common.unauthorized
                     error: Authentication required. Please log in.
         '403':
-          description: 'HTTP 403. Possible error keys: common.forbidden.'
+          description: 'HTTP 403. Possible error keys: common.forbidden, common.passwordChangeRequired.'
           content:
             application/json:
               schema:
@@ -256,6 +256,7 @@ paths:
                     type: string
                     enum:
                     - common.forbidden
+                    - common.passwordChangeRequired
                     description: Stable key for frontend handling; error text is localized.
                   error:
                     type: string
@@ -575,7 +576,7 @@ paths:
                     errorKey: common.unauthorized
                     error: Authentication required. Please log in.
         '403':
-          description: 'HTTP 403. Possible error keys: common.forbidden.'
+          description: 'HTTP 403. Possible error keys: common.forbidden, common.passwordChangeRequired.'
           content:
             application/json:
               schema:
@@ -591,6 +592,7 @@ paths:
                     type: string
                     enum:
                     - common.forbidden
+                    - common.passwordChangeRequired
                     description: Stable key for frontend handling; error text is localized.
                   error:
                     type: string
@@ -960,7 +962,7 @@ paths:
                     errorKey: common.unauthorized
                     error: Authentication required. Please log in.
         '403':
-          description: 'HTTP 403. Possible error keys: common.forbidden.'
+          description: 'HTTP 403. Possible error keys: common.forbidden, common.passwordChangeRequired.'
           content:
             application/json:
               schema:
@@ -976,6 +978,7 @@ paths:
                     type: string
                     enum:
                     - common.forbidden
+                    - common.passwordChangeRequired
                     description: Stable key for frontend handling; error text is localized.
                   error:
                     type: string
@@ -1245,7 +1248,7 @@ paths:
                     errorKey: common.unauthorized
                     error: Authentication required. Please log in.
         '403':
-          description: 'HTTP 403. Possible error keys: common.forbidden.'
+          description: 'HTTP 403. Possible error keys: common.forbidden, common.passwordChangeRequired.'
           content:
             application/json:
               schema:
@@ -1261,6 +1264,7 @@ paths:
                     type: string
                     enum:
                     - common.forbidden
+                    - common.passwordChangeRequired
                     description: Stable key for frontend handling; error text is localized.
                   error:
                     type: string
@@ -2011,8 +2015,7 @@ paths:
                     errorKey: common.unauthorized
                     error: Authentication required. Please log in.
         '403':
-          description: 'HTTP 403. Possible error keys: auth.devices.edgeGrantDeviceDisabled, auth.devices.edgeGrantForbidden,
-            common.forbidden.'
+          description: 'HTTP 403. Possible error keys: auth.devices.edgeGrantDeviceDisabled, auth.devices.edgeGrantForbidden, common.forbidden, common.passwordChangeRequired.'
           content:
             application/json:
               schema:
@@ -2030,6 +2033,7 @@ paths:
                     - auth.devices.edgeGrantDeviceDisabled
                     - auth.devices.edgeGrantForbidden
                     - common.forbidden
+                    - common.passwordChangeRequired
                     description: Stable key for frontend handling; error text is localized.
                   error:
                     type: string
@@ -2229,7 +2233,7 @@ paths:
                     errorKey: common.unauthorized
                     error: Authentication required. Please log in.
         '403':
-          description: 'HTTP 403. Possible error keys: common.forbidden.'
+          description: 'HTTP 403. Possible error keys: common.forbidden, common.passwordChangeRequired.'
           content:
             application/json:
               schema:
@@ -2245,6 +2249,7 @@ paths:
                     type: string
                     enum:
                     - common.forbidden
+                    - common.passwordChangeRequired
                     description: Stable key for frontend handling; error text is localized.
                   error:
                     type: string
@@ -2317,6 +2322,8 @@ paths:
       operationId: R003
       description: Email and password login for organization staff accounts. Returns an access token and sets the
         HttpOnly refresh cookie. Every rejection, including lockout and missing membership, returns the same 401.
+        Organization email verification is optional. mustChangePassword reflects stored credential state; when true,
+        show password replacement before business screens. Refresh/logout remain available.
       security: []
       x-source-router: functions/iam-auth/src/router.ts
       responses:
@@ -2344,6 +2351,8 @@ paths:
                         type: string
                       mustChangePassword:
                         type: boolean
+                        description: True for administrator-provisioned initial credentials; normal protected operations
+                          are blocked until self password replacement.
                       organizations:
                         type: array
                         items:
@@ -2637,7 +2646,7 @@ paths:
                     errorKey: common.unauthorized
                     error: Authentication required. Please log in.
         '403':
-          description: 'HTTP 403. Possible error keys: common.forbidden.'
+          description: 'HTTP 403. Possible error keys: common.forbidden, common.passwordChangeRequired.'
           content:
             application/json:
               schema:
@@ -2653,6 +2662,7 @@ paths:
                     type: string
                     enum:
                     - common.forbidden
+                    - common.passwordChangeRequired
                     description: Stable key for frontend handling; error text is localized.
                   error:
                     type: string
@@ -2920,7 +2930,7 @@ paths:
                     errorKey: common.unauthorized
                     error: Authentication required. Please log in.
         '403':
-          description: 'HTTP 403. Possible error keys: common.forbidden.'
+          description: 'HTTP 403. Possible error keys: common.forbidden, common.passwordChangeRequired.'
           content:
             application/json:
               schema:
@@ -2936,6 +2946,7 @@ paths:
                     type: string
                     enum:
                     - common.forbidden
+                    - common.passwordChangeRequired
                     description: Stable key for frontend handling; error text is localized.
                   error:
                     type: string
@@ -3076,9 +3087,11 @@ paths:
       operationId: R011
       description: Creates an organization staff account with an email password credential and an active membership
         with the given role in the organization. Organization admins may add staff to their own organization; internal
-        callers may add members to any organization. The first member of a provisioning organization must be its
-        admin, and that membership activates the organization. A `reason` is required when the role is an administrator
-        role (`ngo_admin`, `hotel_admin`, `clinic_admin`); without it the request returns 400 `common.invalidBodyParams`.
+        callers may add members to any organization. The first member of a provisioning organization must be its admin,
+        and that membership activates the organization. A `reason` is required when the role is an administrator role
+        (`ngo_admin`, `hotel_admin`, `clinic_admin`); without it the request returns 400 `common.invalidBodyParams`.
+        Provisioned credentials set mustChangePassword=true. The active user and membership do not require email verification;
+        the initial-password gate restricts normal service access until owner password replacement.
       security:
       - bearerAuth: []
         apiKeyAuth: []
@@ -3122,6 +3135,7 @@ paths:
                         - version
                       mustChangePassword:
                         type: boolean
+                        const: true
                       emailVerified:
                         type: boolean
                     additionalProperties: true
@@ -3217,7 +3231,7 @@ paths:
                     errorKey: common.unauthorized
                     error: Authentication required. Please log in.
         '403':
-          description: 'HTTP 403. Possible error keys: common.forbidden.'
+          description: 'HTTP 403. Possible error keys: common.forbidden, common.passwordChangeRequired.'
           content:
             application/json:
               schema:
@@ -3233,6 +3247,7 @@ paths:
                     type: string
                     enum:
                     - common.forbidden
+                    - common.passwordChangeRequired
                     description: Stable key for frontend handling; error text is localized.
                   error:
                     type: string
@@ -3551,7 +3566,7 @@ paths:
                     errorKey: common.unauthorized
                     error: Authentication required. Please log in.
         '403':
-          description: 'HTTP 403. Possible error keys: common.forbidden.'
+          description: 'HTTP 403. Possible error keys: common.forbidden, common.passwordChangeRequired.'
           content:
             application/json:
               schema:
@@ -3567,6 +3582,7 @@ paths:
                     type: string
                     enum:
                     - common.forbidden
+                    - common.passwordChangeRequired
                     description: Stable key for frontend handling; error text is localized.
                   error:
                     type: string
@@ -3841,9 +3857,10 @@ paths:
       - iam-auth
       summary: Desktop Exchange
       operationId: R006
-      description: 'For the desktop app''s native webview only: exchanges the refresh cookie for an access token
-        and refresh token returned in the body, so the app can keep them in the OS keychain. Requests from other
-        origins return 403.'
+      description: 'For the desktop app''s native webview only: exchanges the refresh cookie for an access token and
+        refresh token returned in the body, so the app can keep them in the OS keychain. Requests from other origins
+        return 403. Organization-staff responses include current mustChangePassword; exchanging transport does not
+        bypass initial-password restrictions.'
       security: []
       x-source-router: functions/iam-auth/src/router.ts
       responses:
@@ -3874,6 +3891,9 @@ paths:
                       expiresAt:
                         type: string
                         format: date-time
+                      mustChangePassword:
+                        type: boolean
+                        description: Present for organization-staff sessions only.
                     additionalProperties: true
                     required:
                     - accessToken
@@ -4014,8 +4034,9 @@ paths:
       - iam-auth
       summary: Desktop Refresh
       operationId: R007
-      description: 'For the desktop app only: rotates a refresh token taken from the OS keychain and returns the
-        next token pair in the body. Requests from other origins return 403.'
+      description: 'For the desktop app only: rotates a refresh token taken from the OS keychain and returns the next
+        token pair in the body. Requests from other origins return 403. Organization-staff responses include current
+        mustChangePassword. Refresh does not bypass the initial-password gate or restore a revoked session.'
       security: []
       x-source-router: functions/iam-auth/src/router.ts
       responses:
@@ -4046,6 +4067,9 @@ paths:
                       expiresAt:
                         type: string
                         format: date-time
+                      mustChangePassword:
+                        type: boolean
+                        description: Present for organization-staff sessions only; reflects current credential state.
                     additionalProperties: true
                     required:
                     - accessToken
@@ -4234,10 +4258,11 @@ paths:
       - iam-auth
       summary: Refresh Token
       operationId: R005
-      description: Rotates the refresh session and returns a new access token. Browser clients send no body and
-        use the refresh cookie; API clients may send the refresh token in the JSON body and receive the next refresh
-        token in the response. A spent or invalid token returns 401. A browser can use the refresh cookie; the body
-        token is for the supported non-cookie transport.
+      description: Rotates the refresh session and returns a new access token. Browser clients send no body and use
+        the refresh cookie; API clients may send the refresh token in the JSON body and receive the next refresh token
+        in the response. A spent or invalid token returns 401. A browser can use the refresh cookie; the body token
+        is for the supported non-cookie transport. Organization-staff responses include current mustChangePassword.
+        Refresh does not bypass the initial-password gate or restore a revoked session.
       security: []
       x-source-router: functions/iam-auth/src/router.ts
       responses:
@@ -4268,6 +4293,9 @@ paths:
                       expiresAt:
                         type: string
                         format: date-time
+                      mustChangePassword:
+                        type: boolean
+                        description: Present for organization-staff sessions only; reflects current credential state.
                     additionalProperties: true
                     required:
                     - accessToken
@@ -4678,7 +4706,7 @@ paths:
                     errorKey: common.unauthorized
                     error: Authentication required. Please log in.
         '403':
-          description: 'HTTP 403. Possible error keys: common.forbidden.'
+          description: 'HTTP 403. Possible error keys: common.forbidden, common.passwordChangeRequired.'
           content:
             application/json:
               schema:
@@ -4694,6 +4722,7 @@ paths:
                     type: string
                     enum:
                     - common.forbidden
+                    - common.passwordChangeRequired
                     description: Stable key for frontend handling; error text is localized.
                   error:
                     type: string
@@ -4976,7 +5005,7 @@ paths:
                     errorKey: common.unauthorized
                     error: Authentication required. Please log in.
         '403':
-          description: 'HTTP 403. Possible error keys: common.forbidden.'
+          description: 'HTTP 403. Possible error keys: common.forbidden, common.passwordChangeRequired.'
           content:
             application/json:
               schema:
@@ -4992,6 +5021,7 @@ paths:
                     type: string
                     enum:
                     - common.forbidden
+                    - common.passwordChangeRequired
                     description: Stable key for frontend handling; error text is localized.
                   error:
                     type: string
@@ -5359,7 +5389,7 @@ paths:
                     errorKey: common.unauthorized
                     error: Authentication required. Please log in.
         '403':
-          description: 'HTTP 403. Possible error keys: common.forbidden.'
+          description: 'HTTP 403. Possible error keys: common.forbidden, common.passwordChangeRequired.'
           content:
             application/json:
               schema:
@@ -5375,6 +5405,7 @@ paths:
                     type: string
                     enum:
                     - common.forbidden
+                    - common.passwordChangeRequired
                     description: Stable key for frontend handling; error text is localized.
                   error:
                     type: string
@@ -5705,7 +5736,7 @@ paths:
                     errorKey: common.unauthorized
                     error: Authentication required. Please log in.
         '403':
-          description: 'HTTP 403. Possible error keys: common.forbidden.'
+          description: 'HTTP 403. Possible error keys: common.forbidden, common.passwordChangeRequired.'
           content:
             application/json:
               schema:
@@ -5721,6 +5752,7 @@ paths:
                     type: string
                     enum:
                     - common.forbidden
+                    - common.passwordChangeRequired
                     description: Stable key for frontend handling; error text is localized.
                   error:
                     type: string
@@ -7109,7 +7141,7 @@ paths:
                     errorKey: common.unauthorized
                     error: Authentication required. Please log in.
         '403':
-          description: 'HTTP 403. Possible error keys: common.forbidden.'
+          description: 'HTTP 403. Possible error keys: common.forbidden, common.passwordChangeRequired.'
           content:
             application/json:
               schema:
@@ -7125,6 +7157,7 @@ paths:
                     type: string
                     enum:
                     - common.forbidden
+                    - common.passwordChangeRequired
                     description: Stable key for frontend handling; error text is localized.
                   error:
                     type: string
@@ -7487,7 +7520,7 @@ paths:
                     errorKey: common.unauthorized
                     error: Authentication required. Please log in.
         '403':
-          description: 'HTTP 403. Possible error keys: common.forbidden.'
+          description: 'HTTP 403. Possible error keys: common.forbidden, common.passwordChangeRequired.'
           content:
             application/json:
               schema:
@@ -7503,6 +7536,7 @@ paths:
                     type: string
                     enum:
                     - common.forbidden
+                    - common.passwordChangeRequired
                     description: Stable key for frontend handling; error text is localized.
                   error:
                     type: string
@@ -8292,7 +8326,7 @@ paths:
                     errorKey: common.unauthorized
                     error: Authentication required. Please log in.
         '403':
-          description: 'HTTP 403. Possible error keys: common.forbidden.'
+          description: 'HTTP 403. Possible error keys: common.forbidden, common.passwordChangeRequired.'
           content:
             application/json:
               schema:
@@ -8308,6 +8342,7 @@ paths:
                     type: string
                     enum:
                     - common.forbidden
+                    - common.passwordChangeRequired
                     description: Stable key for frontend handling; error text is localized.
                   error:
                     type: string
@@ -8576,7 +8611,7 @@ paths:
                     errorKey: common.unauthorized
                     error: Authentication required. Please log in.
         '403':
-          description: 'HTTP 403. Possible error keys: common.forbidden.'
+          description: 'HTTP 403. Possible error keys: common.forbidden, common.passwordChangeRequired.'
           content:
             application/json:
               schema:
@@ -8592,6 +8627,7 @@ paths:
                     type: string
                     enum:
                     - common.forbidden
+                    - common.passwordChangeRequired
                     description: Stable key for frontend handling; error text is localized.
                   error:
                     type: string
@@ -9537,7 +9573,7 @@ paths:
                     errorKey: common.unauthorized
                     error: Authentication required. Please log in.
         '403':
-          description: 'HTTP 403. Possible error keys: common.forbidden.'
+          description: 'HTTP 403. Possible error keys: common.forbidden, common.passwordChangeRequired.'
           content:
             application/json:
               schema:
@@ -9553,6 +9589,7 @@ paths:
                     type: string
                     enum:
                     - common.forbidden
+                    - common.passwordChangeRequired
                     description: Stable key for frontend handling; error text is localized.
                   error:
                     type: string
@@ -10744,7 +10781,7 @@ paths:
                     errorKey: common.unauthorized
                     error: Authentication required. Please log in.
         '403':
-          description: 'HTTP 403. Possible error keys: common.forbidden.'
+          description: 'HTTP 403. Possible error keys: common.forbidden, common.passwordChangeRequired.'
           content:
             application/json:
               schema:
@@ -10760,6 +10797,7 @@ paths:
                     type: string
                     enum:
                     - common.forbidden
+                    - common.passwordChangeRequired
                     description: Stable key for frontend handling; error text is localized.
                   error:
                     type: string
@@ -11065,7 +11103,7 @@ paths:
                     errorKey: common.unauthorized
                     error: Authentication required. Please log in.
         '403':
-          description: 'HTTP 403. Possible error keys: common.forbidden, support.errors.deploymentNotOwned.'
+          description: 'HTTP 403. Possible error keys: common.forbidden, common.passwordChangeRequired, support.errors.deploymentNotOwned.'
           content:
             application/json:
               schema:
@@ -11081,6 +11119,7 @@ paths:
                     type: string
                     enum:
                     - common.forbidden
+                    - common.passwordChangeRequired
                     - support.errors.deploymentNotOwned
                     description: Stable key for frontend handling; error text is localized.
                   error:
@@ -11459,7 +11498,7 @@ paths:
                     errorKey: common.unauthorized
                     error: Authentication required. Please log in.
         '403':
-          description: 'HTTP 403. Possible error keys: common.forbidden.'
+          description: 'HTTP 403. Possible error keys: common.forbidden, common.passwordChangeRequired.'
           content:
             application/json:
               schema:
@@ -11475,6 +11514,7 @@ paths:
                     type: string
                     enum:
                     - common.forbidden
+                    - common.passwordChangeRequired
                     description: Stable key for frontend handling; error text is localized.
                   error:
                     type: string
@@ -11706,7 +11746,7 @@ paths:
                     errorKey: common.unauthorized
                     error: Authentication required. Please log in.
         '403':
-          description: 'HTTP 403. Possible error keys: common.forbidden.'
+          description: 'HTTP 403. Possible error keys: common.forbidden, common.passwordChangeRequired.'
           content:
             application/json:
               schema:
@@ -11722,6 +11762,7 @@ paths:
                     type: string
                     enum:
                     - common.forbidden
+                    - common.passwordChangeRequired
                     description: Stable key for frontend handling; error text is localized.
                   error:
                     type: string
@@ -11973,7 +12014,7 @@ paths:
                     errorKey: common.unauthorized
                     error: Authentication required. Please log in.
         '403':
-          description: 'HTTP 403. Possible error keys: common.forbidden.'
+          description: 'HTTP 403. Possible error keys: common.forbidden, common.passwordChangeRequired.'
           content:
             application/json:
               schema:
@@ -11989,6 +12030,7 @@ paths:
                     type: string
                     enum:
                     - common.forbidden
+                    - common.passwordChangeRequired
                     description: Stable key for frontend handling; error text is localized.
                   error:
                     type: string
@@ -12353,7 +12395,7 @@ paths:
                     errorKey: common.unauthorized
                     error: Authentication required. Please log in.
         '403':
-          description: 'HTTP 403. Possible error keys: common.forbidden.'
+          description: 'HTTP 403. Possible error keys: common.forbidden, common.passwordChangeRequired.'
           content:
             application/json:
               schema:
@@ -12369,6 +12411,7 @@ paths:
                     type: string
                     enum:
                     - common.forbidden
+                    - common.passwordChangeRequired
                     description: Stable key for frontend handling; error text is localized.
                   error:
                     type: string
@@ -13775,7 +13818,7 @@ paths:
                     errorKey: common.unauthorized
                     error: Authentication required. Please log in.
         '403':
-          description: 'HTTP 403. Possible error keys: common.forbidden.'
+          description: 'HTTP 403. Possible error keys: common.forbidden, common.passwordChangeRequired.'
           content:
             application/json:
               schema:
@@ -13791,6 +13834,7 @@ paths:
                     type: string
                     enum:
                     - common.forbidden
+                    - common.passwordChangeRequired
                     description: Stable key for frontend handling; error text is localized.
                   error:
                     type: string
@@ -14010,7 +14054,7 @@ paths:
                     errorKey: common.unauthorized
                     error: Authentication required. Please log in.
         '403':
-          description: 'HTTP 403. Possible error keys: common.forbidden.'
+          description: 'HTTP 403. Possible error keys: common.forbidden, common.passwordChangeRequired.'
           content:
             application/json:
               schema:
@@ -14026,6 +14070,7 @@ paths:
                     type: string
                     enum:
                     - common.forbidden
+                    - common.passwordChangeRequired
                     description: Stable key for frontend handling; error text is localized.
                   error:
                     type: string
@@ -14427,7 +14472,7 @@ paths:
                     errorKey: common.unauthorized
                     error: Authentication required. Please log in.
         '403':
-          description: 'HTTP 403. Possible error keys: common.forbidden.'
+          description: 'HTTP 403. Possible error keys: common.forbidden, common.passwordChangeRequired.'
           content:
             application/json:
               schema:
@@ -14443,6 +14488,7 @@ paths:
                     type: string
                     enum:
                     - common.forbidden
+                    - common.passwordChangeRequired
                     description: Stable key for frontend handling; error text is localized.
                   error:
                     type: string
@@ -14828,7 +14874,7 @@ paths:
                     errorKey: common.unauthorized
                     error: Authentication required. Please log in.
         '403':
-          description: 'HTTP 403. Possible error keys: common.forbidden.'
+          description: 'HTTP 403. Possible error keys: common.forbidden, common.passwordChangeRequired.'
           content:
             application/json:
               schema:
@@ -14844,6 +14890,7 @@ paths:
                     type: string
                     enum:
                     - common.forbidden
+                    - common.passwordChangeRequired
                     description: Stable key for frontend handling; error text is localized.
                   error:
                     type: string
@@ -15198,7 +15245,7 @@ paths:
                     errorKey: common.unauthorized
                     error: Authentication required. Please log in.
         '403':
-          description: 'HTTP 403. Possible error keys: common.forbidden.'
+          description: 'HTTP 403. Possible error keys: common.forbidden, common.passwordChangeRequired.'
           content:
             application/json:
               schema:
@@ -15214,6 +15261,7 @@ paths:
                     type: string
                     enum:
                     - common.forbidden
+                    - common.passwordChangeRequired
                     description: Stable key for frontend handling; error text is localized.
                   error:
                     type: string
@@ -15651,7 +15699,7 @@ paths:
                     errorKey: common.unauthorized
                     error: Authentication required. Please log in.
         '403':
-          description: 'HTTP 403. Possible error keys: common.forbidden.'
+          description: 'HTTP 403. Possible error keys: common.forbidden, common.passwordChangeRequired.'
           content:
             application/json:
               schema:
@@ -15667,6 +15715,7 @@ paths:
                     type: string
                     enum:
                     - common.forbidden
+                    - common.passwordChangeRequired
                     description: Stable key for frontend handling; error text is localized.
                   error:
                     type: string
@@ -16104,7 +16153,7 @@ paths:
                     errorKey: common.unauthorized
                     error: Authentication required. Please log in.
         '403':
-          description: 'HTTP 403. Possible error keys: common.forbidden.'
+          description: 'HTTP 403. Possible error keys: common.forbidden, common.passwordChangeRequired.'
           content:
             application/json:
               schema:
@@ -16120,6 +16169,7 @@ paths:
                     type: string
                     enum:
                     - common.forbidden
+                    - common.passwordChangeRequired
                     description: Stable key for frontend handling; error text is localized.
                   error:
                     type: string
@@ -16557,7 +16607,7 @@ paths:
                     errorKey: common.unauthorized
                     error: Authentication required. Please log in.
         '403':
-          description: 'HTTP 403. Possible error keys: common.forbidden.'
+          description: 'HTTP 403. Possible error keys: common.forbidden, common.passwordChangeRequired.'
           content:
             application/json:
               schema:
@@ -16573,6 +16623,7 @@ paths:
                     type: string
                     enum:
                     - common.forbidden
+                    - common.passwordChangeRequired
                     description: Stable key for frontend handling; error text is localized.
                   error:
                     type: string
@@ -16879,7 +16930,7 @@ paths:
                     errorKey: common.unauthorized
                     error: Authentication required. Please log in.
         '403':
-          description: 'HTTP 403. Possible error keys: common.forbidden.'
+          description: 'HTTP 403. Possible error keys: common.forbidden, common.passwordChangeRequired.'
           content:
             application/json:
               schema:
@@ -16895,6 +16946,7 @@ paths:
                     type: string
                     enum:
                     - common.forbidden
+                    - common.passwordChangeRequired
                     description: Stable key for frontend handling; error text is localized.
                   error:
                     type: string
@@ -17140,7 +17192,7 @@ paths:
                     errorKey: common.unauthorized
                     error: Authentication required. Please log in.
         '403':
-          description: 'HTTP 403. Possible error keys: common.forbidden.'
+          description: 'HTTP 403. Possible error keys: common.forbidden, common.passwordChangeRequired.'
           content:
             application/json:
               schema:
@@ -17156,6 +17208,7 @@ paths:
                     type: string
                     enum:
                     - common.forbidden
+                    - common.passwordChangeRequired
                     description: Stable key for frontend handling; error text is localized.
                   error:
                     type: string
@@ -17394,7 +17447,7 @@ paths:
                     errorKey: common.unauthorized
                     error: Authentication required. Please log in.
         '403':
-          description: 'HTTP 403. Possible error keys: common.forbidden.'
+          description: 'HTTP 403. Possible error keys: common.forbidden, common.passwordChangeRequired.'
           content:
             application/json:
               schema:
@@ -17410,6 +17463,7 @@ paths:
                     type: string
                     enum:
                     - common.forbidden
+                    - common.passwordChangeRequired
                     description: Stable key for frontend handling; error text is localized.
                   error:
                     type: string
@@ -17637,7 +17691,7 @@ paths:
                     errorKey: common.unauthorized
                     error: Authentication required. Please log in.
         '403':
-          description: 'HTTP 403. Possible error keys: common.forbidden.'
+          description: 'HTTP 403. Possible error keys: common.forbidden, common.passwordChangeRequired.'
           content:
             application/json:
               schema:
@@ -17653,6 +17707,7 @@ paths:
                     type: string
                     enum:
                     - common.forbidden
+                    - common.passwordChangeRequired
                     description: Stable key for frontend handling; error text is localized.
                   error:
                     type: string
@@ -17955,7 +18010,7 @@ paths:
                     errorKey: common.unauthorized
                     error: Authentication required. Please log in.
         '403':
-          description: 'HTTP 403. Possible error keys: common.forbidden.'
+          description: 'HTTP 403. Possible error keys: common.forbidden, common.passwordChangeRequired.'
           content:
             application/json:
               schema:
@@ -17971,6 +18026,7 @@ paths:
                     type: string
                     enum:
                     - common.forbidden
+                    - common.passwordChangeRequired
                     description: Stable key for frontend handling; error text is localized.
                   error:
                     type: string
@@ -18355,7 +18411,7 @@ paths:
                     errorKey: common.unauthorized
                     error: Authentication required. Please log in.
         '403':
-          description: 'HTTP 403. Possible error keys: common.forbidden.'
+          description: 'HTTP 403. Possible error keys: common.forbidden, common.passwordChangeRequired.'
           content:
             application/json:
               schema:
@@ -18371,6 +18427,7 @@ paths:
                     type: string
                     enum:
                     - common.forbidden
+                    - common.passwordChangeRequired
                     description: Stable key for frontend handling; error text is localized.
                   error:
                     type: string
@@ -18770,7 +18827,7 @@ paths:
                     errorKey: common.unauthorized
                     error: Authentication required. Please log in.
         '403':
-          description: 'HTTP 403. Possible error keys: common.forbidden.'
+          description: 'HTTP 403. Possible error keys: common.forbidden, common.passwordChangeRequired.'
           content:
             application/json:
               schema:
@@ -18786,6 +18843,7 @@ paths:
                     type: string
                     enum:
                     - common.forbidden
+                    - common.passwordChangeRequired
                     description: Stable key for frontend handling; error text is localized.
                   error:
                     type: string
@@ -19104,7 +19162,7 @@ paths:
                     errorKey: common.unauthorized
                     error: Authentication required. Please log in.
         '403':
-          description: 'HTTP 403. Possible error keys: common.forbidden.'
+          description: 'HTTP 403. Possible error keys: common.forbidden, common.passwordChangeRequired.'
           content:
             application/json:
               schema:
@@ -19120,6 +19178,7 @@ paths:
                     type: string
                     enum:
                     - common.forbidden
+                    - common.passwordChangeRequired
                     description: Stable key for frontend handling; error text is localized.
                   error:
                     type: string
@@ -19475,7 +19534,7 @@ paths:
                     errorKey: common.unauthorized
                     error: Authentication required. Please log in.
         '403':
-          description: 'HTTP 403. Possible error keys: common.forbidden.'
+          description: 'HTTP 403. Possible error keys: common.forbidden, common.passwordChangeRequired.'
           content:
             application/json:
               schema:
@@ -19491,6 +19550,7 @@ paths:
                     type: string
                     enum:
                     - common.forbidden
+                    - common.passwordChangeRequired
                     description: Stable key for frontend handling; error text is localized.
                   error:
                     type: string
@@ -19847,7 +19907,7 @@ paths:
                     errorKey: common.unauthorized
                     error: Authentication required. Please log in.
         '403':
-          description: 'HTTP 403. Possible error keys: common.forbidden.'
+          description: 'HTTP 403. Possible error keys: common.forbidden, common.passwordChangeRequired.'
           content:
             application/json:
               schema:
@@ -19863,6 +19923,7 @@ paths:
                     type: string
                     enum:
                     - common.forbidden
+                    - common.passwordChangeRequired
                     description: Stable key for frontend handling; error text is localized.
                   error:
                     type: string
@@ -20301,7 +20362,7 @@ paths:
                     errorKey: common.unauthorized
                     error: Authentication required. Please log in.
         '403':
-          description: 'HTTP 403. Possible error keys: common.forbidden.'
+          description: 'HTTP 403. Possible error keys: common.forbidden, common.passwordChangeRequired.'
           content:
             application/json:
               schema:
@@ -20317,6 +20378,7 @@ paths:
                     type: string
                     enum:
                     - common.forbidden
+                    - common.passwordChangeRequired
                     description: Stable key for frontend handling; error text is localized.
                   error:
                     type: string
@@ -20755,7 +20817,7 @@ paths:
                     errorKey: common.unauthorized
                     error: Authentication required. Please log in.
         '403':
-          description: 'HTTP 403. Possible error keys: common.forbidden.'
+          description: 'HTTP 403. Possible error keys: common.forbidden, common.passwordChangeRequired.'
           content:
             application/json:
               schema:
@@ -20771,6 +20833,7 @@ paths:
                     type: string
                     enum:
                     - common.forbidden
+                    - common.passwordChangeRequired
                     description: Stable key for frontend handling; error text is localized.
                   error:
                     type: string
@@ -21210,7 +21273,7 @@ paths:
                     errorKey: common.unauthorized
                     error: Authentication required. Please log in.
         '403':
-          description: 'HTTP 403. Possible error keys: common.forbidden.'
+          description: 'HTTP 403. Possible error keys: common.forbidden, common.passwordChangeRequired.'
           content:
             application/json:
               schema:
@@ -21226,6 +21289,7 @@ paths:
                     type: string
                     enum:
                     - common.forbidden
+                    - common.passwordChangeRequired
                     description: Stable key for frontend handling; error text is localized.
                   error:
                     type: string
@@ -21607,7 +21671,7 @@ paths:
                     errorKey: common.unauthorized
                     error: Authentication required. Please log in.
         '403':
-          description: 'HTTP 403. Possible error keys: common.forbidden.'
+          description: 'HTTP 403. Possible error keys: common.forbidden, common.passwordChangeRequired.'
           content:
             application/json:
               schema:
@@ -21623,6 +21687,7 @@ paths:
                     type: string
                     enum:
                     - common.forbidden
+                    - common.passwordChangeRequired
                     description: Stable key for frontend handling; error text is localized.
                   error:
                     type: string
@@ -21935,7 +22000,7 @@ paths:
                     errorKey: common.unauthorized
                     error: Authentication required. Please log in.
         '403':
-          description: 'HTTP 403. Possible error keys: common.forbidden.'
+          description: 'HTTP 403. Possible error keys: common.forbidden, common.passwordChangeRequired.'
           content:
             application/json:
               schema:
@@ -21951,6 +22016,7 @@ paths:
                     type: string
                     enum:
                     - common.forbidden
+                    - common.passwordChangeRequired
                     description: Stable key for frontend handling; error text is localized.
                   error:
                     type: string
@@ -22301,7 +22367,7 @@ paths:
                     errorKey: common.unauthorized
                     error: Authentication required. Please log in.
         '403':
-          description: 'HTTP 403. Possible error keys: common.forbidden.'
+          description: 'HTTP 403. Possible error keys: common.forbidden, common.passwordChangeRequired.'
           content:
             application/json:
               schema:
@@ -22317,6 +22383,7 @@ paths:
                     type: string
                     enum:
                     - common.forbidden
+                    - common.passwordChangeRequired
                     description: Stable key for frontend handling; error text is localized.
                   error:
                     type: string
@@ -22621,7 +22688,7 @@ paths:
                     errorKey: common.unauthorized
                     error: Authentication required. Please log in.
         '403':
-          description: 'HTTP 403. Possible error keys: common.forbidden.'
+          description: 'HTTP 403. Possible error keys: common.forbidden, common.passwordChangeRequired.'
           content:
             application/json:
               schema:
@@ -22637,6 +22704,7 @@ paths:
                     type: string
                     enum:
                     - common.forbidden
+                    - common.passwordChangeRequired
                     description: Stable key for frontend handling; error text is localized.
                   error:
                     type: string
@@ -22943,7 +23011,7 @@ paths:
                     errorKey: common.unauthorized
                     error: Authentication required. Please log in.
         '403':
-          description: 'HTTP 403. Possible error keys: common.forbidden.'
+          description: 'HTTP 403. Possible error keys: common.forbidden, common.passwordChangeRequired.'
           content:
             application/json:
               schema:
@@ -22959,6 +23027,7 @@ paths:
                     type: string
                     enum:
                     - common.forbidden
+                    - common.passwordChangeRequired
                     description: Stable key for frontend handling; error text is localized.
                   error:
                     type: string
@@ -23228,7 +23297,7 @@ paths:
                     errorKey: common.unauthorized
                     error: Authentication required. Please log in.
         '403':
-          description: 'HTTP 403. Possible error keys: common.forbidden.'
+          description: 'HTTP 403. Possible error keys: common.forbidden, common.passwordChangeRequired.'
           content:
             application/json:
               schema:
@@ -23244,6 +23313,7 @@ paths:
                     type: string
                     enum:
                     - common.forbidden
+                    - common.passwordChangeRequired
                     description: Stable key for frontend handling; error text is localized.
                   error:
                     type: string
@@ -23514,8 +23584,7 @@ paths:
                     errorKey: common.unauthorized
                     error: Authentication required. Please log in.
         '403':
-          description: 'HTTP 403. Possible error keys: common.forbidden, notifications.hotelClient.errors.hotelIdentityMissing,
-            notifications.hotelClient.errors.keyNotAllowed.'
+          description: 'HTTP 403. Possible error keys: common.forbidden, common.passwordChangeRequired, notifications.hotelClient.errors.hotelIdentityMissing, notifications.hotelClient.errors.keyNotAllowed.'
           content:
             application/json:
               schema:
@@ -23531,6 +23600,7 @@ paths:
                     type: string
                     enum:
                     - common.forbidden
+                    - common.passwordChangeRequired
                     - notifications.hotelClient.errors.hotelIdentityMissing
                     - notifications.hotelClient.errors.keyNotAllowed
                     description: Stable key for frontend handling; error text is localized.
@@ -23844,7 +23914,7 @@ paths:
                     errorKey: common.unauthorized
                     error: Authentication required. Please log in.
         '403':
-          description: 'HTTP 403. Possible error keys: common.forbidden.'
+          description: 'HTTP 403. Possible error keys: common.forbidden, common.passwordChangeRequired.'
           content:
             application/json:
               schema:
@@ -23860,6 +23930,7 @@ paths:
                     type: string
                     enum:
                     - common.forbidden
+                    - common.passwordChangeRequired
                     description: Stable key for frontend handling; error text is localized.
                   error:
                     type: string
@@ -24124,7 +24195,7 @@ paths:
                     errorKey: common.unauthorized
                     error: Authentication required. Please log in.
         '403':
-          description: 'HTTP 403. Possible error keys: common.forbidden.'
+          description: 'HTTP 403. Possible error keys: common.forbidden, common.passwordChangeRequired.'
           content:
             application/json:
               schema:
@@ -24140,6 +24211,7 @@ paths:
                     type: string
                     enum:
                     - common.forbidden
+                    - common.passwordChangeRequired
                     description: Stable key for frontend handling; error text is localized.
                   error:
                     type: string
@@ -24436,7 +24508,7 @@ paths:
                     errorKey: common.unauthorized
                     error: Authentication required. Please log in.
         '403':
-          description: 'HTTP 403. Possible error keys: common.forbidden.'
+          description: 'HTTP 403. Possible error keys: common.forbidden, common.passwordChangeRequired.'
           content:
             application/json:
               schema:
@@ -24452,6 +24524,7 @@ paths:
                     type: string
                     enum:
                     - common.forbidden
+                    - common.passwordChangeRequired
                     description: Stable key for frontend handling; error text is localized.
                   error:
                     type: string
@@ -24787,7 +24860,7 @@ paths:
                     errorKey: common.unauthorized
                     error: Authentication required. Please log in.
         '403':
-          description: 'HTTP 403. Possible error keys: common.forbidden.'
+          description: 'HTTP 403. Possible error keys: common.forbidden, common.passwordChangeRequired.'
           content:
             application/json:
               schema:
@@ -24803,6 +24876,7 @@ paths:
                     type: string
                     enum:
                     - common.forbidden
+                    - common.passwordChangeRequired
                     description: Stable key for frontend handling; error text is localized.
                   error:
                     type: string
@@ -25108,7 +25182,7 @@ paths:
                     errorKey: common.unauthorized
                     error: Authentication required. Please log in.
         '403':
-          description: 'HTTP 403. Possible error keys: common.forbidden.'
+          description: 'HTTP 403. Possible error keys: common.forbidden, common.passwordChangeRequired.'
           content:
             application/json:
               schema:
@@ -25124,6 +25198,7 @@ paths:
                     type: string
                     enum:
                     - common.forbidden
+                    - common.passwordChangeRequired
                     description: Stable key for frontend handling; error text is localized.
                   error:
                     type: string
@@ -25389,8 +25464,7 @@ paths:
                     errorKey: common.unauthorized
                     error: Authentication required. Please log in.
         '403':
-          description: 'HTTP 403. Possible error keys: common.forbidden, subscription.errors.aiModelLimitExceeded,
-            subscription.errors.cameraLimitExceeded.'
+          description: 'HTTP 403. Possible error keys: common.forbidden, common.passwordChangeRequired, subscription.errors.aiModelLimitExceeded, subscription.errors.cameraLimitExceeded.'
           content:
             application/json:
               schema:
@@ -25406,6 +25480,7 @@ paths:
                     type: string
                     enum:
                     - common.forbidden
+                    - common.passwordChangeRequired
                     - subscription.errors.aiModelLimitExceeded
                     - subscription.errors.cameraLimitExceeded
                     description: Stable key for frontend handling; error text is localized.
@@ -25622,7 +25697,7 @@ paths:
                     errorKey: common.unauthorized
                     error: Authentication required. Please log in.
         '403':
-          description: 'HTTP 403. Possible error keys: common.forbidden.'
+          description: 'HTTP 403. Possible error keys: common.forbidden, common.passwordChangeRequired.'
           content:
             application/json:
               schema:
@@ -25638,6 +25713,7 @@ paths:
                     type: string
                     enum:
                     - common.forbidden
+                    - common.passwordChangeRequired
                     description: Stable key for frontend handling; error text is localized.
                   error:
                     type: string
@@ -25908,7 +25984,7 @@ paths:
                     errorKey: common.unauthorized
                     error: Authentication required. Please log in.
         '403':
-          description: 'HTTP 403. Possible error keys: common.forbidden.'
+          description: 'HTTP 403. Possible error keys: common.forbidden, common.passwordChangeRequired.'
           content:
             application/json:
               schema:
@@ -25924,6 +26000,7 @@ paths:
                     type: string
                     enum:
                     - common.forbidden
+                    - common.passwordChangeRequired
                     description: Stable key for frontend handling; error text is localized.
                   error:
                     type: string
@@ -26203,7 +26280,7 @@ paths:
                     errorKey: common.unauthorized
                     error: Authentication required. Please log in.
         '403':
-          description: 'HTTP 403. Possible error keys: common.forbidden.'
+          description: 'HTTP 403. Possible error keys: common.forbidden, common.passwordChangeRequired.'
           content:
             application/json:
               schema:
@@ -26219,6 +26296,7 @@ paths:
                     type: string
                     enum:
                     - common.forbidden
+                    - common.passwordChangeRequired
                     description: Stable key for frontend handling; error text is localized.
                   error:
                     type: string
@@ -26572,7 +26650,7 @@ paths:
                     errorKey: common.unauthorized
                     error: Authentication required. Please log in.
         '403':
-          description: 'HTTP 403. Possible error keys: common.forbidden.'
+          description: 'HTTP 403. Possible error keys: common.forbidden, common.passwordChangeRequired.'
           content:
             application/json:
               schema:
@@ -26588,6 +26666,7 @@ paths:
                     type: string
                     enum:
                     - common.forbidden
+                    - common.passwordChangeRequired
                     description: Stable key for frontend handling; error text is localized.
                   error:
                     type: string
@@ -26848,7 +26927,7 @@ paths:
                     errorKey: common.unauthorized
                     error: Authentication required. Please log in.
         '403':
-          description: 'HTTP 403. Possible error keys: common.forbidden.'
+          description: 'HTTP 403. Possible error keys: common.forbidden, common.passwordChangeRequired.'
           content:
             application/json:
               schema:
@@ -26864,6 +26943,7 @@ paths:
                     type: string
                     enum:
                     - common.forbidden
+                    - common.passwordChangeRequired
                     description: Stable key for frontend handling; error text is localized.
                   error:
                     type: string
@@ -27139,7 +27219,7 @@ paths:
                     errorKey: common.unauthorized
                     error: Authentication required. Please log in.
         '403':
-          description: 'HTTP 403. Possible error keys: common.forbidden.'
+          description: 'HTTP 403. Possible error keys: common.forbidden, common.passwordChangeRequired.'
           content:
             application/json:
               schema:
@@ -27155,6 +27235,7 @@ paths:
                     type: string
                     enum:
                     - common.forbidden
+                    - common.passwordChangeRequired
                     description: Stable key for frontend handling; error text is localized.
                   error:
                     type: string
@@ -27549,7 +27630,7 @@ paths:
                     errorKey: common.unauthorized
                     error: Authentication required. Please log in.
         '403':
-          description: 'HTTP 403. Possible error keys: common.forbidden.'
+          description: 'HTTP 403. Possible error keys: common.forbidden, common.passwordChangeRequired.'
           content:
             application/json:
               schema:
@@ -27565,6 +27646,7 @@ paths:
                     type: string
                     enum:
                     - common.forbidden
+                    - common.passwordChangeRequired
                     description: Stable key for frontend handling; error text is localized.
                   error:
                     type: string
@@ -27854,7 +27936,7 @@ paths:
                     errorKey: common.unauthorized
                     error: Authentication required. Please log in.
         '403':
-          description: 'HTTP 403. Possible error keys: common.forbidden.'
+          description: 'HTTP 403. Possible error keys: common.forbidden, common.passwordChangeRequired.'
           content:
             application/json:
               schema:
@@ -27870,6 +27952,7 @@ paths:
                     type: string
                     enum:
                     - common.forbidden
+                    - common.passwordChangeRequired
                     description: Stable key for frontend handling; error text is localized.
                   error:
                     type: string
@@ -28130,7 +28213,7 @@ paths:
                     errorKey: common.unauthorized
                     error: Authentication required. Please log in.
         '403':
-          description: 'HTTP 403. Possible error keys: common.forbidden.'
+          description: 'HTTP 403. Possible error keys: common.forbidden, common.passwordChangeRequired.'
           content:
             application/json:
               schema:
@@ -28146,6 +28229,7 @@ paths:
                     type: string
                     enum:
                     - common.forbidden
+                    - common.passwordChangeRequired
                     description: Stable key for frontend handling; error text is localized.
                   error:
                     type: string
@@ -28399,7 +28483,7 @@ paths:
                     errorKey: common.unauthorized
                     error: Authentication required. Please log in.
         '403':
-          description: 'HTTP 403. Possible error keys: common.forbidden.'
+          description: 'HTTP 403. Possible error keys: common.forbidden, common.passwordChangeRequired.'
           content:
             application/json:
               schema:
@@ -28415,6 +28499,7 @@ paths:
                     type: string
                     enum:
                     - common.forbidden
+                    - common.passwordChangeRequired
                     description: Stable key for frontend handling; error text is localized.
                   error:
                     type: string
@@ -28683,7 +28768,7 @@ paths:
                     errorKey: common.unauthorized
                     error: Authentication required. Please log in.
         '403':
-          description: 'HTTP 403. Possible error keys: common.forbidden.'
+          description: 'HTTP 403. Possible error keys: common.forbidden, common.passwordChangeRequired.'
           content:
             application/json:
               schema:
@@ -28699,6 +28784,7 @@ paths:
                     type: string
                     enum:
                     - common.forbidden
+                    - common.passwordChangeRequired
                     description: Stable key for frontend handling; error text is localized.
                   error:
                     type: string
@@ -28970,7 +29056,7 @@ paths:
                     errorKey: common.unauthorized
                     error: Authentication required. Please log in.
         '403':
-          description: 'HTTP 403. Possible error keys: common.forbidden.'
+          description: 'HTTP 403. Possible error keys: common.forbidden, common.passwordChangeRequired.'
           content:
             application/json:
               schema:
@@ -28986,6 +29072,7 @@ paths:
                     type: string
                     enum:
                     - common.forbidden
+                    - common.passwordChangeRequired
                     description: Stable key for frontend handling; error text is localized.
                   error:
                     type: string
@@ -29266,7 +29353,7 @@ paths:
                     errorKey: common.unauthorized
                     error: Authentication required. Please log in.
         '403':
-          description: 'HTTP 403. Possible error keys: common.forbidden.'
+          description: 'HTTP 403. Possible error keys: common.forbidden, common.passwordChangeRequired.'
           content:
             application/json:
               schema:
@@ -29282,6 +29369,7 @@ paths:
                     type: string
                     enum:
                     - common.forbidden
+                    - common.passwordChangeRequired
                     description: Stable key for frontend handling; error text is localized.
                   error:
                     type: string
@@ -29536,7 +29624,7 @@ paths:
                     errorKey: common.unauthorized
                     error: Authentication required. Please log in.
         '403':
-          description: 'HTTP 403. Possible error keys: common.forbidden.'
+          description: 'HTTP 403. Possible error keys: common.forbidden, common.passwordChangeRequired.'
           content:
             application/json:
               schema:
@@ -29552,6 +29640,7 @@ paths:
                     type: string
                     enum:
                     - common.forbidden
+                    - common.passwordChangeRequired
                     description: Stable key for frontend handling; error text is localized.
                   error:
                     type: string
@@ -29775,7 +29864,7 @@ paths:
                     errorKey: common.unauthorized
                     error: Authentication required. Please log in.
         '403':
-          description: 'HTTP 403. Possible error keys: common.forbidden.'
+          description: 'HTTP 403. Possible error keys: common.forbidden, common.passwordChangeRequired.'
           content:
             application/json:
               schema:
@@ -29791,6 +29880,7 @@ paths:
                     type: string
                     enum:
                     - common.forbidden
+                    - common.passwordChangeRequired
                     description: Stable key for frontend handling; error text is localized.
                   error:
                     type: string
@@ -30050,7 +30140,7 @@ paths:
                     errorKey: common.unauthorized
                     error: Authentication required. Please log in.
         '403':
-          description: 'HTTP 403. Possible error keys: common.forbidden.'
+          description: 'HTTP 403. Possible error keys: common.forbidden, common.passwordChangeRequired.'
           content:
             application/json:
               schema:
@@ -30066,6 +30156,7 @@ paths:
                     type: string
                     enum:
                     - common.forbidden
+                    - common.passwordChangeRequired
                     description: Stable key for frontend handling; error text is localized.
                   error:
                     type: string
@@ -30334,7 +30425,7 @@ paths:
                     errorKey: common.unauthorized
                     error: Authentication required. Please log in.
         '403':
-          description: 'HTTP 403. Possible error keys: common.forbidden.'
+          description: 'HTTP 403. Possible error keys: common.forbidden, common.passwordChangeRequired.'
           content:
             application/json:
               schema:
@@ -30350,6 +30441,7 @@ paths:
                     type: string
                     enum:
                     - common.forbidden
+                    - common.passwordChangeRequired
                     description: Stable key for frontend handling; error text is localized.
                   error:
                     type: string
@@ -30649,7 +30741,7 @@ paths:
                     errorKey: common.unauthorized
                     error: Authentication required. Please log in.
         '403':
-          description: 'HTTP 403. Possible error keys: common.forbidden.'
+          description: 'HTTP 403. Possible error keys: common.forbidden, common.passwordChangeRequired.'
           content:
             application/json:
               schema:
@@ -30665,6 +30757,7 @@ paths:
                     type: string
                     enum:
                     - common.forbidden
+                    - common.passwordChangeRequired
                     description: Stable key for frontend handling; error text is localized.
                   error:
                     type: string
@@ -30951,7 +31044,7 @@ paths:
                     errorKey: common.unauthorized
                     error: Authentication required. Please log in.
         '403':
-          description: 'HTTP 403. Possible error keys: common.forbidden.'
+          description: 'HTTP 403. Possible error keys: common.forbidden, common.passwordChangeRequired.'
           content:
             application/json:
               schema:
@@ -30967,6 +31060,7 @@ paths:
                     type: string
                     enum:
                     - common.forbidden
+                    - common.passwordChangeRequired
                     description: Stable key for frontend handling; error text is localized.
                   error:
                     type: string
@@ -31186,7 +31280,7 @@ paths:
                     errorKey: common.unauthorized
                     error: Authentication required. Please log in.
         '403':
-          description: 'HTTP 403. Possible error keys: common.forbidden.'
+          description: 'HTTP 403. Possible error keys: common.forbidden, common.passwordChangeRequired.'
           content:
             application/json:
               schema:
@@ -31202,6 +31296,7 @@ paths:
                     type: string
                     enum:
                     - common.forbidden
+                    - common.passwordChangeRequired
                     description: Stable key for frontend handling; error text is localized.
                   error:
                     type: string
@@ -31451,7 +31546,7 @@ paths:
                     errorKey: common.unauthorized
                     error: Authentication required. Please log in.
         '403':
-          description: 'HTTP 403. Possible error keys: common.forbidden.'
+          description: 'HTTP 403. Possible error keys: common.forbidden, common.passwordChangeRequired.'
           content:
             application/json:
               schema:
@@ -31467,6 +31562,7 @@ paths:
                     type: string
                     enum:
                     - common.forbidden
+                    - common.passwordChangeRequired
                     description: Stable key for frontend handling; error text is localized.
                   error:
                     type: string
@@ -31985,7 +32081,7 @@ paths:
                     errorKey: common.unauthorized
                     error: Authentication required. Please log in.
         '403':
-          description: 'HTTP 403. Possible error keys: common.forbidden.'
+          description: 'HTTP 403. Possible error keys: common.forbidden, common.passwordChangeRequired.'
           content:
             application/json:
               schema:
@@ -32001,6 +32097,7 @@ paths:
                     type: string
                     enum:
                     - common.forbidden
+                    - common.passwordChangeRequired
                     description: Stable key for frontend handling; error text is localized.
                   error:
                     type: string
@@ -32527,7 +32624,7 @@ paths:
                     errorKey: common.unauthorized
                     error: Authentication required. Please log in.
         '403':
-          description: 'HTTP 403. Possible error keys: common.forbidden.'
+          description: 'HTTP 403. Possible error keys: common.forbidden, common.passwordChangeRequired.'
           content:
             application/json:
               schema:
@@ -32543,6 +32640,7 @@ paths:
                     type: string
                     enum:
                     - common.forbidden
+                    - common.passwordChangeRequired
                     description: Stable key for frontend handling; error text is localized.
                   error:
                     type: string
@@ -32809,7 +32907,7 @@ paths:
                     errorKey: common.unauthorized
                     error: Authentication required. Please log in.
         '403':
-          description: 'HTTP 403. Possible error keys: common.forbidden.'
+          description: 'HTTP 403. Possible error keys: common.forbidden, common.passwordChangeRequired.'
           content:
             application/json:
               schema:
@@ -32825,6 +32923,7 @@ paths:
                     type: string
                     enum:
                     - common.forbidden
+                    - common.passwordChangeRequired
                     description: Stable key for frontend handling; error text is localized.
                   error:
                     type: string
@@ -33095,7 +33194,7 @@ paths:
                     errorKey: common.unauthorized
                     error: Authentication required. Please log in.
         '403':
-          description: 'HTTP 403. Possible error keys: common.forbidden.'
+          description: 'HTTP 403. Possible error keys: common.forbidden, common.passwordChangeRequired.'
           content:
             application/json:
               schema:
@@ -33111,6 +33210,7 @@ paths:
                     type: string
                     enum:
                     - common.forbidden
+                    - common.passwordChangeRequired
                     description: Stable key for frontend handling; error text is localized.
                   error:
                     type: string
@@ -33386,7 +33486,7 @@ paths:
                     errorKey: common.unauthorized
                     error: Authentication required. Please log in.
         '403':
-          description: 'HTTP 403. Possible error keys: common.forbidden.'
+          description: 'HTTP 403. Possible error keys: common.forbidden, common.passwordChangeRequired.'
           content:
             application/json:
               schema:
@@ -33402,6 +33502,7 @@ paths:
                     type: string
                     enum:
                     - common.forbidden
+                    - common.passwordChangeRequired
                     description: Stable key for frontend handling; error text is localized.
                   error:
                     type: string
@@ -33722,7 +33823,7 @@ paths:
                     errorKey: common.unauthorized
                     error: Authentication required. Please log in.
         '403':
-          description: 'HTTP 403. Possible error keys: common.forbidden.'
+          description: 'HTTP 403. Possible error keys: common.forbidden, common.passwordChangeRequired.'
           content:
             application/json:
               schema:
@@ -33738,6 +33839,7 @@ paths:
                     type: string
                     enum:
                     - common.forbidden
+                    - common.passwordChangeRequired
                     description: Stable key for frontend handling; error text is localized.
                   error:
                     type: string
@@ -34108,7 +34210,7 @@ paths:
                     errorKey: common.unauthorized
                     error: Authentication required. Please log in.
         '403':
-          description: 'HTTP 403. Possible error keys: common.forbidden.'
+          description: 'HTTP 403. Possible error keys: common.forbidden, common.passwordChangeRequired.'
           content:
             application/json:
               schema:
@@ -34124,6 +34226,7 @@ paths:
                     type: string
                     enum:
                     - common.forbidden
+                    - common.passwordChangeRequired
                     description: Stable key for frontend handling; error text is localized.
                   error:
                     type: string
@@ -34594,7 +34697,7 @@ paths:
                     errorKey: common.unauthorized
                     error: Authentication required. Please log in.
         '403':
-          description: 'HTTP 403. Possible error keys: common.forbidden.'
+          description: 'HTTP 403. Possible error keys: common.forbidden, common.passwordChangeRequired.'
           content:
             application/json:
               schema:
@@ -34610,6 +34713,7 @@ paths:
                     type: string
                     enum:
                     - common.forbidden
+                    - common.passwordChangeRequired
                     description: Stable key for frontend handling; error text is localized.
                   error:
                     type: string
@@ -34964,7 +35068,7 @@ paths:
                     errorKey: common.unauthorized
                     error: Authentication required. Please log in.
         '403':
-          description: 'HTTP 403. Possible error keys: common.forbidden.'
+          description: 'HTTP 403. Possible error keys: common.forbidden, common.passwordChangeRequired.'
           content:
             application/json:
               schema:
@@ -34980,6 +35084,7 @@ paths:
                     type: string
                     enum:
                     - common.forbidden
+                    - common.passwordChangeRequired
                     description: Stable key for frontend handling; error text is localized.
                   error:
                     type: string
@@ -35313,7 +35418,7 @@ paths:
                     errorKey: common.unauthorized
                     error: Authentication required. Please log in.
         '403':
-          description: 'HTTP 403. Possible error keys: common.forbidden.'
+          description: 'HTTP 403. Possible error keys: common.forbidden, common.passwordChangeRequired.'
           content:
             application/json:
               schema:
@@ -35329,6 +35434,7 @@ paths:
                     type: string
                     enum:
                     - common.forbidden
+                    - common.passwordChangeRequired
                     description: Stable key for frontend handling; error text is localized.
                   error:
                     type: string
@@ -35712,7 +35818,7 @@ paths:
                     errorKey: common.unauthorized
                     error: Authentication required. Please log in.
         '403':
-          description: 'HTTP 403. Possible error keys: common.forbidden.'
+          description: 'HTTP 403. Possible error keys: common.forbidden, common.passwordChangeRequired.'
           content:
             application/json:
               schema:
@@ -35728,6 +35834,7 @@ paths:
                     type: string
                     enum:
                     - common.forbidden
+                    - common.passwordChangeRequired
                     description: Stable key for frontend handling; error text is localized.
                   error:
                     type: string
@@ -35948,7 +36055,7 @@ paths:
                     errorKey: common.unauthorized
                     error: Authentication required. Please log in.
         '403':
-          description: 'HTTP 403. Possible error keys: common.forbidden.'
+          description: 'HTTP 403. Possible error keys: common.forbidden, common.passwordChangeRequired.'
           content:
             application/json:
               schema:
@@ -35964,6 +36071,7 @@ paths:
                     type: string
                     enum:
                     - common.forbidden
+                    - common.passwordChangeRequired
                     description: Stable key for frontend handling; error text is localized.
                   error:
                     type: string
@@ -36376,7 +36484,7 @@ paths:
                     errorKey: common.unauthorized
                     error: Authentication required. Please log in.
         '403':
-          description: 'HTTP 403. Possible error keys: common.forbidden.'
+          description: 'HTTP 403. Possible error keys: common.forbidden, common.passwordChangeRequired.'
           content:
             application/json:
               schema:
@@ -36392,6 +36500,7 @@ paths:
                     type: string
                     enum:
                     - common.forbidden
+                    - common.passwordChangeRequired
                     description: Stable key for frontend handling; error text is localized.
                   error:
                     type: string
@@ -36764,7 +36873,7 @@ paths:
                     errorKey: common.unauthorized
                     error: Authentication required. Please log in.
         '403':
-          description: 'HTTP 403. Possible error keys: common.forbidden.'
+          description: 'HTTP 403. Possible error keys: common.forbidden, common.passwordChangeRequired.'
           content:
             application/json:
               schema:
@@ -36780,6 +36889,7 @@ paths:
                     type: string
                     enum:
                     - common.forbidden
+                    - common.passwordChangeRequired
                     description: Stable key for frontend handling; error text is localized.
                   error:
                     type: string
@@ -37149,7 +37259,7 @@ paths:
                     errorKey: common.unauthorized
                     error: Authentication required. Please log in.
         '403':
-          description: 'HTTP 403. Possible error keys: common.forbidden.'
+          description: 'HTTP 403. Possible error keys: common.forbidden, common.passwordChangeRequired.'
           content:
             application/json:
               schema:
@@ -37165,6 +37275,7 @@ paths:
                     type: string
                     enum:
                     - common.forbidden
+                    - common.passwordChangeRequired
                     description: Stable key for frontend handling; error text is localized.
                   error:
                     type: string
@@ -37500,7 +37611,7 @@ paths:
                     errorKey: common.unauthorized
                     error: Authentication required. Please log in.
         '403':
-          description: 'HTTP 403. Possible error keys: common.forbidden.'
+          description: 'HTTP 403. Possible error keys: common.forbidden, common.passwordChangeRequired.'
           content:
             application/json:
               schema:
@@ -37516,6 +37627,7 @@ paths:
                     type: string
                     enum:
                     - common.forbidden
+                    - common.passwordChangeRequired
                     description: Stable key for frontend handling; error text is localized.
                   error:
                     type: string
@@ -37865,7 +37977,7 @@ paths:
                     errorKey: common.unauthorized
                     error: Authentication required. Please log in.
         '403':
-          description: 'HTTP 403. Possible error keys: common.forbidden.'
+          description: 'HTTP 403. Possible error keys: common.forbidden, common.passwordChangeRequired.'
           content:
             application/json:
               schema:
@@ -37881,6 +37993,7 @@ paths:
                     type: string
                     enum:
                     - common.forbidden
+                    - common.passwordChangeRequired
                     description: Stable key for frontend handling; error text is localized.
                   error:
                     type: string
@@ -38210,7 +38323,7 @@ paths:
                     errorKey: common.unauthorized
                     error: Authentication required. Please log in.
         '403':
-          description: 'HTTP 403. Possible error keys: common.forbidden.'
+          description: 'HTTP 403. Possible error keys: common.forbidden, common.passwordChangeRequired.'
           content:
             application/json:
               schema:
@@ -38226,6 +38339,7 @@ paths:
                     type: string
                     enum:
                     - common.forbidden
+                    - common.passwordChangeRequired
                     description: Stable key for frontend handling; error text is localized.
                   error:
                     type: string
@@ -38655,7 +38769,7 @@ paths:
                     errorKey: common.unauthorized
                     error: Authentication required. Please log in.
         '403':
-          description: 'HTTP 403. Possible error keys: common.forbidden.'
+          description: 'HTTP 403. Possible error keys: common.forbidden, common.passwordChangeRequired.'
           content:
             application/json:
               schema:
@@ -38671,6 +38785,7 @@ paths:
                     type: string
                     enum:
                     - common.forbidden
+                    - common.passwordChangeRequired
                     description: Stable key for frontend handling; error text is localized.
                   error:
                     type: string
@@ -39019,7 +39134,7 @@ paths:
                     errorKey: common.unauthorized
                     error: Authentication required. Please log in.
         '403':
-          description: 'HTTP 403. Possible error keys: common.forbidden.'
+          description: 'HTTP 403. Possible error keys: common.forbidden, common.passwordChangeRequired.'
           content:
             application/json:
               schema:
@@ -39035,6 +39150,7 @@ paths:
                     type: string
                     enum:
                     - common.forbidden
+                    - common.passwordChangeRequired
                     description: Stable key for frontend handling; error text is localized.
                   error:
                     type: string
@@ -39397,7 +39513,7 @@ paths:
                     errorKey: common.unauthorized
                     error: Authentication required. Please log in.
         '403':
-          description: 'HTTP 403. Possible error keys: common.forbidden.'
+          description: 'HTTP 403. Possible error keys: common.forbidden, common.passwordChangeRequired.'
           content:
             application/json:
               schema:
@@ -39413,6 +39529,7 @@ paths:
                     type: string
                     enum:
                     - common.forbidden
+                    - common.passwordChangeRequired
                     description: Stable key for frontend handling; error text is localized.
                   error:
                     type: string
@@ -39755,7 +39872,7 @@ paths:
                     errorKey: common.unauthorized
                     error: Authentication required. Please log in.
         '403':
-          description: 'HTTP 403. Possible error keys: common.forbidden.'
+          description: 'HTTP 403. Possible error keys: common.forbidden, common.passwordChangeRequired.'
           content:
             application/json:
               schema:
@@ -39771,6 +39888,7 @@ paths:
                     type: string
                     enum:
                     - common.forbidden
+                    - common.passwordChangeRequired
                     description: Stable key for frontend handling; error text is localized.
                   error:
                     type: string
@@ -40197,7 +40315,7 @@ paths:
                     errorKey: common.unauthorized
                     error: Authentication required. Please log in.
         '403':
-          description: 'HTTP 403. Possible error keys: common.forbidden.'
+          description: 'HTTP 403. Possible error keys: common.forbidden, common.passwordChangeRequired.'
           content:
             application/json:
               schema:
@@ -40213,6 +40331,7 @@ paths:
                     type: string
                     enum:
                     - common.forbidden
+                    - common.passwordChangeRequired
                     description: Stable key for frontend handling; error text is localized.
                   error:
                     type: string
@@ -40572,7 +40691,7 @@ paths:
                     errorKey: common.unauthorized
                     error: Authentication required. Please log in.
         '403':
-          description: 'HTTP 403. Possible error keys: common.forbidden.'
+          description: 'HTTP 403. Possible error keys: common.forbidden, common.passwordChangeRequired.'
           content:
             application/json:
               schema:
@@ -40588,6 +40707,7 @@ paths:
                     type: string
                     enum:
                     - common.forbidden
+                    - common.passwordChangeRequired
                     description: Stable key for frontend handling; error text is localized.
                   error:
                     type: string
@@ -40872,7 +40992,7 @@ paths:
                     errorKey: common.unauthorized
                     error: Authentication required. Please log in.
         '403':
-          description: 'HTTP 403. Possible error keys: common.forbidden.'
+          description: 'HTTP 403. Possible error keys: common.forbidden, common.passwordChangeRequired.'
           content:
             application/json:
               schema:
@@ -40888,6 +41008,7 @@ paths:
                     type: string
                     enum:
                     - common.forbidden
+                    - common.passwordChangeRequired
                     description: Stable key for frontend handling; error text is localized.
                   error:
                     type: string
@@ -41119,7 +41240,7 @@ paths:
                     errorKey: common.unauthorized
                     error: Authentication required. Please log in.
         '403':
-          description: 'HTTP 403. Possible error keys: common.forbidden.'
+          description: 'HTTP 403. Possible error keys: common.forbidden, common.passwordChangeRequired.'
           content:
             application/json:
               schema:
@@ -41135,6 +41256,7 @@ paths:
                     type: string
                     enum:
                     - common.forbidden
+                    - common.passwordChangeRequired
                     description: Stable key for frontend handling; error text is localized.
                   error:
                     type: string
@@ -42832,7 +42954,7 @@ paths:
                     errorKey: common.unauthorized
                     error: Authentication required. Please log in.
         '403':
-          description: 'HTTP 403. Possible error keys: common.forbidden.'
+          description: 'HTTP 403. Possible error keys: common.forbidden, common.passwordChangeRequired.'
           content:
             application/json:
               schema:
@@ -42848,6 +42970,7 @@ paths:
                     type: string
                     enum:
                     - common.forbidden
+                    - common.passwordChangeRequired
                     description: Stable key for frontend handling; error text is localized.
                   error:
                     type: string
@@ -43276,7 +43399,7 @@ paths:
                     errorKey: common.unauthorized
                     error: Authentication required. Please log in.
         '403':
-          description: 'HTTP 403. Possible error keys: common.forbidden.'
+          description: 'HTTP 403. Possible error keys: common.forbidden, common.passwordChangeRequired.'
           content:
             application/json:
               schema:
@@ -43292,6 +43415,7 @@ paths:
                     type: string
                     enum:
                     - common.forbidden
+                    - common.passwordChangeRequired
                     description: Stable key for frontend handling; error text is localized.
                   error:
                     type: string
@@ -43549,7 +43673,7 @@ paths:
                     errorKey: common.unauthorized
                     error: Authentication required. Please log in.
         '403':
-          description: 'HTTP 403. Possible error keys: common.forbidden.'
+          description: 'HTTP 403. Possible error keys: common.forbidden, common.passwordChangeRequired.'
           content:
             application/json:
               schema:
@@ -43565,6 +43689,7 @@ paths:
                     type: string
                     enum:
                     - common.forbidden
+                    - common.passwordChangeRequired
                     description: Stable key for frontend handling; error text is localized.
                   error:
                     type: string
@@ -43939,7 +44064,7 @@ paths:
                     errorKey: common.unauthorized
                     error: Authentication required. Please log in.
         '403':
-          description: 'HTTP 403. Possible error keys: common.forbidden.'
+          description: 'HTTP 403. Possible error keys: common.forbidden, common.passwordChangeRequired.'
           content:
             application/json:
               schema:
@@ -43955,6 +44080,7 @@ paths:
                     type: string
                     enum:
                     - common.forbidden
+                    - common.passwordChangeRequired
                     description: Stable key for frontend handling; error text is localized.
                   error:
                     type: string
@@ -44285,7 +44411,7 @@ paths:
                     errorKey: common.unauthorized
                     error: Authentication required. Please log in.
         '403':
-          description: 'HTTP 403. Possible error keys: common.forbidden.'
+          description: 'HTTP 403. Possible error keys: common.forbidden, common.passwordChangeRequired.'
           content:
             application/json:
               schema:
@@ -44301,6 +44427,7 @@ paths:
                     type: string
                     enum:
                     - common.forbidden
+                    - common.passwordChangeRequired
                     description: Stable key for frontend handling; error text is localized.
                   error:
                     type: string
@@ -44717,7 +44844,7 @@ paths:
                     errorKey: common.unauthorized
                     error: Authentication required. Please log in.
         '403':
-          description: 'HTTP 403. Possible error keys: common.forbidden.'
+          description: 'HTTP 403. Possible error keys: common.forbidden, common.passwordChangeRequired.'
           content:
             application/json:
               schema:
@@ -44733,6 +44860,7 @@ paths:
                     type: string
                     enum:
                     - common.forbidden
+                    - common.passwordChangeRequired
                     description: Stable key for frontend handling; error text is localized.
                   error:
                     type: string
@@ -45036,7 +45164,7 @@ paths:
                     errorKey: common.unauthorized
                     error: Authentication required. Please log in.
         '403':
-          description: 'HTTP 403. Possible error keys: common.forbidden.'
+          description: 'HTTP 403. Possible error keys: common.forbidden, common.passwordChangeRequired.'
           content:
             application/json:
               schema:
@@ -45052,6 +45180,7 @@ paths:
                     type: string
                     enum:
                     - common.forbidden
+                    - common.passwordChangeRequired
                     description: Stable key for frontend handling; error text is localized.
                   error:
                     type: string
@@ -45358,7 +45487,7 @@ paths:
                     errorKey: common.unauthorized
                     error: Authentication required. Please log in.
         '403':
-          description: 'HTTP 403. Possible error keys: common.forbidden.'
+          description: 'HTTP 403. Possible error keys: common.forbidden, common.passwordChangeRequired.'
           content:
             application/json:
               schema:
@@ -45374,6 +45503,7 @@ paths:
                     type: string
                     enum:
                     - common.forbidden
+                    - common.passwordChangeRequired
                     description: Stable key for frontend handling; error text is localized.
                   error:
                     type: string
@@ -45677,7 +45807,7 @@ paths:
                     errorKey: common.unauthorized
                     error: Authentication required. Please log in.
         '403':
-          description: 'HTTP 403. Possible error keys: common.forbidden.'
+          description: 'HTTP 403. Possible error keys: common.forbidden, common.passwordChangeRequired.'
           content:
             application/json:
               schema:
@@ -45693,6 +45823,7 @@ paths:
                     type: string
                     enum:
                     - common.forbidden
+                    - common.passwordChangeRequired
                     description: Stable key for frontend handling; error text is localized.
                   error:
                     type: string
@@ -45933,7 +46064,7 @@ paths:
                     errorKey: common.unauthorized
                     error: Authentication required. Please log in.
         '403':
-          description: 'HTTP 403. Possible error keys: common.forbidden.'
+          description: 'HTTP 403. Possible error keys: common.forbidden, common.passwordChangeRequired.'
           content:
             application/json:
               schema:
@@ -45949,6 +46080,7 @@ paths:
                     type: string
                     enum:
                     - common.forbidden
+                    - common.passwordChangeRequired
                     description: Stable key for frontend handling; error text is localized.
                   error:
                     type: string
@@ -46175,7 +46307,7 @@ paths:
                     errorKey: common.unauthorized
                     error: Authentication required. Please log in.
         '403':
-          description: 'HTTP 403. Possible error keys: common.forbidden.'
+          description: 'HTTP 403. Possible error keys: common.forbidden, common.passwordChangeRequired.'
           content:
             application/json:
               schema:
@@ -46191,6 +46323,7 @@ paths:
                     type: string
                     enum:
                     - common.forbidden
+                    - common.passwordChangeRequired
                     description: Stable key for frontend handling; error text is localized.
                   error:
                     type: string
@@ -46420,7 +46553,7 @@ paths:
                     errorKey: common.unauthorized
                     error: Authentication required. Please log in.
         '403':
-          description: 'HTTP 403. Possible error keys: common.forbidden.'
+          description: 'HTTP 403. Possible error keys: common.forbidden, common.passwordChangeRequired.'
           content:
             application/json:
               schema:
@@ -46436,6 +46569,7 @@ paths:
                     type: string
                     enum:
                     - common.forbidden
+                    - common.passwordChangeRequired
                     description: Stable key for frontend handling; error text is localized.
                   error:
                     type: string
@@ -46680,7 +46814,7 @@ paths:
                     errorKey: common.unauthorized
                     error: Authentication required. Please log in.
         '403':
-          description: 'HTTP 403. Possible error keys: common.forbidden.'
+          description: 'HTTP 403. Possible error keys: common.forbidden, common.passwordChangeRequired.'
           content:
             application/json:
               schema:
@@ -46696,6 +46830,7 @@ paths:
                     type: string
                     enum:
                     - common.forbidden
+                    - common.passwordChangeRequired
                     description: Stable key for frontend handling; error text is localized.
                   error:
                     type: string
@@ -46957,7 +47092,7 @@ paths:
                     errorKey: common.unauthorized
                     error: Authentication required. Please log in.
         '403':
-          description: 'HTTP 403. Possible error keys: common.forbidden.'
+          description: 'HTTP 403. Possible error keys: common.forbidden, common.passwordChangeRequired.'
           content:
             application/json:
               schema:
@@ -46973,6 +47108,7 @@ paths:
                     type: string
                     enum:
                     - common.forbidden
+                    - common.passwordChangeRequired
                     description: Stable key for frontend handling; error text is localized.
                   error:
                     type: string
@@ -47234,7 +47370,7 @@ paths:
                     errorKey: common.unauthorized
                     error: Authentication required. Please log in.
         '403':
-          description: 'HTTP 403. Possible error keys: common.forbidden.'
+          description: 'HTTP 403. Possible error keys: common.forbidden, common.passwordChangeRequired.'
           content:
             application/json:
               schema:
@@ -47250,6 +47386,7 @@ paths:
                     type: string
                     enum:
                     - common.forbidden
+                    - common.passwordChangeRequired
                     description: Stable key for frontend handling; error text is localized.
                   error:
                     type: string
@@ -47534,7 +47671,7 @@ paths:
                     errorKey: common.unauthorized
                     error: Authentication required. Please log in.
         '403':
-          description: 'HTTP 403. Possible error keys: common.forbidden.'
+          description: 'HTTP 403. Possible error keys: common.forbidden, common.passwordChangeRequired.'
           content:
             application/json:
               schema:
@@ -47550,6 +47687,7 @@ paths:
                     type: string
                     enum:
                     - common.forbidden
+                    - common.passwordChangeRequired
                     description: Stable key for frontend handling; error text is localized.
                   error:
                     type: string
@@ -47790,7 +47928,7 @@ paths:
                     errorKey: common.unauthorized
                     error: Authentication required. Please log in.
         '403':
-          description: 'HTTP 403. Possible error keys: common.forbidden.'
+          description: 'HTTP 403. Possible error keys: common.forbidden, common.passwordChangeRequired.'
           content:
             application/json:
               schema:
@@ -47806,6 +47944,7 @@ paths:
                     type: string
                     enum:
                     - common.forbidden
+                    - common.passwordChangeRequired
                     description: Stable key for frontend handling; error text is localized.
                   error:
                     type: string
@@ -48178,7 +48317,7 @@ paths:
                     errorKey: common.unauthorized
                     error: Authentication required. Please log in.
         '403':
-          description: 'HTTP 403. Possible error keys: common.forbidden.'
+          description: 'HTTP 403. Possible error keys: common.forbidden, common.passwordChangeRequired.'
           content:
             application/json:
               schema:
@@ -48194,6 +48333,7 @@ paths:
                     type: string
                     enum:
                     - common.forbidden
+                    - common.passwordChangeRequired
                     description: Stable key for frontend handling; error text is localized.
                   error:
                     type: string
@@ -48529,7 +48669,7 @@ paths:
                     errorKey: common.unauthorized
                     error: Authentication required. Please log in.
         '403':
-          description: 'HTTP 403. Possible error keys: common.forbidden.'
+          description: 'HTTP 403. Possible error keys: common.forbidden, common.passwordChangeRequired.'
           content:
             application/json:
               schema:
@@ -48545,6 +48685,7 @@ paths:
                     type: string
                     enum:
                     - common.forbidden
+                    - common.passwordChangeRequired
                     description: Stable key for frontend handling; error text is localized.
                   error:
                     type: string
@@ -49017,7 +49158,7 @@ paths:
                     errorKey: common.unauthorized
                     error: Authentication required. Please log in.
         '403':
-          description: 'HTTP 403. Possible error keys: common.forbidden.'
+          description: 'HTTP 403. Possible error keys: common.forbidden, common.passwordChangeRequired.'
           content:
             application/json:
               schema:
@@ -49033,6 +49174,7 @@ paths:
                     type: string
                     enum:
                     - common.forbidden
+                    - common.passwordChangeRequired
                     description: Stable key for frontend handling; error text is localized.
                   error:
                     type: string
@@ -50334,7 +50476,7 @@ paths:
                     errorKey: common.unauthorized
                     error: Authentication required. Please log in.
         '403':
-          description: 'HTTP 403. Possible error keys: common.forbidden.'
+          description: 'HTTP 403. Possible error keys: common.forbidden, common.passwordChangeRequired.'
           content:
             application/json:
               schema:
@@ -50350,6 +50492,7 @@ paths:
                     type: string
                     enum:
                     - common.forbidden
+                    - common.passwordChangeRequired
                     description: Stable key for frontend handling; error text is localized.
                   error:
                     type: string
@@ -50682,7 +50825,7 @@ paths:
                     errorKey: common.unauthorized
                     error: Authentication required. Please log in.
         '403':
-          description: 'HTTP 403. Possible error keys: common.forbidden.'
+          description: 'HTTP 403. Possible error keys: common.forbidden, common.passwordChangeRequired.'
           content:
             application/json:
               schema:
@@ -50698,6 +50841,7 @@ paths:
                     type: string
                     enum:
                     - common.forbidden
+                    - common.passwordChangeRequired
                     description: Stable key for frontend handling; error text is localized.
                   error:
                     type: string
@@ -51057,7 +51201,7 @@ paths:
                     errorKey: common.unauthorized
                     error: Authentication required. Please log in.
         '403':
-          description: 'HTTP 403. Possible error keys: common.forbidden.'
+          description: 'HTTP 403. Possible error keys: common.forbidden, common.passwordChangeRequired.'
           content:
             application/json:
               schema:
@@ -51073,6 +51217,7 @@ paths:
                     type: string
                     enum:
                     - common.forbidden
+                    - common.passwordChangeRequired
                     description: Stable key for frontend handling; error text is localized.
                   error:
                     type: string
@@ -51440,7 +51585,7 @@ paths:
                     errorKey: common.unauthorized
                     error: Authentication required. Please log in.
         '403':
-          description: 'HTTP 403. Possible error keys: common.forbidden.'
+          description: 'HTTP 403. Possible error keys: common.forbidden, common.passwordChangeRequired.'
           content:
             application/json:
               schema:
@@ -51456,6 +51601,7 @@ paths:
                     type: string
                     enum:
                     - common.forbidden
+                    - common.passwordChangeRequired
                     description: Stable key for frontend handling; error text is localized.
                   error:
                     type: string
@@ -51773,7 +51919,7 @@ paths:
                     errorKey: common.unauthorized
                     error: Authentication required. Please log in.
         '403':
-          description: 'HTTP 403. Possible error keys: common.forbidden.'
+          description: 'HTTP 403. Possible error keys: common.forbidden, common.passwordChangeRequired.'
           content:
             application/json:
               schema:
@@ -51789,6 +51935,7 @@ paths:
                     type: string
                     enum:
                     - common.forbidden
+                    - common.passwordChangeRequired
                     description: Stable key for frontend handling; error text is localized.
                   error:
                     type: string
@@ -52110,7 +52257,7 @@ paths:
                     errorKey: common.unauthorized
                     error: Authentication required. Please log in.
         '403':
-          description: 'HTTP 403. Possible error keys: common.forbidden.'
+          description: 'HTTP 403. Possible error keys: common.forbidden, common.passwordChangeRequired.'
           content:
             application/json:
               schema:
@@ -52126,6 +52273,7 @@ paths:
                     type: string
                     enum:
                     - common.forbidden
+                    - common.passwordChangeRequired
                     description: Stable key for frontend handling; error text is localized.
                   error:
                     type: string
@@ -52447,7 +52595,7 @@ paths:
                     errorKey: common.unauthorized
                     error: Authentication required. Please log in.
         '403':
-          description: 'HTTP 403. Possible error keys: common.forbidden.'
+          description: 'HTTP 403. Possible error keys: common.forbidden, common.passwordChangeRequired.'
           content:
             application/json:
               schema:
@@ -52463,6 +52611,7 @@ paths:
                     type: string
                     enum:
                     - common.forbidden
+                    - common.passwordChangeRequired
                     description: Stable key for frontend handling; error text is localized.
                   error:
                     type: string
@@ -52788,7 +52937,7 @@ paths:
                     errorKey: common.unauthorized
                     error: Authentication required. Please log in.
         '403':
-          description: 'HTTP 403. Possible error keys: common.forbidden.'
+          description: 'HTTP 403. Possible error keys: common.forbidden, common.passwordChangeRequired.'
           content:
             application/json:
               schema:
@@ -52804,6 +52953,7 @@ paths:
                     type: string
                     enum:
                     - common.forbidden
+                    - common.passwordChangeRequired
                     description: Stable key for frontend handling; error text is localized.
                   error:
                     type: string
@@ -53097,7 +53247,7 @@ paths:
                     errorKey: common.unauthorized
                     error: Authentication required. Please log in.
         '403':
-          description: 'HTTP 403. Possible error keys: common.forbidden.'
+          description: 'HTTP 403. Possible error keys: common.forbidden, common.passwordChangeRequired.'
           content:
             application/json:
               schema:
@@ -53113,6 +53263,7 @@ paths:
                     type: string
                     enum:
                     - common.forbidden
+                    - common.passwordChangeRequired
                     description: Stable key for frontend handling; error text is localized.
                   error:
                     type: string
@@ -53405,7 +53556,7 @@ paths:
                     errorKey: common.unauthorized
                     error: Authentication required. Please log in.
         '403':
-          description: 'HTTP 403. Possible error keys: common.forbidden.'
+          description: 'HTTP 403. Possible error keys: common.forbidden, common.passwordChangeRequired.'
           content:
             application/json:
               schema:
@@ -53421,6 +53572,7 @@ paths:
                     type: string
                     enum:
                     - common.forbidden
+                    - common.passwordChangeRequired
                     description: Stable key for frontend handling; error text is localized.
                   error:
                     type: string
@@ -53774,7 +53926,7 @@ paths:
                     errorKey: common.unauthorized
                     error: Authentication required. Please log in.
         '403':
-          description: 'HTTP 403. Possible error keys: common.forbidden.'
+          description: 'HTTP 403. Possible error keys: common.forbidden, common.passwordChangeRequired.'
           content:
             application/json:
               schema:
@@ -53790,6 +53942,7 @@ paths:
                     type: string
                     enum:
                     - common.forbidden
+                    - common.passwordChangeRequired
                     description: Stable key for frontend handling; error text is localized.
                   error:
                     type: string
@@ -54112,7 +54265,7 @@ paths:
                     errorKey: common.unauthorized
                     error: Authentication required. Please log in.
         '403':
-          description: 'HTTP 403. Possible error keys: common.forbidden.'
+          description: 'HTTP 403. Possible error keys: common.forbidden, common.passwordChangeRequired.'
           content:
             application/json:
               schema:
@@ -54128,6 +54281,7 @@ paths:
                     type: string
                     enum:
                     - common.forbidden
+                    - common.passwordChangeRequired
                     description: Stable key for frontend handling; error text is localized.
                   error:
                     type: string
@@ -54462,7 +54616,7 @@ paths:
                     errorKey: common.unauthorized
                     error: Authentication required. Please log in.
         '403':
-          description: 'HTTP 403. Possible error keys: common.forbidden.'
+          description: 'HTTP 403. Possible error keys: common.forbidden, common.passwordChangeRequired.'
           content:
             application/json:
               schema:
@@ -54478,6 +54632,7 @@ paths:
                     type: string
                     enum:
                     - common.forbidden
+                    - common.passwordChangeRequired
                     description: Stable key for frontend handling; error text is localized.
                   error:
                     type: string
@@ -54750,7 +54905,7 @@ paths:
                     errorKey: common.unauthorized
                     error: Authentication required. Please log in.
         '403':
-          description: 'HTTP 403. Possible error keys: common.forbidden.'
+          description: 'HTTP 403. Possible error keys: common.forbidden, common.passwordChangeRequired.'
           content:
             application/json:
               schema:
@@ -54766,6 +54921,7 @@ paths:
                     type: string
                     enum:
                     - common.forbidden
+                    - common.passwordChangeRequired
                     description: Stable key for frontend handling; error text is localized.
                   error:
                     type: string
@@ -55033,7 +55189,7 @@ paths:
                     errorKey: common.unauthorized
                     error: Authentication required. Please log in.
         '403':
-          description: 'HTTP 403. Possible error keys: common.forbidden.'
+          description: 'HTTP 403. Possible error keys: common.forbidden, common.passwordChangeRequired.'
           content:
             application/json:
               schema:
@@ -55049,6 +55205,7 @@ paths:
                     type: string
                     enum:
                     - common.forbidden
+                    - common.passwordChangeRequired
                     description: Stable key for frontend handling; error text is localized.
                   error:
                     type: string
@@ -55420,7 +55577,7 @@ paths:
                     errorKey: common.unauthorized
                     error: Authentication required. Please log in.
         '403':
-          description: 'HTTP 403. Possible error keys: common.forbidden.'
+          description: 'HTTP 403. Possible error keys: common.forbidden, common.passwordChangeRequired.'
           content:
             application/json:
               schema:
@@ -55436,6 +55593,7 @@ paths:
                     type: string
                     enum:
                     - common.forbidden
+                    - common.passwordChangeRequired
                     description: Stable key for frontend handling; error text is localized.
                   error:
                     type: string
@@ -55777,7 +55935,7 @@ paths:
                     errorKey: common.unauthorized
                     error: Authentication required. Please log in.
         '403':
-          description: 'HTTP 403. Possible error keys: common.forbidden.'
+          description: 'HTTP 403. Possible error keys: common.forbidden, common.passwordChangeRequired.'
           content:
             application/json:
               schema:
@@ -55793,6 +55951,7 @@ paths:
                     type: string
                     enum:
                     - common.forbidden
+                    - common.passwordChangeRequired
                     description: Stable key for frontend handling; error text is localized.
                   error:
                     type: string
@@ -56051,7 +56210,7 @@ paths:
                     errorKey: common.unauthorized
                     error: Authentication required. Please log in.
         '403':
-          description: 'HTTP 403. Possible error keys: common.forbidden.'
+          description: 'HTTP 403. Possible error keys: common.forbidden, common.passwordChangeRequired.'
           content:
             application/json:
               schema:
@@ -56067,6 +56226,7 @@ paths:
                     type: string
                     enum:
                     - common.forbidden
+                    - common.passwordChangeRequired
                     description: Stable key for frontend handling; error text is localized.
                   error:
                     type: string
@@ -56364,7 +56524,7 @@ paths:
                     errorKey: common.unauthorized
                     error: Authentication required. Please log in.
         '403':
-          description: 'HTTP 403. Possible error keys: common.forbidden.'
+          description: 'HTTP 403. Possible error keys: common.forbidden, common.passwordChangeRequired.'
           content:
             application/json:
               schema:
@@ -56380,6 +56540,7 @@ paths:
                     type: string
                     enum:
                     - common.forbidden
+                    - common.passwordChangeRequired
                     description: Stable key for frontend handling; error text is localized.
                   error:
                     type: string
@@ -56718,7 +56879,7 @@ paths:
                     errorKey: common.unauthorized
                     error: Authentication required. Please log in.
         '403':
-          description: 'HTTP 403. Possible error keys: common.forbidden.'
+          description: 'HTTP 403. Possible error keys: common.forbidden, common.passwordChangeRequired.'
           content:
             application/json:
               schema:
@@ -56734,6 +56895,7 @@ paths:
                     type: string
                     enum:
                     - common.forbidden
+                    - common.passwordChangeRequired
                     description: Stable key for frontend handling; error text is localized.
                   error:
                     type: string
@@ -57070,7 +57232,7 @@ paths:
                     errorKey: common.unauthorized
                     error: Authentication required. Please log in.
         '403':
-          description: 'HTTP 403. Possible error keys: common.forbidden.'
+          description: 'HTTP 403. Possible error keys: common.forbidden, common.passwordChangeRequired.'
           content:
             application/json:
               schema:
@@ -57086,6 +57248,7 @@ paths:
                     type: string
                     enum:
                     - common.forbidden
+                    - common.passwordChangeRequired
                     description: Stable key for frontend handling; error text is localized.
                   error:
                     type: string
@@ -57448,7 +57611,7 @@ paths:
                     errorKey: common.unauthorized
                     error: Authentication required. Please log in.
         '403':
-          description: 'HTTP 403. Possible error keys: common.forbidden.'
+          description: 'HTTP 403. Possible error keys: common.forbidden, common.passwordChangeRequired.'
           content:
             application/json:
               schema:
@@ -57464,6 +57627,7 @@ paths:
                     type: string
                     enum:
                     - common.forbidden
+                    - common.passwordChangeRequired
                     description: Stable key for frontend handling; error text is localized.
                   error:
                     type: string
@@ -57826,7 +57990,7 @@ paths:
                     errorKey: common.unauthorized
                     error: Authentication required. Please log in.
         '403':
-          description: 'HTTP 403. Possible error keys: common.forbidden.'
+          description: 'HTTP 403. Possible error keys: common.forbidden, common.passwordChangeRequired.'
           content:
             application/json:
               schema:
@@ -57842,6 +58006,7 @@ paths:
                     type: string
                     enum:
                     - common.forbidden
+                    - common.passwordChangeRequired
                     description: Stable key for frontend handling; error text is localized.
                   error:
                     type: string
@@ -58158,7 +58323,7 @@ paths:
                     errorKey: common.unauthorized
                     error: Authentication required. Please log in.
         '403':
-          description: 'HTTP 403. Possible error keys: common.forbidden.'
+          description: 'HTTP 403. Possible error keys: common.forbidden, common.passwordChangeRequired.'
           content:
             application/json:
               schema:
@@ -58174,6 +58339,7 @@ paths:
                     type: string
                     enum:
                     - common.forbidden
+                    - common.passwordChangeRequired
                     description: Stable key for frontend handling; error text is localized.
                   error:
                     type: string
@@ -58494,7 +58660,7 @@ paths:
                     errorKey: common.unauthorized
                     error: Authentication required. Please log in.
         '403':
-          description: 'HTTP 403. Possible error keys: common.forbidden.'
+          description: 'HTTP 403. Possible error keys: common.forbidden, common.passwordChangeRequired.'
           content:
             application/json:
               schema:
@@ -58510,6 +58676,7 @@ paths:
                     type: string
                     enum:
                     - common.forbidden
+                    - common.passwordChangeRequired
                     description: Stable key for frontend handling; error text is localized.
                   error:
                     type: string
@@ -58799,7 +58966,7 @@ paths:
                     errorKey: common.unauthorized
                     error: Authentication required. Please log in.
         '403':
-          description: 'HTTP 403. Possible error keys: common.forbidden.'
+          description: 'HTTP 403. Possible error keys: common.forbidden, common.passwordChangeRequired.'
           content:
             application/json:
               schema:
@@ -58815,6 +58982,7 @@ paths:
                     type: string
                     enum:
                     - common.forbidden
+                    - common.passwordChangeRequired
                     description: Stable key for frontend handling; error text is localized.
                   error:
                     type: string
@@ -59167,7 +59335,7 @@ paths:
                     errorKey: common.unauthorized
                     error: Authentication required. Please log in.
         '403':
-          description: 'HTTP 403. Possible error keys: common.forbidden.'
+          description: 'HTTP 403. Possible error keys: common.forbidden, common.passwordChangeRequired.'
           content:
             application/json:
               schema:
@@ -59183,6 +59351,7 @@ paths:
                     type: string
                     enum:
                     - common.forbidden
+                    - common.passwordChangeRequired
                     description: Stable key for frontend handling; error text is localized.
                   error:
                     type: string
@@ -59623,7 +59792,7 @@ paths:
                     errorKey: common.unauthorized
                     error: Authentication required. Please log in.
         '403':
-          description: 'HTTP 403. Possible error keys: common.forbidden.'
+          description: 'HTTP 403. Possible error keys: common.forbidden, common.passwordChangeRequired.'
           content:
             application/json:
               schema:
@@ -59639,6 +59808,7 @@ paths:
                     type: string
                     enum:
                     - common.forbidden
+                    - common.passwordChangeRequired
                     description: Stable key for frontend handling; error text is localized.
                   error:
                     type: string
@@ -59860,7 +60030,7 @@ paths:
                     errorKey: common.unauthorized
                     error: Authentication required. Please log in.
         '403':
-          description: 'HTTP 403. Possible error keys: common.forbidden.'
+          description: 'HTTP 403. Possible error keys: common.forbidden, common.passwordChangeRequired.'
           content:
             application/json:
               schema:
@@ -59876,6 +60046,7 @@ paths:
                     type: string
                     enum:
                     - common.forbidden
+                    - common.passwordChangeRequired
                     description: Stable key for frontend handling; error text is localized.
                   error:
                     type: string
@@ -60149,7 +60320,7 @@ paths:
                     errorKey: common.unauthorized
                     error: Authentication required. Please log in.
         '403':
-          description: 'HTTP 403. Possible error keys: common.forbidden.'
+          description: 'HTTP 403. Possible error keys: common.forbidden, common.passwordChangeRequired.'
           content:
             application/json:
               schema:
@@ -60165,6 +60336,7 @@ paths:
                     type: string
                     enum:
                     - common.forbidden
+                    - common.passwordChangeRequired
                     description: Stable key for frontend handling; error text is localized.
                   error:
                     type: string
@@ -60478,7 +60650,7 @@ paths:
                     errorKey: common.unauthorized
                     error: Authentication required. Please log in.
         '403':
-          description: 'HTTP 403. Possible error keys: common.forbidden.'
+          description: 'HTTP 403. Possible error keys: common.forbidden, common.passwordChangeRequired.'
           content:
             application/json:
               schema:
@@ -60494,6 +60666,7 @@ paths:
                     type: string
                     enum:
                     - common.forbidden
+                    - common.passwordChangeRequired
                     description: Stable key for frontend handling; error text is localized.
                   error:
                     type: string
@@ -60807,7 +60980,7 @@ paths:
                     errorKey: common.unauthorized
                     error: Authentication required. Please log in.
         '403':
-          description: 'HTTP 403. Possible error keys: common.forbidden.'
+          description: 'HTTP 403. Possible error keys: common.forbidden, common.passwordChangeRequired.'
           content:
             application/json:
               schema:
@@ -60823,6 +60996,7 @@ paths:
                     type: string
                     enum:
                     - common.forbidden
+                    - common.passwordChangeRequired
                     description: Stable key for frontend handling; error text is localized.
                   error:
                     type: string
@@ -61179,7 +61353,7 @@ paths:
                     errorKey: common.unauthorized
                     error: Authentication required. Please log in.
         '403':
-          description: 'HTTP 403. Possible error keys: common.forbidden.'
+          description: 'HTTP 403. Possible error keys: common.forbidden, common.passwordChangeRequired.'
           content:
             application/json:
               schema:
@@ -61195,6 +61369,7 @@ paths:
                     type: string
                     enum:
                     - common.forbidden
+                    - common.passwordChangeRequired
                     description: Stable key for frontend handling; error text is localized.
                   error:
                     type: string
@@ -61549,7 +61724,7 @@ paths:
                     errorKey: common.unauthorized
                     error: Authentication required. Please log in.
         '403':
-          description: 'HTTP 403. Possible error keys: common.forbidden.'
+          description: 'HTTP 403. Possible error keys: common.forbidden, common.passwordChangeRequired.'
           content:
             application/json:
               schema:
@@ -61565,6 +61740,7 @@ paths:
                     type: string
                     enum:
                     - common.forbidden
+                    - common.passwordChangeRequired
                     description: Stable key for frontend handling; error text is localized.
                   error:
                     type: string
@@ -61873,8 +62049,33 @@ paths:
                 - errorKey
                 - error
                 additionalProperties: false
+        '401':
+          description: 'HTTP 401. Possible error keys: common.unauthorized.'
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    const: false
+                  errorKey:
+                    type: string
+                    enum:
+                    - common.unauthorized
+                  error:
+                    type: string
+                  requestId:
+                    type: string
+                  details:
+                    type: object
+                    additionalProperties: true
+                required:
+                - success
+                - errorKey
+                - error
+                additionalProperties: false
         '403':
-          description: 'Possible error keys: common.forbidden.'
+          description: 'HTTP 403. Possible error keys: common.forbidden, common.passwordChangeRequired.'
           content:
             application/json:
               schema:
@@ -61886,6 +62087,7 @@ paths:
                     type: string
                     enum:
                     - common.forbidden
+                    - common.passwordChangeRequired
                   error:
                     type: string
                   requestId:
@@ -62084,8 +62286,33 @@ paths:
                 - errorKey
                 - error
                 additionalProperties: false
+        '401':
+          description: 'HTTP 401. Possible error keys: common.unauthorized.'
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    const: false
+                  errorKey:
+                    type: string
+                    enum:
+                    - common.unauthorized
+                  error:
+                    type: string
+                  requestId:
+                    type: string
+                  details:
+                    type: object
+                    additionalProperties: true
+                required:
+                - success
+                - errorKey
+                - error
+                additionalProperties: false
         '403':
-          description: 'Possible error keys: common.forbidden.'
+          description: 'HTTP 403. Possible error keys: common.forbidden, common.passwordChangeRequired.'
           content:
             application/json:
               schema:
@@ -62097,6 +62324,7 @@ paths:
                     type: string
                     enum:
                     - common.forbidden
+                    - common.passwordChangeRequired
                   error:
                     type: string
                   requestId:
@@ -62309,8 +62537,33 @@ paths:
                 - errorKey
                 - error
                 additionalProperties: false
+        '401':
+          description: 'HTTP 401. Possible error keys: common.unauthorized.'
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    const: false
+                  errorKey:
+                    type: string
+                    enum:
+                    - common.unauthorized
+                  error:
+                    type: string
+                  requestId:
+                    type: string
+                  details:
+                    type: object
+                    additionalProperties: true
+                required:
+                - success
+                - errorKey
+                - error
+                additionalProperties: false
         '403':
-          description: 'Possible error keys: common.forbidden.'
+          description: 'HTTP 403. Possible error keys: common.forbidden, common.passwordChangeRequired.'
           content:
             application/json:
               schema:
@@ -62322,6 +62575,7 @@ paths:
                     type: string
                     enum:
                     - common.forbidden
+                    - common.passwordChangeRequired
                   error:
                     type: string
                   requestId:
@@ -62535,8 +62789,33 @@ paths:
                 - errorKey
                 - error
                 additionalProperties: false
+        '401':
+          description: 'HTTP 401. Possible error keys: common.unauthorized.'
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    const: false
+                  errorKey:
+                    type: string
+                    enum:
+                    - common.unauthorized
+                  error:
+                    type: string
+                  requestId:
+                    type: string
+                  details:
+                    type: object
+                    additionalProperties: true
+                required:
+                - success
+                - errorKey
+                - error
+                additionalProperties: false
         '403':
-          description: 'Possible error keys: common.forbidden.'
+          description: 'HTTP 403. Possible error keys: common.forbidden, common.passwordChangeRequired.'
           content:
             application/json:
               schema:
@@ -62548,6 +62827,7 @@ paths:
                     type: string
                     enum:
                     - common.forbidden
+                    - common.passwordChangeRequired
                   error:
                     type: string
                   requestId:
@@ -62799,7 +63079,7 @@ paths:
                     errorKey: common.unauthorized
                     error: Authentication required. Please log in.
         '403':
-          description: 'HTTP 403. Possible error keys: common.forbidden.'
+          description: 'HTTP 403. Possible error keys: common.forbidden, common.passwordChangeRequired.'
           content:
             application/json:
               schema:
@@ -62815,6 +63095,7 @@ paths:
                     type: string
                     enum:
                     - common.forbidden
+                    - common.passwordChangeRequired
                     description: Stable key for frontend handling; error text is localized.
                   error:
                     type: string
@@ -63091,7 +63372,7 @@ paths:
                     errorKey: common.unauthorized
                     error: Authentication required. Please log in.
         '403':
-          description: 'HTTP 403. Possible error keys: common.forbidden.'
+          description: 'HTTP 403. Possible error keys: common.forbidden, common.passwordChangeRequired.'
           content:
             application/json:
               schema:
@@ -63107,6 +63388,7 @@ paths:
                     type: string
                     enum:
                     - common.forbidden
+                    - common.passwordChangeRequired
                     description: Stable key for frontend handling; error text is localized.
                   error:
                     type: string
@@ -63426,7 +63708,7 @@ paths:
                     errorKey: common.unauthorized
                     error: Authentication required. Please log in.
         '403':
-          description: 'HTTP 403. Possible error keys: common.forbidden.'
+          description: 'HTTP 403. Possible error keys: common.forbidden, common.passwordChangeRequired.'
           content:
             application/json:
               schema:
@@ -63442,6 +63724,7 @@ paths:
                     type: string
                     enum:
                     - common.forbidden
+                    - common.passwordChangeRequired
                     description: Stable key for frontend handling; error text is localized.
                   error:
                     type: string
@@ -63792,7 +64075,7 @@ paths:
                     errorKey: common.unauthorized
                     error: Authentication required. Please log in.
         '403':
-          description: 'HTTP 403. Possible error keys: common.forbidden.'
+          description: 'HTTP 403. Possible error keys: common.forbidden, common.passwordChangeRequired.'
           content:
             application/json:
               schema:
@@ -63808,6 +64091,7 @@ paths:
                     type: string
                     enum:
                     - common.forbidden
+                    - common.passwordChangeRequired
                     description: Stable key for frontend handling; error text is localized.
                   error:
                     type: string
@@ -64110,7 +64394,7 @@ paths:
                     errorKey: common.unauthorized
                     error: Authentication required. Please log in.
         '403':
-          description: 'HTTP 403. Possible error keys: common.forbidden.'
+          description: 'HTTP 403. Possible error keys: common.forbidden, common.passwordChangeRequired.'
           content:
             application/json:
               schema:
@@ -64126,6 +64410,7 @@ paths:
                     type: string
                     enum:
                     - common.forbidden
+                    - common.passwordChangeRequired
                     description: Stable key for frontend handling; error text is localized.
                   error:
                     type: string
@@ -64432,7 +64717,7 @@ paths:
                     errorKey: common.unauthorized
                     error: Authentication required. Please log in.
         '403':
-          description: 'HTTP 403. Possible error keys: common.forbidden.'
+          description: 'HTTP 403. Possible error keys: common.forbidden, common.passwordChangeRequired.'
           content:
             application/json:
               schema:
@@ -64448,6 +64733,7 @@ paths:
                     type: string
                     enum:
                     - common.forbidden
+                    - common.passwordChangeRequired
                     description: Stable key for frontend handling; error text is localized.
                   error:
                     type: string
@@ -64718,7 +65004,7 @@ paths:
                     errorKey: common.unauthorized
                     error: Authentication required. Please log in.
         '403':
-          description: 'HTTP 403. Possible error keys: common.forbidden.'
+          description: 'HTTP 403. Possible error keys: common.forbidden, common.passwordChangeRequired.'
           content:
             application/json:
               schema:
@@ -64734,6 +65020,7 @@ paths:
                     type: string
                     enum:
                     - common.forbidden
+                    - common.passwordChangeRequired
                     description: Stable key for frontend handling; error text is localized.
                   error:
                     type: string
@@ -64986,7 +65273,7 @@ paths:
                     errorKey: common.unauthorized
                     error: Authentication required. Please log in.
         '403':
-          description: 'HTTP 403. Possible error keys: common.forbidden.'
+          description: 'HTTP 403. Possible error keys: common.forbidden, common.passwordChangeRequired.'
           content:
             application/json:
               schema:
@@ -65002,6 +65289,7 @@ paths:
                     type: string
                     enum:
                     - common.forbidden
+                    - common.passwordChangeRequired
                     description: Stable key for frontend handling; error text is localized.
                   error:
                     type: string
@@ -65266,7 +65554,7 @@ paths:
                     errorKey: common.unauthorized
                     error: Authentication required. Please log in.
         '403':
-          description: 'HTTP 403. Possible error keys: common.forbidden, orders.errors.checkoutAccessDenied.'
+          description: 'HTTP 403. Possible error keys: common.forbidden, common.passwordChangeRequired, orders.errors.checkoutAccessDenied.'
           content:
             application/json:
               schema:
@@ -65282,6 +65570,7 @@ paths:
                     type: string
                     enum:
                     - common.forbidden
+                    - common.passwordChangeRequired
                     - orders.errors.checkoutAccessDenied
                     description: Stable key for frontend handling; error text is localized.
                   error:
@@ -65621,7 +65910,7 @@ paths:
                     errorKey: common.unauthorized
                     error: Authentication required. Please log in.
         '403':
-          description: 'HTTP 403. Possible error keys: common.forbidden.'
+          description: 'HTTP 403. Possible error keys: common.forbidden, common.passwordChangeRequired.'
           content:
             application/json:
               schema:
@@ -65637,6 +65926,7 @@ paths:
                     type: string
                     enum:
                     - common.forbidden
+                    - common.passwordChangeRequired
                     description: Stable key for frontend handling; error text is localized.
                   error:
                     type: string
@@ -65876,7 +66166,7 @@ paths:
                     errorKey: common.unauthorized
                     error: Authentication required. Please log in.
         '403':
-          description: 'HTTP 403. Possible error keys: common.forbidden.'
+          description: 'HTTP 403. Possible error keys: common.forbidden, common.passwordChangeRequired.'
           content:
             application/json:
               schema:
@@ -65892,6 +66182,7 @@ paths:
                     type: string
                     enum:
                     - common.forbidden
+                    - common.passwordChangeRequired
                     description: Stable key for frontend handling; error text is localized.
                   error:
                     type: string
@@ -66135,7 +66426,7 @@ paths:
                     errorKey: common.unauthorized
                     error: Authentication required. Please log in.
         '403':
-          description: 'HTTP 403. Possible error keys: common.forbidden.'
+          description: 'HTTP 403. Possible error keys: common.forbidden, common.passwordChangeRequired.'
           content:
             application/json:
               schema:
@@ -66151,6 +66442,7 @@ paths:
                     type: string
                     enum:
                     - common.forbidden
+                    - common.passwordChangeRequired
                     description: Stable key for frontend handling; error text is localized.
                   error:
                     type: string
@@ -66417,8 +66709,7 @@ paths:
                     errorKey: common.unauthorized
                     error: Authentication required. Please log in.
         '403':
-          description: 'HTTP 403. Possible error keys: common.forbidden, subscription.errors.aiModelLimitExceeded,
-            subscription.errors.cameraLimitExceeded.'
+          description: 'HTTP 403. Possible error keys: common.forbidden, common.passwordChangeRequired, subscription.errors.aiModelLimitExceeded, subscription.errors.cameraLimitExceeded.'
           content:
             application/json:
               schema:
@@ -66434,6 +66725,7 @@ paths:
                     type: string
                     enum:
                     - common.forbidden
+                    - common.passwordChangeRequired
                     - subscription.errors.aiModelLimitExceeded
                     - subscription.errors.cameraLimitExceeded
                     description: Stable key for frontend handling; error text is localized.
@@ -66650,7 +66942,7 @@ paths:
                     errorKey: common.unauthorized
                     error: Authentication required. Please log in.
         '403':
-          description: 'HTTP 403. Possible error keys: common.forbidden.'
+          description: 'HTTP 403. Possible error keys: common.forbidden, common.passwordChangeRequired.'
           content:
             application/json:
               schema:
@@ -66666,6 +66958,7 @@ paths:
                     type: string
                     enum:
                     - common.forbidden
+                    - common.passwordChangeRequired
                     description: Stable key for frontend handling; error text is localized.
                   error:
                     type: string
@@ -66937,7 +67230,7 @@ paths:
                     errorKey: common.unauthorized
                     error: Authentication required. Please log in.
         '403':
-          description: 'HTTP 403. Possible error keys: common.forbidden.'
+          description: 'HTTP 403. Possible error keys: common.forbidden, common.passwordChangeRequired.'
           content:
             application/json:
               schema:
@@ -66953,6 +67246,7 @@ paths:
                     type: string
                     enum:
                     - common.forbidden
+                    - common.passwordChangeRequired
                     description: Stable key for frontend handling; error text is localized.
                   error:
                     type: string
@@ -67232,7 +67526,7 @@ paths:
                     errorKey: common.unauthorized
                     error: Authentication required. Please log in.
         '403':
-          description: 'HTTP 403. Possible error keys: common.forbidden.'
+          description: 'HTTP 403. Possible error keys: common.forbidden, common.passwordChangeRequired.'
           content:
             application/json:
               schema:
@@ -67248,6 +67542,7 @@ paths:
                     type: string
                     enum:
                     - common.forbidden
+                    - common.passwordChangeRequired
                     description: Stable key for frontend handling; error text is localized.
                   error:
                     type: string
@@ -67609,7 +67904,7 @@ paths:
                     errorKey: common.unauthorized
                     error: Authentication required. Please log in.
         '403':
-          description: 'HTTP 403. Possible error keys: common.forbidden.'
+          description: 'HTTP 403. Possible error keys: common.forbidden, common.passwordChangeRequired.'
           content:
             application/json:
               schema:
@@ -67625,6 +67920,7 @@ paths:
                     type: string
                     enum:
                     - common.forbidden
+                    - common.passwordChangeRequired
                     description: Stable key for frontend handling; error text is localized.
                   error:
                     type: string
@@ -67892,7 +68188,7 @@ paths:
                     errorKey: common.unauthorized
                     error: Authentication required. Please log in.
         '403':
-          description: 'HTTP 403. Possible error keys: common.forbidden.'
+          description: 'HTTP 403. Possible error keys: common.forbidden, common.passwordChangeRequired.'
           content:
             application/json:
               schema:
@@ -67908,6 +68204,7 @@ paths:
                     type: string
                     enum:
                     - common.forbidden
+                    - common.passwordChangeRequired
                     description: Stable key for frontend handling; error text is localized.
                   error:
                     type: string
@@ -68182,7 +68479,7 @@ paths:
                     errorKey: common.unauthorized
                     error: Authentication required. Please log in.
         '403':
-          description: 'HTTP 403. Possible error keys: common.forbidden.'
+          description: 'HTTP 403. Possible error keys: common.forbidden, common.passwordChangeRequired.'
           content:
             application/json:
               schema:
@@ -68198,6 +68495,7 @@ paths:
                     type: string
                     enum:
                     - common.forbidden
+                    - common.passwordChangeRequired
                     description: Stable key for frontend handling; error text is localized.
                   error:
                     type: string
@@ -68591,7 +68889,7 @@ paths:
                     errorKey: common.unauthorized
                     error: Authentication required. Please log in.
         '403':
-          description: 'HTTP 403. Possible error keys: common.forbidden.'
+          description: 'HTTP 403. Possible error keys: common.forbidden, common.passwordChangeRequired.'
           content:
             application/json:
               schema:
@@ -68607,6 +68905,7 @@ paths:
                     type: string
                     enum:
                     - common.forbidden
+                    - common.passwordChangeRequired
                     description: Stable key for frontend handling; error text is localized.
                   error:
                     type: string
@@ -68831,7 +69130,7 @@ paths:
                     errorKey: common.unauthorized
                     error: Authentication required. Please log in.
         '403':
-          description: 'HTTP 403. Possible error keys: common.forbidden.'
+          description: 'HTTP 403. Possible error keys: common.forbidden, common.passwordChangeRequired.'
           content:
             application/json:
               schema:
@@ -68847,6 +69146,7 @@ paths:
                     type: string
                     enum:
                     - common.forbidden
+                    - common.passwordChangeRequired
                     description: Stable key for frontend handling; error text is localized.
                   error:
                     type: string
@@ -69130,7 +69430,7 @@ paths:
                     errorKey: common.unauthorized
                     error: Authentication required. Please log in.
         '403':
-          description: 'HTTP 403. Possible error keys: common.forbidden.'
+          description: 'HTTP 403. Possible error keys: common.forbidden, common.passwordChangeRequired.'
           content:
             application/json:
               schema:
@@ -69146,6 +69446,7 @@ paths:
                     type: string
                     enum:
                     - common.forbidden
+                    - common.passwordChangeRequired
                     description: Stable key for frontend handling; error text is localized.
                   error:
                     type: string
@@ -69603,7 +69904,7 @@ paths:
                     errorKey: common.unauthorized
                     error: Authentication required. Please log in.
         '403':
-          description: 'HTTP 403. Possible error keys: common.forbidden.'
+          description: 'HTTP 403. Possible error keys: common.forbidden, common.passwordChangeRequired.'
           content:
             application/json:
               schema:
@@ -69619,6 +69920,7 @@ paths:
                     type: string
                     enum:
                     - common.forbidden
+                    - common.passwordChangeRequired
                     description: Stable key for frontend handling; error text is localized.
                   error:
                     type: string
@@ -69758,6 +70060,238 @@ paths:
         required: true
         schema:
           type: string
+  /users/{userId}/password-change:
+    post:
+      tags:
+      - iam-user
+      summary: Change own organization password
+      operationId: R023
+      description: Organization-staff self only. Requires current password, a live password session, organization
+        acting context, and the exact IAM key within the organization ceiling. No email OTP or verified email is required.
+        Initial-password sessions may call this route while normal protected operations return 403 common.passwordChangeRequired.
+        Success atomically replaces the hash, clears mustChangePassword and failure state, revokes every refresh session,
+        and inserts shared security audit evidence. Existing organization access tokens then fail the live-session
+        gate; sign in again. No administrator reset, personal, or internal password changes.
+      security:
+      - bearerAuth: []
+        apiKeyAuth: []
+      x-source-router: functions/iam-user/src/router.ts
+      x-permission-keys:
+      - iam.password_credential.change
+      parameters:
+      - name: userId
+        in: path
+        required: true
+        schema:
+          type: string
+          pattern: ^[a-fA-F0-9]{24}$
+      - name: X-Acting-Context
+        in: header
+        required: true
+        schema:
+          type: string
+          const: organization
+      - name: X-Acting-Organization
+        in: header
+        required: true
+        schema:
+          type: string
+          pattern: ^[a-fA-F0-9]{24}$
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                currentPassword:
+                  type: string
+                  minLength: 1
+                  maxLength: 1024
+                  writeOnly: true
+                newPassword:
+                  type: string
+                  minLength: 12
+                  maxLength: 72
+                  writeOnly: true
+                  description: At most 72 UTF-8 bytes. Preserved exactly, including whitespace; must differ from the
+                    current password.
+              required:
+              - currentPassword
+              - newPassword
+              additionalProperties: false
+      x-request-schema-source: functions/iam-user/src/zodSchema/changePasswordBodySchema.ts#changePasswordBodySchema
+      responses:
+        '200':
+          description: Password replaced. Discard old access token and authenticate with the new password.
+          headers:
+            Set-Cookie:
+              description: Clears the HttpOnly refresh cookie at the stage auth path.
+              schema:
+                type: string
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    const: true
+                  message:
+                    type: string
+                  requestId:
+                    type: string
+                  data:
+                    type: object
+                    properties:
+                      userId:
+                        type: string
+                      mustChangePassword:
+                        const: false
+                      reauthenticationRequired:
+                        const: true
+                    required:
+                    - userId
+                    - mustChangePassword
+                    - reauthenticationRequired
+                    additionalProperties: false
+                required:
+                - success
+                - data
+                additionalProperties: false
+        '400':
+          description: 'HTTP 400. Possible error keys: common.invalidPathParam, common.invalidBodyParams, common.missingBodyParams,
+            iam.user.passwordInvalid, iam.user.passwordUnchanged.'
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    const: false
+                  errorKey:
+                    type: string
+                    enum:
+                    - common.invalidPathParam
+                    - common.invalidBodyParams
+                    - common.missingBodyParams
+                    - iam.user.passwordInvalid
+                    - iam.user.passwordUnchanged
+                  error:
+                    type: string
+                  requestId:
+                    type: string
+                  details:
+                    type: object
+                    additionalProperties: true
+                required:
+                - success
+                - errorKey
+                - error
+                additionalProperties: false
+        '401':
+          description: 'HTTP 401. Possible error keys: common.unauthorized.'
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    const: false
+                  errorKey:
+                    type: string
+                    enum:
+                    - common.unauthorized
+                  error:
+                    type: string
+                  requestId:
+                    type: string
+                  details:
+                    type: object
+                    additionalProperties: true
+                required:
+                - success
+                - errorKey
+                - error
+                additionalProperties: false
+        '403':
+          description: 'HTTP 403. Possible error keys: common.forbidden.'
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    const: false
+                  errorKey:
+                    type: string
+                    enum:
+                    - common.forbidden
+                  error:
+                    type: string
+                  requestId:
+                    type: string
+                  details:
+                    type: object
+                    additionalProperties: true
+                required:
+                - success
+                - errorKey
+                - error
+                additionalProperties: false
+        '409':
+          description: 'HTTP 409. Possible error keys: iam.user.passwordConflict.'
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    const: false
+                  errorKey:
+                    type: string
+                    enum:
+                    - iam.user.passwordConflict
+                  error:
+                    type: string
+                  requestId:
+                    type: string
+                  details:
+                    type: object
+                    additionalProperties: true
+                required:
+                - success
+                - errorKey
+                - error
+                additionalProperties: false
+        '429':
+          description: 'HTTP 429. Possible error keys: common.rateLimited.'
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    const: false
+                  errorKey:
+                    type: string
+                    enum:
+                    - common.rateLimited
+                  error:
+                    type: string
+                  requestId:
+                    type: string
+                  details:
+                    type: object
+                    additionalProperties: true
+                required:
+                - success
+                - errorKey
+                - error
+                additionalProperties: false
+        4XX:
+          $ref: '#/components/responses/ClientError'
+        5XX:
+          $ref: '#/components/responses/ServerError'
   /users/{userId}/ptags:
     get:
       tags:
@@ -69961,7 +70495,7 @@ paths:
                     errorKey: common.unauthorized
                     error: Authentication required. Please log in.
         '403':
-          description: 'HTTP 403. Possible error keys: common.forbidden.'
+          description: 'HTTP 403. Possible error keys: common.forbidden, common.passwordChangeRequired.'
           content:
             application/json:
               schema:
@@ -69977,6 +70511,7 @@ paths:
                     type: string
                     enum:
                     - common.forbidden
+                    - common.passwordChangeRequired
                     description: Stable key for frontend handling; error text is localized.
                   error:
                     type: string
@@ -70184,7 +70719,7 @@ paths:
                     errorKey: common.unauthorized
                     error: Authentication required. Please log in.
         '403':
-          description: 'HTTP 403. Possible error keys: common.forbidden.'
+          description: 'HTTP 403. Possible error keys: common.forbidden, common.passwordChangeRequired.'
           content:
             application/json:
               schema:
@@ -70200,6 +70735,7 @@ paths:
                     type: string
                     enum:
                     - common.forbidden
+                    - common.passwordChangeRequired
                     description: Stable key for frontend handling; error text is localized.
                   error:
                     type: string
@@ -70441,7 +70977,7 @@ paths:
                     errorKey: common.unauthorized
                     error: Authentication required. Please log in.
         '403':
-          description: 'HTTP 403. Possible error keys: common.forbidden.'
+          description: 'HTTP 403. Possible error keys: common.forbidden, common.passwordChangeRequired.'
           content:
             application/json:
               schema:
@@ -70457,6 +70993,7 @@ paths:
                     type: string
                     enum:
                     - common.forbidden
+                    - common.passwordChangeRequired
                     description: Stable key for frontend handling; error text is localized.
                   error:
                     type: string
@@ -70686,7 +71223,7 @@ paths:
                     errorKey: common.unauthorized
                     error: Authentication required. Please log in.
         '403':
-          description: 'HTTP 403. Possible error keys: common.forbidden.'
+          description: 'HTTP 403. Possible error keys: common.forbidden, common.passwordChangeRequired.'
           content:
             application/json:
               schema:
@@ -70702,6 +71239,7 @@ paths:
                     type: string
                     enum:
                     - common.forbidden
+                    - common.passwordChangeRequired
                     description: Stable key for frontend handling; error text is localized.
                   error:
                     type: string
@@ -70908,7 +71446,7 @@ paths:
                     errorKey: common.unauthorized
                     error: Authentication required. Please log in.
         '403':
-          description: 'HTTP 403. Possible error keys: common.forbidden.'
+          description: 'HTTP 403. Possible error keys: common.forbidden, common.passwordChangeRequired.'
           content:
             application/json:
               schema:
@@ -70924,6 +71462,7 @@ paths:
                     type: string
                     enum:
                     - common.forbidden
+                    - common.passwordChangeRequired
                     description: Stable key for frontend handling; error text is localized.
                   error:
                     type: string
@@ -71151,7 +71690,7 @@ paths:
                     errorKey: common.unauthorized
                     error: Authentication required. Please log in.
         '403':
-          description: 'HTTP 403. Possible error keys: common.forbidden.'
+          description: 'HTTP 403. Possible error keys: common.forbidden, common.passwordChangeRequired.'
           content:
             application/json:
               schema:
@@ -71167,6 +71706,7 @@ paths:
                     type: string
                     enum:
                     - common.forbidden
+                    - common.passwordChangeRequired
                     description: Stable key for frontend handling; error text is localized.
                   error:
                     type: string
@@ -71401,7 +71941,7 @@ paths:
                     errorKey: common.unauthorized
                     error: Authentication required. Please log in.
         '403':
-          description: 'HTTP 403. Possible error keys: common.forbidden.'
+          description: 'HTTP 403. Possible error keys: common.forbidden, common.passwordChangeRequired.'
           content:
             application/json:
               schema:
@@ -71417,6 +71957,7 @@ paths:
                     type: string
                     enum:
                     - common.forbidden
+                    - common.passwordChangeRequired
                     description: Stable key for frontend handling; error text is localized.
                   error:
                     type: string
@@ -71587,7 +72128,7 @@ paths:
                     errorKey: common.unauthorized
                     error: Authentication required. Please log in.
         '403':
-          description: 'HTTP 403. Possible error keys: common.forbidden.'
+          description: 'HTTP 403. Possible error keys: common.forbidden, common.passwordChangeRequired.'
           content:
             application/json:
               schema:
@@ -71603,6 +72144,7 @@ paths:
                     type: string
                     enum:
                     - common.forbidden
+                    - common.passwordChangeRequired
                     description: Stable key for frontend handling; error text is localized.
                   error:
                     type: string
@@ -71857,7 +72399,7 @@ paths:
                     errorKey: common.unauthorized
                     error: Authentication required. Please log in.
         '403':
-          description: 'HTTP 403. Possible error keys: common.forbidden.'
+          description: 'HTTP 403. Possible error keys: common.forbidden, common.passwordChangeRequired.'
           content:
             application/json:
               schema:
@@ -71873,6 +72415,7 @@ paths:
                     type: string
                     enum:
                     - common.forbidden
+                    - common.passwordChangeRequired
                     description: Stable key for frontend handling; error text is localized.
                   error:
                     type: string
@@ -72194,7 +72737,7 @@ paths:
                     errorKey: common.unauthorized
                     error: Authentication required. Please log in.
         '403':
-          description: 'HTTP 403. Possible error keys: common.forbidden.'
+          description: 'HTTP 403. Possible error keys: common.forbidden, common.passwordChangeRequired.'
           content:
             application/json:
               schema:
@@ -72210,6 +72753,7 @@ paths:
                     type: string
                     enum:
                     - common.forbidden
+                    - common.passwordChangeRequired
                     description: Stable key for frontend handling; error text is localized.
                   error:
                     type: string
@@ -72525,7 +73069,7 @@ paths:
                     errorKey: common.unauthorized
                     error: Authentication required. Please log in.
         '403':
-          description: 'HTTP 403. Possible error keys: common.forbidden.'
+          description: 'HTTP 403. Possible error keys: common.forbidden, common.passwordChangeRequired.'
           content:
             application/json:
               schema:
@@ -72541,6 +73085,7 @@ paths:
                     type: string
                     enum:
                     - common.forbidden
+                    - common.passwordChangeRequired
                     description: Stable key for frontend handling; error text is localized.
                   error:
                     type: string
@@ -72933,7 +73478,7 @@ paths:
                     errorKey: common.unauthorized
                     error: Authentication required. Please log in.
         '403':
-          description: 'HTTP 403. Possible error keys: common.forbidden.'
+          description: 'HTTP 403. Possible error keys: common.forbidden, common.passwordChangeRequired.'
           content:
             application/json:
               schema:
@@ -72949,6 +73494,7 @@ paths:
                     type: string
                     enum:
                     - common.forbidden
+                    - common.passwordChangeRequired
                     description: Stable key for frontend handling; error text is localized.
                   error:
                     type: string
@@ -73692,7 +74238,9 @@ components:
         password:
           type: string
           minLength: 12
-          maxLength: 200
+          maxLength: 72
+          writeOnly: true
+          description: At most 72 UTF-8 bytes; preserved exactly. Initial credential requires owner password replacement.
         role:
           type: object
           properties:

@@ -2,7 +2,7 @@
 
 Run `python -m http.server 8000` in this directory and open `http://localhost:8000`, or use the [published GitHub Pages site](https://leungyulap19.github.io/AWS_DDD_API_docs/). Open [openapi.yaml](openapi.yaml) to save the contract for LLM tools and code generators. Choose an endpoint, fill its request fields on the left, and use **Send request** on the right. The preview follows those inputs and offers HTTP, Shell, Node, Ruby, and PHP examples. Success and error response structures are listed below the form. The specification uses OpenAPI 3.1 and YAML 1.2.
 
-The 241 documented operations describe implemented routes, callers, and client rules. Five deferred routes and three preview/smoke routes are omitted. The contract covers subscriptions, placement sites, localized species/breed catalogs, public contacts, unified ownership events (including audited internal corrections), recovery image replacement and event-date filters, PTag location reports, and external adoption listings.
+The 242 documented operations describe implemented routes, callers, and client rules. Four deferred routes and three preview/smoke routes are omitted. The contract covers subscriptions, placement sites, localized species/breed catalogs, public contacts, unified ownership events (including audited internal corrections), recovery image replacement and event-date filters, PTag location reports, and external adoption listings.
 
 For frontend error handling, each operation lists the HTTP statuses its handlers return. Open a `4xx` response to see its JSON fields, the allowed `errorKey` values, and an example for each key. Branch on `errorKey`, not the localized `error` message. The `4XX` and `5XX` entries remain as fallbacks for gateway and unexpected responses. SF Express address payloads are passed through as provider-defined JSON because the Lambda does not validate their fields.
 
@@ -36,6 +36,15 @@ These contracts deployed to SG development on 2026-11-20, followed by revision b
 refresh, and security-focused live verification. OTP personal replacement and staff password-proof
 phone add/remove and email replacement passed. Session/proof replay, cross-account access,
 revoked permission, invalid revisions, and invalid JWTs were rejected. Failed delivery does not
-change the account; restart with fresh proof. Existing access JWTs expire normally; completion
+change the account; restart with fresh proof. Personal/internal access JWTs expire normally; organization requests now require a live password session. Completion
 revokes all refresh sessions. Concurrency, expiry, provider failures, and rollback also have
 automated coverage; this rollout did not inject those faults into the live database.
+
+Organization self password change is implemented locally and documented at `POST /users/{userId}/password-change`.
+Send `currentPassword` and `newPassword` in organization context with the exact IAM key. No email OTP is required.
+Initial credentials set `mustChangePassword: true`; show password replacement before business screens.
+Refresh/logout remain available. New passwords contain 12?72 characters and at most 72 UTF-8 bytes, without trimming.
+Success revokes all sessions, clears the refresh cookie, and requires login with the new password.
+Organization access tokens are denied after session revocation. Personal/internal users remain OTP-only.
+The catalog key is organization-only; all six organization defaults and the shared ceiling retain it.
+These password-change changes have not been deployed or reseeded.
