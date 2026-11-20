@@ -4,6 +4,41 @@ Run `python -m http.server 8000` in this directory and open `http://localhost:80
 
 The 246 documented operations describe implemented routes, callers, and client rules. Four deferred routes and three preview/smoke routes are omitted. The contract covers subscriptions, placement sites, localized species/breed catalogs, public contacts, unified ownership events (including audited internal corrections), recovery image replacement and event-date filters, PTag location reports, and external adoption listings.
 
+## Public endpoints
+
+The reference marks these 21 operations with **[PUBLIC]** in endpoint titles and
+`x-public: true` in OpenAPI. Search **[PUBLIC]** to show only these operations.
+They require neither an account access JWT nor an API key. Login passwords, OTPs,
+request validation, rate limits, and other endpoint-specific checks still apply.
+
+| Area | Public operations |
+| --- | --- |
+| Authentication | `POST /auth/challenges`<br>`POST /auth/challenges/verify`<br>`POST /auth/password/login`<br>`POST /auth/registrations/users` |
+| PTag product catalog | `GET /commerce/catalog/products/ptags`<br>`GET /commerce/catalog/products/ptags/{productId}` |
+| Checkout quote | `POST /commerce/checkouts/quotes` |
+| Shop codes | `GET /commerce/discount-codes`<br>`POST /commerce/discount-codes/verify` |
+| Order lookup | `GET /commerce/orders/public/{orderReference}` |
+| Payment return handoff | `GET /commerce/payments/return`<br>`POST /commerce/payments/return` |
+| Reference catalogs | `GET /reference-data/animal-species`<br>`GET /reference-data/adoption-listings`<br>`GET /reference-data/adoption-listings/{listingId}` |
+| PTag lookup/location submission | `GET /pets/ptags/{tagCode}`<br>`POST /pets/ptags/{tagCode}/location-reports` |
+| Recovery cases | `GET /pets/recovery-cases`<br>`POST /pets/recovery-cases`<br>`GET /pets/recovery-cases/{caseId}` |
+| Subscription plans | `GET /subscriptions/plans` |
+
+Public order/recovery/PTag reads return their documented public projections, not
+private management records. Recovery submission also accepts an optional signed-in
+identity. Payment return pages are public browser handoffs; payment completion is
+not established by opening one. Provider tokenization data is applied only after
+signature verification.
+
+**No bearer JWT does not mean public.** Refresh/desktop/logout routes use existing
+session credentials; guest checkout draft/read/payment/cancel use `x-checkout-token`;
+device secret claim uses a provisioning token. Device calls and the notification
+outbox trigger require their signatures and API key. Payment notify requires the
+provider signature. These operations intentionally have no **[PUBLIC]** label.
+`POST /users/{userId}/commerce/checkouts/drafts` additionally requires account JWT,
+API key, and checkout token. An unmarked operation is not evidence of public access:
+follow its documented `security` and credential requirements.
+
 For frontend error handling, each operation lists the HTTP statuses its handlers return. Open a `4xx` response to see its JSON fields, the allowed `errorKey` values, and an example for each key. Branch on `errorKey`, not the localized `error` message. The `4XX` and `5XX` entries remain as fallbacks for gateway and unexpected responses. SF Express address payloads are passed through as provider-defined JSON because the Lambda does not validate their fields.
 
 The published contract is [openapi.yaml](openapi.yaml). Local generation and audit scripts are excluded from Git.

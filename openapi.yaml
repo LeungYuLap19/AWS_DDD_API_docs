@@ -3,12 +3,15 @@
 openapi: 3.1.0
 info:
   title: AWS DDD API
-  version: '2026-11-20.2'
-  description: The 242 implemented HTTP operations of the API. Paths, gateway credentials, request validation, and
+  version: '2026-11-20.3'
+  description: The 246 implemented HTTP operations of the API. Paths, gateway credentials, request validation, and
     permission keys are checked against current source. Deferred and preview/smoke routes are omitted. Success responses
     document handler payload fields. Each documented HTTP error status lists the stable errorKey values emitted
     by the reachable handler and validation branches; error text is localized. Gateway-generated responses and upstream
-    provider JSON may have their own contracts.
+    provider JSON may have their own contracts. Operations marked [PUBLIC] and x-public=true require no account
+    access token or API key. Request credentials such as login passwords or OTPs, validation, and abuse controls
+    still apply. Routes using refresh sessions, checkout/provisioning tokens, or device/provider/worker signatures
+    are not marked public merely because they do not use a bearer JWT.
 servers:
 - url: https://{apiId}.execute-api.{region}.amazonaws.com/{stage}
   description: Set these variables to the deployed API Gateway stage.
@@ -1388,8 +1391,9 @@ paths:
     post:
       tags:
       - iam-auth
-      summary: Create Challenge
+      summary: '[PUBLIC] Create Challenge'
       operationId: R001
+      x-public: true
       description: Requests a one-time login code for exactly one email or E.164 phone. Always returns 202 with
         the same body, and sends a code only when the destination belongs to an account that may log in (active
         or pending verification). Supply exactly one of email or phone. The response does not reveal whether an
@@ -1519,8 +1523,9 @@ paths:
     post:
       tags:
       - iam-auth
-      summary: Verify Challenge
+      summary: '[PUBLIC] Verify Challenge'
       operationId: R002
+      x-public: true
       description: Verifies a login code for the same email or phone and starts a session. Returns an access token
         and sets the HttpOnly refresh cookie. The first successful verification marks the identifier verified and
         activates a pending account. Every failure returns the same 401. Supply the same destination and its one-time
@@ -2318,8 +2323,9 @@ paths:
     post:
       tags:
       - iam-auth
-      summary: Password Login
+      summary: '[PUBLIC] Password Login'
       operationId: R003
+      x-public: true
       description: Email and password login for organization staff accounts. Returns an access token and sets the
         HttpOnly refresh cookie. Every rejection, including lockout and missing membership, returns the same 401.
         Organization email verification is optional. mustChangePassword reflects stored credential state; when true,
@@ -3725,8 +3731,9 @@ paths:
     post:
       tags:
       - iam-auth
-      summary: Register User
+      summary: '[PUBLIC] Register User'
       operationId: R004
+      x-public: true
       description: Registers a personal account with exactly one email or phone and optional given and family names,
         then sends a login code to that destination. The account stays pending until the code is verified. Returns
         the same 202 whether or not the identifier is already taken.
@@ -5179,8 +5186,9 @@ paths:
     get:
       tags:
       - commerce-catalog
-      summary: List Products
+      summary: '[PUBLIC] List Products'
       operationId: R175
+      x-public: true
       description: Public list of PTag products available to buy, with their prices and display details.
       security: []
       x-source-router: functions/commerce-catalog/src/router.ts
@@ -5473,8 +5481,9 @@ paths:
     get:
       tags:
       - commerce-catalog
-      summary: Read Product
+      summary: '[PUBLIC] Read Product'
       operationId: R176
+      x-public: true
       description: Public read of one PTag product.
       security: []
       x-source-router: functions/commerce-catalog/src/router.ts
@@ -6182,8 +6191,9 @@ paths:
     post:
       tags:
       - commerce-orders
-      summary: Create Checkout Quote
+      summary: '[PUBLIC] Create Checkout Quote'
       operationId: R183
+      x-public: true
       description: Prices a cart on the server and returns a short-lived quote token. Checkout drafts must present
         this token, so clients cannot set prices. The server calculates the quote and returns the checkout token
         needed for draft, detail, payment, and cancellation.
@@ -6477,8 +6487,9 @@ paths:
     get:
       tags:
       - commerce-catalog
-      summary: List Shops
+      summary: '[PUBLIC] List Shops'
       operationId: R177
+      x-public: true
       description: Public directory of partner shops that offer discount codes. Bank details are not returned.
       security: []
       x-source-router: functions/commerce-catalog/src/router.ts
@@ -6637,8 +6648,9 @@ paths:
     post:
       tags:
       - commerce-catalog
-      summary: Verify Shop Code
+      summary: '[PUBLIC] Verify Shop Code'
       operationId: R179
+      x-public: true
       description: Public check of a partner shop discount code before checkout. Send a shop code as JSON, or a
         PDF file as multipart form data; the PDF is read in memory and not stored. Multipart requests are limited to
         5 MiB total, including multipart overhead.
@@ -7269,8 +7281,9 @@ paths:
     get:
       tags:
       - commerce-orders
-      summary: Read Public Order
+      summary: '[PUBLIC] Read Public Order'
       operationId: R187
+      x-public: true
       description: Public read of an order by its order reference, with personal and payment details redacted. Public
         order reference returns sanitized detail, without the private owner or payment projection.
       security: []
@@ -9039,8 +9052,9 @@ paths:
     get:
       tags:
       - commerce-payments
-      summary: Handle Payment Return
+      summary: '[PUBLIC] Handle Payment Return'
       operationId: R234
+      x-public: true
       description: Browser return page after a PA-SYS payment or card verification. Takes `app` and `checkoutId`
         query parameters and returns an HTML page that opens the PHealthOS app at `<app>://payment/return?checkoutId=...`.
         The app should then read the checkout status; this page grants nothing.
@@ -9242,8 +9256,9 @@ paths:
     post:
       tags:
       - commerce-payments
-      summary: Handle Payment Return
+      summary: '[PUBLIC] Handle Payment Return'
       operationId: R235
+      x-public: true
       description: PA-SYS form-POST variant of the payment return page. When the provider posts a signed card-verification
         result, it is verified and applied before the same HTML hand-off page is returned; unsigned or unrelated
         posts are ignored.
@@ -29988,8 +30003,9 @@ paths:
     get:
       tags:
       - reference-catalogs
-      summary: List Species
+      summary: '[PUBLIC] List Species'
       operationId: R244
+      x-public: true
       description: "Public, unpaginated species catalog including all matching categories and embedded breeds, sorted by key. Query lang=en|zh selects the returned label at both levels; omitted lang defaults to en, and zh means Traditional Chinese. Keys are stable and must be submitted for selections instead of labels. Supports case-insensitive literal search across species/breed keys and both languages, and active=true|false. Without active, disabled categories remain resolvable. For new selections request active=true and exclude inactive breeds. No page, limit, pagination metadata, request body, or header-based language selection."
       security: []
       x-source-router: functions/reference-catalogs/src/router.ts
@@ -31670,8 +31686,9 @@ paths:
     get:
       tags:
       - reference-catalogs
-      summary: List Adoption Listings
+      summary: '[PUBLIC] List Adoption Listings'
       operationId: R251
+      x-public: true
       description: 'Public browse of external adoption listings, newest first. Matches the production list: rows from Arc
         Dog Shelter, Tolobunny, and HKRABBIT and rows without images are hidden here but stay readable by ID. Filters take
         comma-separated values (max 20): `species` and `sex` use the normalized keys, `site` matches `siteName`, and `age`
@@ -32200,8 +32217,9 @@ paths:
     get:
       tags:
       - reference-catalogs
-      summary: Read Adoption Listing
+      summary: '[PUBLIC] Read Adoption Listing'
       operationId: R253
+      x-public: true
       description: Public detail of one external adoption listing, including rows hidden from the list. Returns the partner
         `listingUrl`, `siteName`, remark, and the `revision` needed for internal writes; `chipNumber` is never returned.
       security: []
@@ -41382,8 +41400,9 @@ paths:
           $ref: '#/components/responses/ServerError'
   /pets/ptags/{tagCode}/location-reports:
     post:
-      summary: Submit PTag location report
+      summary: '[PUBLIC] Submit PTag location report'
       operationId: createPtagLocationReport
+      x-public: true
       tags: [ptag]
       x-source-router: functions/ptag/src/router.ts
       description: Public submission, not proof of a physical scan. Resolve an active assigned tag
@@ -41615,8 +41634,9 @@ paths:
     get:
       tags:
       - ptag
-      summary: Public Lookup
+      summary: '[PUBLIC] Public Lookup'
       operationId: R171
+      x-public: true
       description: 'Public lookup when someone scans a PTag: returns the public details of the pet the tag is assigned
         to and the owner''s public `contacts`. A personal owner''s contacts are their `publicContacts` (empty unless
         they added some); an organization owner''s are its profile phone and email. Contacts are empty when the
@@ -41822,8 +41842,9 @@ paths:
     get:
       tags:
       - pet-recovery
-      summary: List Public Cases
+      summary: '[PUBLIC] List Public Cases'
       operationId: R096
+      x-public: true
       description: >-
         Public list of active lost and found reports with page/limit pagination, kind/district filters,
         search and sorting. Optional from/to filter the lost/found event date, never report creation time.
@@ -42123,8 +42144,9 @@ paths:
     post:
       tags:
       - pet-recovery
-      summary: Create Case
+      summary: '[PUBLIC] Create Case'
       operationId: R098
+      x-public: true
       description: Creates a lost or found report. Anyone may report without signing in; with a valid bearer token
         the reporter is recorded, and only the pet's current owner may link a `petId`. `species` is a required animal
         species catalog key and `breed` must belong to it. Send JSON, or multipart form data with a `payload` JSON
@@ -42482,8 +42504,9 @@ paths:
     get:
       tags:
       - pet-recovery
-      summary: Read Public Case
+      summary: '[PUBLIC] Read Public Case'
       operationId: R099
+      x-public: true
       description: Public read of one recovery case that has not been withdrawn, with the same public fields and
         photo URLs as the list.
       security: []
@@ -59458,8 +59481,9 @@ paths:
     get:
       tags:
       - commerce-subscriptions
-      summary: List Plans
+      summary: '[PUBLIC] List Plans'
       operationId: R159
+      x-public: true
       description: Public list of active subscription plans with their server-held prices, billing intervals, and
         feature limits. Purchases always reload the price from this catalog.
       security: []
