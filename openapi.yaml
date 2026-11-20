@@ -73650,7 +73650,8 @@ paths:
         body are accepted. The path user must be the authenticated user, regardless of account class. Normal shared
         authorization and mustChangePassword restrictions apply. There are no _any alternatives or agreement grants.
         Deployed to SG development with IAM refreshed. User PTag/deworm preference gates were live-tested
-        in temporary legacy development; organization writes and anomaly entitlement were not live-tested.
+        in temporary legacy development. Organization PTag/deworm preference gates and system inbox
+        were subsequently live-tested on SG through signed outbox triggers; anomaly entitlement remains untested.
       parameters:
       - name: userId
         in: path
@@ -73821,7 +73822,8 @@ paths:
         behavior. The path user must be the authenticated user, regardless of account class. Normal shared authorization
         and mustChangePassword restrictions apply. There are no _any alternatives or agreement grants.
         Deployed to SG development with IAM refreshed. User PTag/deworm preference gates were live-tested
-        in temporary legacy development; organization writes and anomaly entitlement were not live-tested.
+        in temporary legacy development. Organization PTag/deworm preference gates and system inbox
+        were subsequently live-tested on SG through signed outbox triggers; anomaly entitlement remains untested.
       parameters:
       - name: userId
         in: path
@@ -74011,7 +74013,8 @@ paths:
         read; only admins default update, with reviewed member overrides possible within the ceiling. Normal shared
         authorization and mustChangePassword restrictions apply. There are no _any alternatives or agreement grants.
         Deployed to SG development with IAM refreshed. User PTag/deworm preference gates were live-tested
-        in temporary legacy development; organization writes and anomaly entitlement were not live-tested.
+        in temporary legacy development. Organization PTag/deworm preference gates and system inbox
+        were subsequently live-tested on SG through signed outbox triggers; anomaly entitlement remains untested.
       parameters:
       - name: organizationId
         in: path
@@ -74181,7 +74184,8 @@ paths:
         admins default update, with reviewed member overrides possible within the ceiling. Normal shared authorization
         and mustChangePassword restrictions apply. There are no _any alternatives or agreement grants.
         Deployed to SG development with IAM refreshed. User PTag/deworm preference gates were live-tested
-        in temporary legacy development; organization writes and anomaly entitlement were not live-tested.
+        in temporary legacy development. Organization PTag/deworm preference gates and system inbox
+        were subsequently live-tested on SG through signed outbox triggers; anomaly entitlement remains untested.
       parameters:
       - name: organizationId
         in: path

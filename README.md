@@ -74,11 +74,16 @@ defaults, all-off, independent channels, hidden inbox
 list/count/read exclusion, retry changes, sent preservation, and no replay after re-enabling.
 Four real emails were accepted and confirmed received; four WhatsApp attempts reached Meta and
 failed as expected. Existing verified contacts, users, plans, and subscriptions were preserved.
-Temporary preference rows were removed, restoring missing-row defaults. Anomaly/entitlement and
-organization-context write testing were not performed. No preference rows are seeded.
+Temporary preference rows were removed, restoring missing-row defaults. Organization writes were
+not part of that earlier legacy batch. No preference rows are seeded; anomaly/entitlement remains skipped.
 
 The final SG return preserved accounts, memberships, contacts, catalogs and plans. Fifteen IAM
-changes wrote fifteen audits; repeat seed verification found no changes. SG provider/Atlas tests
-were not repeated. An existing payment execution-identity index differs from current model options;
+changes wrote fifteen audits; repeat seed verification found no changes. Subsequent SG organization
+tests passed admin/staff defaults, reviewed update grant/revoke, cross-org denial, ten PTag/deworm
+channel cases, and system inbox visibility/counts/filter/read. Signed outbox triggers exercised the
+real worker without Atlas. Four emails were accepted; the first pair was confirmed received. Four
+WhatsApp attempts failed with expected Meta 404 errors. Fixtures were removed, isolated accounts/orgs
+closed, and the temporary helper deleted; original data fingerprints matched. Atlas configuration
+and anomaly entitlement were not tested. An existing payment execution-identity index differs from current model options;
 its separate data/index migration remains open. Two historical, already-disabled legacy-transfer
 permission definitions were retained, without restoring their removed routes or seed grants.
