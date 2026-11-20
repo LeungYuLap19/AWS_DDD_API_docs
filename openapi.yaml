@@ -73639,7 +73639,7 @@ paths:
       - notifications
       summary: List effective user notification preferences
       operationId: listUserNotificationPreferences
-      x-implementation-status: deployed to legacy development
+      x-implementation-status: deployed to SG development
       x-permission-keys:
       - notification.user_preference.read
       security:
@@ -73649,7 +73649,8 @@ paths:
         channels, configured false, and updatedAt null. No writes occur. No query parameters or meaningful request
         body are accepted. The path user must be the authenticated user, regardless of account class. Normal shared
         authorization and mustChangePassword restrictions apply. There are no _any alternatives or agreement grants.
-        Deployed to legacy development with IAM refreshed. User PTag/deworm preference gates were live-tested; organization writes and anomaly entitlement were not live-tested.
+        Deployed to SG development with IAM refreshed. User PTag/deworm preference gates were live-tested
+        in temporary legacy development; organization writes and anomaly entitlement were not live-tested.
       parameters:
       - name: userId
         in: path
@@ -73808,7 +73809,7 @@ paths:
       - notifications
       summary: Upsert one user notification feature preference
       operationId: putUserNotificationPreferences
-      x-implementation-status: deployed to legacy development
+      x-implementation-status: deployed to SG development
       x-permission-keys:
       - notification.user_preference.update
       security:
@@ -73818,8 +73819,9 @@ paths:
         return 200. Require all three booleans; reject unknown fields, coercion, missing fields, and query parameters.
         No separate create key, PATCH, DELETE, or optimistic revision is used. Writing all true restores default
         behavior. The path user must be the authenticated user, regardless of account class. Normal shared authorization
-        and mustChangePassword restrictions apply. There are no _any alternatives or agreement grants. Implemented
-        locally; deployment and live IAM refresh are pending.
+        and mustChangePassword restrictions apply. There are no _any alternatives or agreement grants.
+        Deployed to SG development with IAM refreshed. User PTag/deworm preference gates were live-tested
+        in temporary legacy development; organization writes and anomaly entitlement were not live-tested.
       parameters:
       - name: userId
         in: path
@@ -73997,7 +73999,7 @@ paths:
       - notifications
       summary: List effective organization notification preferences
       operationId: listOrganizationNotificationPreferences
-      x-implementation-status: deployed to legacy development
+      x-implementation-status: deployed to SG development
       x-permission-keys:
       - notification.organization_preference.read
       security:
@@ -74008,7 +74010,8 @@ paths:
         body are accepted. The path organization must be the selected acting organization. Admin/staff defaults
         read; only admins default update, with reviewed member overrides possible within the ceiling. Normal shared
         authorization and mustChangePassword restrictions apply. There are no _any alternatives or agreement grants.
-        Deployed to legacy development with IAM refreshed. User PTag/deworm preference gates were live-tested; organization writes and anomaly entitlement were not live-tested.
+        Deployed to SG development with IAM refreshed. User PTag/deworm preference gates were live-tested
+        in temporary legacy development; organization writes and anomaly entitlement were not live-tested.
       parameters:
       - name: organizationId
         in: path
@@ -74165,7 +74168,7 @@ paths:
       - notifications
       summary: Upsert one organization notification feature preference
       operationId: putOrganizationNotificationPreferences
-      x-implementation-status: deployed to legacy development
+      x-implementation-status: deployed to SG development
       x-permission-keys:
       - notification.organization_preference.update
       security:
@@ -74176,8 +74179,9 @@ paths:
         No separate create key, PATCH, DELETE, or optimistic revision is used. Writing all true restores default
         behavior. The path organization must be the selected acting organization. Admin/staff defaults read; only
         admins default update, with reviewed member overrides possible within the ceiling. Normal shared authorization
-        and mustChangePassword restrictions apply. There are no _any alternatives or agreement grants. Implemented
-        locally; deployment and live IAM refresh are pending.
+        and mustChangePassword restrictions apply. There are no _any alternatives or agreement grants.
+        Deployed to SG development with IAM refreshed. User PTag/deworm preference gates were live-tested
+        in temporary legacy development; organization writes and anomaly entitlement were not live-tested.
       parameters:
       - name: organizationId
         in: path

@@ -54,7 +54,7 @@ Password replacement revoked old sessions. Only fresh login with the new passwor
 Three fixture accounts are closed; four sanitized security audits were verified. One late invalid-refresh
 probe hit the shared IP cooldown; DB readback confirmed every old session was revoked. No production rollout.
 
-## Notification preferences (deployed to legacy development, 2026-11-20)
+## Notification preferences (deployed to SG development, 2026-11-20)
 
 The four user/organization preference routes are now in [openapi.yaml](openapi.yaml).
 Each recipient has independent in-app/email/WhatsApp switches per feature. Missing rows return
@@ -67,11 +67,18 @@ and deworm reminders. Existing contacts, channel support, paid entitlements, and
 remain mandatory. Disabling in-app keeps external-delivery anchors hidden from inbox lists,
 counts, and read mutations. Sent channels stay sent; completed outbox work is never replayed.
 
-API `37a0d2e` deployed successfully; all 34 preview functions now target legacy
-`petpetclub_development`. All 75 modeled collections/indexes and the audited IAM refresh were
-verified. Live PTag/deworm tests passed defaults, all-off, independent channels, hidden inbox
+API `37a0d2e` was tested in temporary legacy development. Preview run `44684260220` restored all
+34 functions to the original SG `petpetclub_development`; preference indexes and the audited SG
+IAM refresh are verified. No preference documents were seeded. Live PTag/deworm tests passed
+defaults, all-off, independent channels, hidden inbox
 list/count/read exclusion, retry changes, sent preservation, and no replay after re-enabling.
 Four real emails were accepted and confirmed received; four WhatsApp attempts reached Meta and
 failed as expected. Existing verified contacts, users, plans, and subscriptions were preserved.
 Temporary preference rows were removed, restoring missing-row defaults. Anomaly/entitlement and
 organization-context write testing were not performed. No preference rows are seeded.
+
+The final SG return preserved accounts, memberships, contacts, catalogs and plans. Fifteen IAM
+changes wrote fifteen audits; repeat seed verification found no changes. SG provider/Atlas tests
+were not repeated. An existing payment execution-identity index differs from current model options;
+its separate data/index migration remains open. Two historical, already-disabled legacy-transfer
+permission definitions were retained, without restoring their removed routes or seed grants.
