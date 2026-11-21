@@ -63557,9 +63557,16 @@ paths:
       - iam-policy
       summary: Read Access
       operationId: R047
-      description: Returns the effective standing permission keys for a user in one acting context, with the role
-        and policy versions they come from. Pass `context` and, for organization context, `organizationId`; it defaults
-        to the caller's current context. Users may read their own access; internal callers may read anyone's.
+      description: Returns effective standing permission keys for the target account in one context, including
+        role and policy versions. When `context` is omitted, infer it from the target account class. An organization
+        caller reading its own access keeps its authenticated acting organization. Otherwise, an omitted
+        `organizationId` resolves the target's sole effective membership in an active organization. Multiple effective
+        memberships return HTTP 400 `iam.policy.organizationRequired`; pass `organizationId` to select one explicitly.
+        No effective membership, an inactive or missing target, or an incompatible context returns HTTP 404
+        `iam.policy.notFound`. An explicit organization must be effective for that target. `organizationId` is valid
+        only for organization accounts and can be supplied without `context`. Users need `iam.access.read` for self;
+        reading another user requires `iam.access.read_any`. This projection does not select the caller's acting
+        context or grant authorization. User-detail reads are not required to discover the target's context.
       security:
       - bearerAuth: []
         apiKeyAuth: []
@@ -63657,7 +63664,7 @@ paths:
                     - policyVersions
                 additionalProperties: true
         '400':
-          description: 'HTTP 400. Possible error keys: common.invalidPathParam, common.invalidQueryParams.'
+          description: 'HTTP 400. Possible error keys: common.invalidPathParam, common.invalidQueryParams, iam.policy.organizationRequired.'
           content:
             application/json:
               schema:
@@ -63674,6 +63681,7 @@ paths:
                     enum:
                     - common.invalidPathParam
                     - common.invalidQueryParams
+                    - iam.policy.organizationRequired
                     description: Stable key for frontend handling; error text is localized.
                   error:
                     type: string
@@ -63697,6 +63705,12 @@ paths:
                     success: false
                     errorKey: common.invalidQueryParams
                     error: Invalid query parameters
+                iam_policy_organizationRequired:
+                  summary: Multiple effective organization memberships require explicit selection
+                  value:
+                    success: false
+                    errorKey: iam.policy.organizationRequired
+                    error: This account has multiple active organization memberships. Specify organizationId to view one organization's permissions.
         '401':
           description: 'HTTP 401. Possible error keys: common.unauthorized.'
           content:
@@ -63884,6 +63898,7 @@ paths:
       - name: context
         in: query
         required: false
+        description: Optional target context; defaults to the context matching the target account class.
         schema:
           type: string
           enum:
@@ -63893,6 +63908,9 @@ paths:
       - name: organizationId
         in: query
         required: false
+        description: Optional effective target organization. Self reads retain the authenticated acting organization;
+          other reads auto-resolve a sole effective membership. Required when those reads have multiple effective
+          memberships. Can be supplied without context; invalid for personal or internal targets.
         schema:
           type: string
   /users/{userId}/access-agreements:
