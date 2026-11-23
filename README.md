@@ -2,7 +2,7 @@
 
 Run `python -m http.server 8000` in this directory and open `http://localhost:8000`, or use the [published GitHub Pages site](https://leungyulap19.github.io/AWS_DDD_API_docs/). Open [openapi.yaml](openapi.yaml) to save the contract for LLM tools and code generators. Choose an endpoint, fill its request fields on the left, and use **Send request** on the right. The preview follows those inputs and offers HTTP, Shell, Node, Ruby, and PHP examples. Success and error response structures are listed below the form. The specification uses OpenAPI 3.1 and YAML 1.2.
 
-The 246 documented operations describe implemented routes, callers, and client rules. Four deferred routes and three preview/smoke routes are omitted. The contract covers subscriptions, placement sites, localized species/breed catalogs, public contacts, unified ownership events (including audited internal corrections), recovery image replacement and event-date filters, PTag location reports, and external adoption listings.
+The 251 documented operations describe implemented routes, callers, and client rules. Four deferred routes and three preview/smoke routes are omitted. The contract covers subscriptions, placement sites, localized species/breed catalogs, public contacts, unified ownership events (including audited internal corrections), recovery image replacement and event-date filters, PTag location reports, and external adoption listings.
 
 ## Public endpoints
 
@@ -57,11 +57,14 @@ the shared in-app, email, and WhatsApp system. There are no advance or historica
 Clearing or correcting the due date suppresses stale queued sends; successful channels are not
 resent when another channel retries. Notification contacts must be selected and verified.
 
-SG development IAM removes default create/update for vaccine, deworm, general medical, medication,
-and blood-test records from personal and NGO owner roles. History listing remains available.
-NGO and clinic providers may write through an active pet-specific agreement granting the exact
-operation. Ownership alone grants no clinical write access; internal operations need the exact
-`_any` key. This policy refresh was not applied to production.
+Medical CRUD (approved 2026-11-23) restores scoped list/create/update/delete defaults for personal
+and owning-NGO roles across vaccines, deworms, general medical, medication, and blood tests.
+Current ownership remains required. Non-owner NGO/clinic providers need an active pet-specific
+agreement selecting the exact key; internal broad operations need the matching `_any` key.
+The five DELETE endpoints permanently remove one record with an atomic human audit event,
+accept no body/query, and return `{ recordId }`. Missing records return 404; related service records
+and delivered notifications remain. Preview deployment and SG reseed status appear in Stage 2
+live results. Production policy is unchanged.
 
 Identifier management adds four self-only routes for current-factor proof, add/replace requests,
 new-destination verification, and removal. All require `iam.user.identifier_manage`. Read
@@ -169,3 +172,8 @@ readable and removable. API commit `c4137654ffd4132868f5879c2049f7fbfbefb575` de
 [deployment 45126237606](https://github.com/LeungYuLap19/AWS_DDD_API/actions/runs/45126237606)
 passed alias verification and smoke testing; CI also passed. Portal changes remain local. No
 backfill or reseed was performed. Authenticated live override checks were not repeated for this patch.
+
+
+## IAM permission sources
+
+Personal accounts use the shared personal role default. Organization and internal staff receive roles and overrides through their respective memberships. Membership detail reads include the configured permission breakdown and current effective result. Organization permission reads describe the organization's ceiling, not an individual member's access. `GET /users/{userId}/access` remains a read-only API projection for authorized clients and signed-in actor resolution; the management portal has no selected-user Permissions page. This UI decision adds no response fields, endpoint, permission key or seed change.

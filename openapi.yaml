@@ -3,7 +3,7 @@
 openapi: 3.1.0
 info:
   title: PetPetClub API
-  version: 2026-11-23.3
+  version: 2026-11-23.5
   description: The 246 implemented HTTP operations of the API. Paths, gateway credentials, request validation, and
     permission keys are checked against current source. Deferred and preview/smoke routes are omitted. Success responses
     document handler payload fields. Each documented HTTP error status lists the stable errorKey values emitted
@@ -14669,7 +14669,7 @@ paths:
       summary: Read Internal Membership
       operationId: R041
       description: |-
-        Returns one internal membership with its role and permission overrides.
+        Returns one internal membership, the source of this staff account's role and permission overrides. Its permissionResolution shows current usable and blocked permissions.
 
         Membership details include permissionResolution, calculated by the shared standing resolver. Authorized readers can still inspect stored configuration of suspended, removed, future-effective, expired, or otherwise unusable memberships; effective keys are empty when the acting context is unavailable. This is current configuration inspection, not historical point-in-time access. Existing membership Reach applies; no user-wide access-read permission is required.
 
@@ -19421,7 +19421,7 @@ paths:
       summary: Read Organization Membership
       operationId: R035
       description: |-
-        Returns one organization membership with its role and permission overrides. Members may read memberships in their acting organization; internal callers may read any.
+        Returns one organization membership, the source of this staff account's role and permission overrides. Its permissionResolution applies the organization ceiling. Members may read memberships in their acting organization; internal callers may read any.
 
         Membership details include permissionResolution, calculated by the shared standing resolver. Authorized readers can still inspect stored configuration of suspended, removed, future-effective, expired, or otherwise unusable memberships; effective keys are empty when the acting context is unavailable. This is current configuration inspection, not historical point-in-time access. Existing membership Reach applies; no user-wide access-read permission is required.
 
@@ -51147,12 +51147,10 @@ paths:
       - pet-medical
       summary: Create records blood tests
       operationId: R086
-      description: >-
-        Adds a blood test record with a CBC date, known FIP history, and analyte results; analyte names must
-        be unique within the record. Writes an audit event. Personal and owning-NGO roles have no default
-        create/update grant. NGO or clinic providers may write through an active pet-specific agreement
-        granting the exact operation. Ownership alone is insufficient; an internal caller needs the exact
-        `_any` permission.
+      description: Adds a blood test record with a CBC date, known FIP history, and analyte results; analyte names must
+        be unique within the record. Writes an audit event. Personal and owning-NGO roles have scoped create/update/delete
+        defaults, subject to current ownership. Non-owner NGO or clinic providers need a live pet-specific agreement granting
+        the exact operation. Internal broad access needs the corresponding `_any` permission.
       security:
       - bearerAuth: []
         apiKeyAuth: []
@@ -51872,15 +51870,13 @@ paths:
       - pet-medical
       summary: Create records deworms
       operationId: R083
-      description: >-
-        Adds a deworming record: product brand, type, parasite types, frequency, and next due date.
-        `productBrand` must be an active key from the anthelmintic brand catalog, or `null`. Writes an audit
-        event. Personal and owning-NGO roles have no default create/update grant. NGO or clinic providers
-        may write through an active pet-specific agreement granting the exact operation. Ownership alone is
-        insufficient; an internal caller needs the exact `_any` permission. A recorded `nextDueDate` queues
-        one owner reminder on that Asia/Hong_Kong calendar date through in-app, email, and WhatsApp channels
-        using verified notification contacts. No advance or overdue backlog reminders. Clearing or
-        correcting the date suppresses stale queued sends; sent messages remain sent.
+      description: 'Adds a deworming record: product brand, type, parasite types, frequency, and next due date. `productBrand`
+        must be an active key from the anthelmintic brand catalog, or `null`. Writes an audit event. Personal and owning-NGO
+        roles have scoped create/update/delete defaults, subject to current ownership. Non-owner NGO or clinic providers
+        need a live pet-specific agreement granting the exact operation. Internal broad access needs the corresponding
+        `_any` permission. A recorded `nextDueDate` queues one owner reminder on that Asia/Hong_Kong calendar date through
+        in-app, email, and WhatsApp channels using verified notification contacts. No advance or overdue backlog reminders.
+        Clearing or correcting the date suppresses stale queued sends; sent messages remain sent.'
       security:
       - bearerAuth: []
         apiKeyAuth: []
@@ -52590,11 +52586,10 @@ paths:
       - pet-medical
       summary: Create records medicals
       operationId: R084
-      description: >-
-        Adds a medical visit record: place, practitioner, result, and treatment, with `occurredAt` or
-        `occurredDate`. Writes an audit event. Personal and owning-NGO roles have no default create/update
-        grant. NGO or clinic providers may write through an active pet-specific agreement granting the exact
-        operation. Ownership alone is insufficient; an internal caller needs the exact `_any` permission.
+      description: 'Adds a medical visit record: place, practitioner, result, and treatment, with `occurredAt` or `occurredDate`.
+        Writes an audit event. Personal and owning-NGO roles have scoped create/update/delete defaults, subject to current
+        ownership. Non-owner NGO or clinic providers need a live pet-specific agreement granting the exact operation.
+        Internal broad access needs the corresponding `_any` permission.'
       security:
       - bearerAuth: []
         apiKeyAuth: []
@@ -53266,11 +53261,10 @@ paths:
       - pet-medical
       summary: Create records medications
       operationId: R085
-      description: >-
-        Adds a medication record: drug name, purpose, administration method, remarks, and allergy flag.
-        Writes an audit event. Personal and owning-NGO roles have no default create/update grant. NGO or
-        clinic providers may write through an active pet-specific agreement granting the exact operation.
-        Ownership alone is insufficient; an internal caller needs the exact `_any` permission.
+      description: 'Adds a medication record: drug name, purpose, administration method, remarks, and allergy flag. Writes
+        an audit event. Personal and owning-NGO roles have scoped create/update/delete defaults, subject to current ownership.
+        Non-owner NGO or clinic providers need a live pet-specific agreement granting the exact operation. Internal broad
+        access needs the corresponding `_any` permission.'
       security:
       - bearerAuth: []
         apiKeyAuth: []
@@ -54597,12 +54591,10 @@ paths:
       - pet-medical
       summary: Create records vaccines
       operationId: R082
-      description: >-
-        Adds a vaccine record (vaccine name, number, position, dose) with `occurredAt` or a date-only
-        `occurredDate`, never both. Writes an audit event. Personal and owning-NGO roles have no default
-        create/update grant. NGO or clinic providers may write through an active pet-specific agreement
-        granting the exact operation. Ownership alone is insufficient; an internal caller needs the exact
-        `_any` permission.
+      description: Adds a vaccine record (vaccine name, number, position, dose) with `occurredAt` or a date-only `occurredDate`,
+        never both. Writes an audit event. Personal and owning-NGO roles have scoped create/update/delete defaults, subject
+        to current ownership. Non-owner NGO or clinic providers need a live pet-specific agreement granting the exact
+        operation. Internal broad access needs the corresponding `_any` permission.
       security:
       - bearerAuth: []
         apiKeyAuth: []
@@ -57934,11 +57926,9 @@ paths:
       - pet-medical
       summary: Update records blood tests
       operationId: R091
-      description: >-
-        Corrects fields of a blood test record. Writes an audit event. Personal and owning-NGO roles have no
-        default create/update grant. NGO or clinic providers may write through an active pet-specific
-        agreement granting the exact operation. Ownership alone is insufficient; an internal caller needs
-        the exact `_any` permission.
+      description: Corrects fields of a blood test record. Writes an audit event. Personal and owning-NGO roles have scoped
+        create/update/delete defaults, subject to current ownership. Non-owner NGO or clinic providers need a live pet-specific
+        agreement granting the exact operation. Internal broad access needs the corresponding `_any` permission.
       security:
       - bearerAuth: []
         apiKeyAuth: []
@@ -58271,21 +58261,257 @@ paths:
           application/json:
             schema:
               $ref: '#/components/schemas/PetMedical_patch_blood_tests'
+    delete:
+      tags:
+      - pet-medical
+      summary: Delete blood-test record
+      operationId: R261
+      description: Permanently deletes one blood-test record and appends a human audit event atomically. Accepts no
+        body or query fields. Requires the current owner with its scoped key, an NGO/clinic provider with a live exact
+        delete agreement, or an internal caller with delete_any. Repeated deletion returns 404. Linked service records
+        and delivered notifications remain; missing deworm sources suppress queued reminders.
+      security:
+      - bearerAuth: []
+        apiKeyAuth: []
+      x-source-router: functions/pet-medical/src/router.ts
+      responses:
+        '200':
+          description: Record deleted.
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                - success
+                - data
+                properties:
+                  success:
+                    const: true
+                  message:
+                    type: string
+                  requestId:
+                    type: string
+                  data:
+                    type: object
+                    required:
+                    - recordId
+                    properties:
+                      recordId:
+                        type: string
+                        pattern: ^[a-fA-F0-9]{24}$
+                    additionalProperties: false
+                additionalProperties: true
+        '400':
+          description: Invalid record ID, query parameters, or unexpected request body.
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                - success
+                - errorKey
+                - error
+                properties:
+                  success:
+                    const: false
+                  errorKey:
+                    type: string
+                    enum:
+                    - common.invalidPathParam
+                    - common.invalidQueryParams
+                    - common.invalidBodyParams
+                    description: Stable key for frontend handling; error text is localized.
+                  error:
+                    type: string
+                    description: Localized human-readable message.
+                  requestId:
+                    type: string
+                  details:
+                    type: object
+                    additionalProperties: true
+                additionalProperties: false
+              examples:
+                common.invalidPathParam:
+                  summary: common.invalidPathParam
+                  value:
+                    success: false
+                    errorKey: common.invalidPathParam
+                    error: Invalid path parameter
+                common.invalidQueryParams:
+                  summary: common.invalidQueryParams
+                  value:
+                    success: false
+                    errorKey: common.invalidQueryParams
+                    error: Invalid query parameters
+                common.invalidBodyParams:
+                  summary: common.invalidBodyParams
+                  value:
+                    success: false
+                    errorKey: common.invalidBodyParams
+                    error: Invalid request body parameters
+        '401':
+          description: 'HTTP 401. Possible error keys: common.unauthorized.'
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                - success
+                - errorKey
+                - error
+                properties:
+                  success:
+                    const: false
+                  errorKey:
+                    type: string
+                    enum:
+                    - common.unauthorized
+                    description: Stable key for frontend handling; error text is localized.
+                  error:
+                    type: string
+                    description: Localized human-readable message.
+                  requestId:
+                    type: string
+                  details:
+                    type: object
+                    additionalProperties: true
+                additionalProperties: false
+              examples:
+                common_unauthorized:
+                  summary: common.unauthorized
+                  value:
+                    success: false
+                    errorKey: common.unauthorized
+                    error: Authentication required. Please log in.
+        '403':
+          description: 'HTTP 403. Possible error keys: common.forbidden, common.passwordChangeRequired.'
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                - success
+                - errorKey
+                - error
+                properties:
+                  success:
+                    const: false
+                  errorKey:
+                    type: string
+                    enum:
+                    - common.forbidden
+                    - common.passwordChangeRequired
+                    description: Stable key for frontend handling; error text is localized.
+                  error:
+                    type: string
+                    description: Localized human-readable message.
+                  requestId:
+                    type: string
+                  details:
+                    type: object
+                    additionalProperties: true
+                additionalProperties: false
+              examples:
+                common_forbidden:
+                  summary: common.forbidden
+                  value:
+                    success: false
+                    errorKey: common.forbidden
+                    error: Forbidden
+        '404':
+          description: 'HTTP 404. Possible error keys: common.notFound.'
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                - success
+                - errorKey
+                - error
+                properties:
+                  success:
+                    const: false
+                  errorKey:
+                    type: string
+                    enum:
+                    - common.notFound
+                    description: Stable key for frontend handling; error text is localized.
+                  error:
+                    type: string
+                    description: Localized human-readable message.
+                  requestId:
+                    type: string
+                  details:
+                    type: object
+                    additionalProperties: true
+                additionalProperties: false
+              examples:
+                common_notFound:
+                  summary: common.notFound
+                  value:
+                    success: false
+                    errorKey: common.notFound
+                    error: The requested resource was not found
+        '429':
+          description: 'HTTP 429. Possible error keys: common.rateLimited.'
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                - success
+                - errorKey
+                - error
+                properties:
+                  success:
+                    const: false
+                  errorKey:
+                    type: string
+                    enum:
+                    - common.rateLimited
+                    description: Stable key for frontend handling; error text is localized.
+                  error:
+                    type: string
+                    description: Localized human-readable message.
+                  requestId:
+                    type: string
+                  details:
+                    type: object
+                    additionalProperties: true
+                additionalProperties: false
+              examples:
+                common_rateLimited:
+                  summary: common.rateLimited
+                  value:
+                    success: false
+                    errorKey: common.rateLimited
+                    error: Too many requests. Please try again later.
+        4XX:
+          $ref: '#/components/responses/ClientError'
+        5XX:
+          $ref: '#/components/responses/ServerError'
+      x-permission-keys:
+      - pet.blood_test_record.delete_any
+      - pet.blood_test_record.delete
+      parameters:
+      - name: recordId
+        in: path
+        required: true
+        schema:
+          type: string
   /records/deworms/{recordId}:
     patch:
       tags:
       - pet-medical
       summary: Update records deworms
       operationId: R088
-      description: >-
-        Corrects fields of a deworming record. A changed `productBrand` must be an active catalog key; an
-        unchanged brand may stay even if it was disabled later. Personal and owning-NGO roles have no
-        default create/update grant. NGO or clinic providers may write through an active pet-specific
-        agreement granting the exact operation. Ownership alone is insufficient; an internal caller needs
-        the exact `_any` permission. A recorded `nextDueDate` queues one owner reminder on that
-        Asia/Hong_Kong calendar date through in-app, email, and WhatsApp channels using verified
-        notification contacts. No advance or overdue backlog reminders. Clearing or correcting the date
-        suppresses stale queued sends; sent messages remain sent.
+      description: Corrects fields of a deworming record. A changed `productBrand` must be an active catalog key; an unchanged
+        brand may stay even if it was disabled later. Personal and owning-NGO roles have scoped create/update/delete defaults,
+        subject to current ownership. Non-owner NGO or clinic providers need a live pet-specific agreement granting the
+        exact operation. Internal broad access needs the corresponding `_any` permission. A recorded `nextDueDate` queues
+        one owner reminder on that Asia/Hong_Kong calendar date through in-app, email, and WhatsApp channels using verified
+        notification contacts. No advance or overdue backlog reminders. Clearing or correcting the date suppresses stale
+        queued sends; sent messages remain sent.
       security:
       - bearerAuth: []
         apiKeyAuth: []
@@ -58650,17 +58876,254 @@ paths:
           application/json:
             schema:
               $ref: '#/components/schemas/PetMedical_patch_deworms'
+    delete:
+      tags:
+      - pet-medical
+      summary: Delete deworm record
+      operationId: R258
+      description: Permanently deletes one deworm record and appends a human audit event atomically. Accepts no body
+        or query fields. Requires the current owner with its scoped key, an NGO/clinic provider with a live exact delete
+        agreement, or an internal caller with delete_any. Repeated deletion returns 404. Linked service records and
+        delivered notifications remain; missing deworm sources suppress queued reminders.
+      security:
+      - bearerAuth: []
+        apiKeyAuth: []
+      x-source-router: functions/pet-medical/src/router.ts
+      responses:
+        '200':
+          description: Record deleted.
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                - success
+                - data
+                properties:
+                  success:
+                    const: true
+                  message:
+                    type: string
+                  requestId:
+                    type: string
+                  data:
+                    type: object
+                    required:
+                    - recordId
+                    properties:
+                      recordId:
+                        type: string
+                        pattern: ^[a-fA-F0-9]{24}$
+                    additionalProperties: false
+                additionalProperties: true
+        '400':
+          description: Invalid record ID, query parameters, or unexpected request body.
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                - success
+                - errorKey
+                - error
+                properties:
+                  success:
+                    const: false
+                  errorKey:
+                    type: string
+                    enum:
+                    - common.invalidPathParam
+                    - common.invalidQueryParams
+                    - common.invalidBodyParams
+                    description: Stable key for frontend handling; error text is localized.
+                  error:
+                    type: string
+                    description: Localized human-readable message.
+                  requestId:
+                    type: string
+                  details:
+                    type: object
+                    additionalProperties: true
+                additionalProperties: false
+              examples:
+                common.invalidPathParam:
+                  summary: common.invalidPathParam
+                  value:
+                    success: false
+                    errorKey: common.invalidPathParam
+                    error: Invalid path parameter
+                common.invalidQueryParams:
+                  summary: common.invalidQueryParams
+                  value:
+                    success: false
+                    errorKey: common.invalidQueryParams
+                    error: Invalid query parameters
+                common.invalidBodyParams:
+                  summary: common.invalidBodyParams
+                  value:
+                    success: false
+                    errorKey: common.invalidBodyParams
+                    error: Invalid request body parameters
+        '401':
+          description: 'HTTP 401. Possible error keys: common.unauthorized.'
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                - success
+                - errorKey
+                - error
+                properties:
+                  success:
+                    const: false
+                  errorKey:
+                    type: string
+                    enum:
+                    - common.unauthorized
+                    description: Stable key for frontend handling; error text is localized.
+                  error:
+                    type: string
+                    description: Localized human-readable message.
+                  requestId:
+                    type: string
+                  details:
+                    type: object
+                    additionalProperties: true
+                additionalProperties: false
+              examples:
+                common_unauthorized:
+                  summary: common.unauthorized
+                  value:
+                    success: false
+                    errorKey: common.unauthorized
+                    error: Authentication required. Please log in.
+        '403':
+          description: 'HTTP 403. Possible error keys: common.forbidden, common.passwordChangeRequired.'
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                - success
+                - errorKey
+                - error
+                properties:
+                  success:
+                    const: false
+                  errorKey:
+                    type: string
+                    enum:
+                    - common.forbidden
+                    - common.passwordChangeRequired
+                    description: Stable key for frontend handling; error text is localized.
+                  error:
+                    type: string
+                    description: Localized human-readable message.
+                  requestId:
+                    type: string
+                  details:
+                    type: object
+                    additionalProperties: true
+                additionalProperties: false
+              examples:
+                common_forbidden:
+                  summary: common.forbidden
+                  value:
+                    success: false
+                    errorKey: common.forbidden
+                    error: Forbidden
+        '404':
+          description: 'HTTP 404. Possible error keys: common.notFound.'
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                - success
+                - errorKey
+                - error
+                properties:
+                  success:
+                    const: false
+                  errorKey:
+                    type: string
+                    enum:
+                    - common.notFound
+                    description: Stable key for frontend handling; error text is localized.
+                  error:
+                    type: string
+                    description: Localized human-readable message.
+                  requestId:
+                    type: string
+                  details:
+                    type: object
+                    additionalProperties: true
+                additionalProperties: false
+              examples:
+                common_notFound:
+                  summary: common.notFound
+                  value:
+                    success: false
+                    errorKey: common.notFound
+                    error: The requested resource was not found
+        '429':
+          description: 'HTTP 429. Possible error keys: common.rateLimited.'
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                - success
+                - errorKey
+                - error
+                properties:
+                  success:
+                    const: false
+                  errorKey:
+                    type: string
+                    enum:
+                    - common.rateLimited
+                    description: Stable key for frontend handling; error text is localized.
+                  error:
+                    type: string
+                    description: Localized human-readable message.
+                  requestId:
+                    type: string
+                  details:
+                    type: object
+                    additionalProperties: true
+                additionalProperties: false
+              examples:
+                common_rateLimited:
+                  summary: common.rateLimited
+                  value:
+                    success: false
+                    errorKey: common.rateLimited
+                    error: Too many requests. Please try again later.
+        4XX:
+          $ref: '#/components/responses/ClientError'
+        5XX:
+          $ref: '#/components/responses/ServerError'
+      x-permission-keys:
+      - pet.deworm_record.delete_any
+      - pet.deworm_record.delete
+      parameters:
+      - name: recordId
+        in: path
+        required: true
+        schema:
+          type: string
   /records/medicals/{recordId}:
     patch:
       tags:
       - pet-medical
       summary: Update records medicals
       operationId: R089
-      description: >-
-        Corrects fields of a medical visit record; `null` clears an optional field. Writes an audit event.
-        Personal and owning-NGO roles have no default create/update grant. NGO or clinic providers may write
-        through an active pet-specific agreement granting the exact operation. Ownership alone is
-        insufficient; an internal caller needs the exact `_any` permission.
+      description: Corrects fields of a medical visit record; `null` clears an optional field. Writes an audit event.
+        Personal and owning-NGO roles have scoped create/update/delete defaults, subject to current ownership. Non-owner
+        NGO or clinic providers need a live pet-specific agreement granting the exact operation. Internal broad access
+        needs the corresponding `_any` permission.
       security:
       - bearerAuth: []
         apiKeyAuth: []
@@ -58983,17 +59446,254 @@ paths:
           application/json:
             schema:
               $ref: '#/components/schemas/PetMedical_patch_medicals'
+    delete:
+      tags:
+      - pet-medical
+      summary: Delete medical record
+      operationId: R259
+      description: Permanently deletes one medical record and appends a human audit event atomically. Accepts no body
+        or query fields. Requires the current owner with its scoped key, an NGO/clinic provider with a live exact delete
+        agreement, or an internal caller with delete_any. Repeated deletion returns 404. Linked service records and
+        delivered notifications remain; missing deworm sources suppress queued reminders.
+      security:
+      - bearerAuth: []
+        apiKeyAuth: []
+      x-source-router: functions/pet-medical/src/router.ts
+      responses:
+        '200':
+          description: Record deleted.
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                - success
+                - data
+                properties:
+                  success:
+                    const: true
+                  message:
+                    type: string
+                  requestId:
+                    type: string
+                  data:
+                    type: object
+                    required:
+                    - recordId
+                    properties:
+                      recordId:
+                        type: string
+                        pattern: ^[a-fA-F0-9]{24}$
+                    additionalProperties: false
+                additionalProperties: true
+        '400':
+          description: Invalid record ID, query parameters, or unexpected request body.
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                - success
+                - errorKey
+                - error
+                properties:
+                  success:
+                    const: false
+                  errorKey:
+                    type: string
+                    enum:
+                    - common.invalidPathParam
+                    - common.invalidQueryParams
+                    - common.invalidBodyParams
+                    description: Stable key for frontend handling; error text is localized.
+                  error:
+                    type: string
+                    description: Localized human-readable message.
+                  requestId:
+                    type: string
+                  details:
+                    type: object
+                    additionalProperties: true
+                additionalProperties: false
+              examples:
+                common.invalidPathParam:
+                  summary: common.invalidPathParam
+                  value:
+                    success: false
+                    errorKey: common.invalidPathParam
+                    error: Invalid path parameter
+                common.invalidQueryParams:
+                  summary: common.invalidQueryParams
+                  value:
+                    success: false
+                    errorKey: common.invalidQueryParams
+                    error: Invalid query parameters
+                common.invalidBodyParams:
+                  summary: common.invalidBodyParams
+                  value:
+                    success: false
+                    errorKey: common.invalidBodyParams
+                    error: Invalid request body parameters
+        '401':
+          description: 'HTTP 401. Possible error keys: common.unauthorized.'
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                - success
+                - errorKey
+                - error
+                properties:
+                  success:
+                    const: false
+                  errorKey:
+                    type: string
+                    enum:
+                    - common.unauthorized
+                    description: Stable key for frontend handling; error text is localized.
+                  error:
+                    type: string
+                    description: Localized human-readable message.
+                  requestId:
+                    type: string
+                  details:
+                    type: object
+                    additionalProperties: true
+                additionalProperties: false
+              examples:
+                common_unauthorized:
+                  summary: common.unauthorized
+                  value:
+                    success: false
+                    errorKey: common.unauthorized
+                    error: Authentication required. Please log in.
+        '403':
+          description: 'HTTP 403. Possible error keys: common.forbidden, common.passwordChangeRequired.'
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                - success
+                - errorKey
+                - error
+                properties:
+                  success:
+                    const: false
+                  errorKey:
+                    type: string
+                    enum:
+                    - common.forbidden
+                    - common.passwordChangeRequired
+                    description: Stable key for frontend handling; error text is localized.
+                  error:
+                    type: string
+                    description: Localized human-readable message.
+                  requestId:
+                    type: string
+                  details:
+                    type: object
+                    additionalProperties: true
+                additionalProperties: false
+              examples:
+                common_forbidden:
+                  summary: common.forbidden
+                  value:
+                    success: false
+                    errorKey: common.forbidden
+                    error: Forbidden
+        '404':
+          description: 'HTTP 404. Possible error keys: common.notFound.'
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                - success
+                - errorKey
+                - error
+                properties:
+                  success:
+                    const: false
+                  errorKey:
+                    type: string
+                    enum:
+                    - common.notFound
+                    description: Stable key for frontend handling; error text is localized.
+                  error:
+                    type: string
+                    description: Localized human-readable message.
+                  requestId:
+                    type: string
+                  details:
+                    type: object
+                    additionalProperties: true
+                additionalProperties: false
+              examples:
+                common_notFound:
+                  summary: common.notFound
+                  value:
+                    success: false
+                    errorKey: common.notFound
+                    error: The requested resource was not found
+        '429':
+          description: 'HTTP 429. Possible error keys: common.rateLimited.'
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                - success
+                - errorKey
+                - error
+                properties:
+                  success:
+                    const: false
+                  errorKey:
+                    type: string
+                    enum:
+                    - common.rateLimited
+                    description: Stable key for frontend handling; error text is localized.
+                  error:
+                    type: string
+                    description: Localized human-readable message.
+                  requestId:
+                    type: string
+                  details:
+                    type: object
+                    additionalProperties: true
+                additionalProperties: false
+              examples:
+                common_rateLimited:
+                  summary: common.rateLimited
+                  value:
+                    success: false
+                    errorKey: common.rateLimited
+                    error: Too many requests. Please try again later.
+        4XX:
+          $ref: '#/components/responses/ClientError'
+        5XX:
+          $ref: '#/components/responses/ServerError'
+      x-permission-keys:
+      - pet.medical_record.delete_any
+      - pet.medical_record.delete
+      parameters:
+      - name: recordId
+        in: path
+        required: true
+        schema:
+          type: string
   /records/medications/{recordId}:
     patch:
       tags:
       - pet-medical
       summary: Update records medications
       operationId: R090
-      description: >-
-        Corrects fields of a medication record; `null` clears an optional field. Writes an audit event.
-        Personal and owning-NGO roles have no default create/update grant. NGO or clinic providers may write
-        through an active pet-specific agreement granting the exact operation. Ownership alone is
-        insufficient; an internal caller needs the exact `_any` permission.
+      description: Corrects fields of a medication record; `null` clears an optional field. Writes an audit event. Personal
+        and owning-NGO roles have scoped create/update/delete defaults, subject to current ownership. Non-owner NGO or
+        clinic providers need a live pet-specific agreement granting the exact operation. Internal broad access needs
+        the corresponding `_any` permission.
       security:
       - bearerAuth: []
         apiKeyAuth: []
@@ -59320,6 +60020,244 @@ paths:
           application/json:
             schema:
               $ref: '#/components/schemas/PetMedical_patch_medications'
+    delete:
+      tags:
+      - pet-medical
+      summary: Delete medication record
+      operationId: R260
+      description: Permanently deletes one medication record and appends a human audit event atomically. Accepts no
+        body or query fields. Requires the current owner with its scoped key, an NGO/clinic provider with a live exact
+        delete agreement, or an internal caller with delete_any. Repeated deletion returns 404. Linked service records
+        and delivered notifications remain; missing deworm sources suppress queued reminders.
+      security:
+      - bearerAuth: []
+        apiKeyAuth: []
+      x-source-router: functions/pet-medical/src/router.ts
+      responses:
+        '200':
+          description: Record deleted.
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                - success
+                - data
+                properties:
+                  success:
+                    const: true
+                  message:
+                    type: string
+                  requestId:
+                    type: string
+                  data:
+                    type: object
+                    required:
+                    - recordId
+                    properties:
+                      recordId:
+                        type: string
+                        pattern: ^[a-fA-F0-9]{24}$
+                    additionalProperties: false
+                additionalProperties: true
+        '400':
+          description: Invalid record ID, query parameters, or unexpected request body.
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                - success
+                - errorKey
+                - error
+                properties:
+                  success:
+                    const: false
+                  errorKey:
+                    type: string
+                    enum:
+                    - common.invalidPathParam
+                    - common.invalidQueryParams
+                    - common.invalidBodyParams
+                    description: Stable key for frontend handling; error text is localized.
+                  error:
+                    type: string
+                    description: Localized human-readable message.
+                  requestId:
+                    type: string
+                  details:
+                    type: object
+                    additionalProperties: true
+                additionalProperties: false
+              examples:
+                common.invalidPathParam:
+                  summary: common.invalidPathParam
+                  value:
+                    success: false
+                    errorKey: common.invalidPathParam
+                    error: Invalid path parameter
+                common.invalidQueryParams:
+                  summary: common.invalidQueryParams
+                  value:
+                    success: false
+                    errorKey: common.invalidQueryParams
+                    error: Invalid query parameters
+                common.invalidBodyParams:
+                  summary: common.invalidBodyParams
+                  value:
+                    success: false
+                    errorKey: common.invalidBodyParams
+                    error: Invalid request body parameters
+        '401':
+          description: 'HTTP 401. Possible error keys: common.unauthorized.'
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                - success
+                - errorKey
+                - error
+                properties:
+                  success:
+                    const: false
+                  errorKey:
+                    type: string
+                    enum:
+                    - common.unauthorized
+                    description: Stable key for frontend handling; error text is localized.
+                  error:
+                    type: string
+                    description: Localized human-readable message.
+                  requestId:
+                    type: string
+                  details:
+                    type: object
+                    additionalProperties: true
+                additionalProperties: false
+              examples:
+                common_unauthorized:
+                  summary: common.unauthorized
+                  value:
+                    success: false
+                    errorKey: common.unauthorized
+                    error: Authentication required. Please log in.
+        '403':
+          description: 'HTTP 403. Possible error keys: common.forbidden, common.passwordChangeRequired.'
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                - success
+                - errorKey
+                - error
+                properties:
+                  success:
+                    const: false
+                  errorKey:
+                    type: string
+                    enum:
+                    - common.forbidden
+                    - common.passwordChangeRequired
+                    description: Stable key for frontend handling; error text is localized.
+                  error:
+                    type: string
+                    description: Localized human-readable message.
+                  requestId:
+                    type: string
+                  details:
+                    type: object
+                    additionalProperties: true
+                additionalProperties: false
+              examples:
+                common_forbidden:
+                  summary: common.forbidden
+                  value:
+                    success: false
+                    errorKey: common.forbidden
+                    error: Forbidden
+        '404':
+          description: 'HTTP 404. Possible error keys: common.notFound.'
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                - success
+                - errorKey
+                - error
+                properties:
+                  success:
+                    const: false
+                  errorKey:
+                    type: string
+                    enum:
+                    - common.notFound
+                    description: Stable key for frontend handling; error text is localized.
+                  error:
+                    type: string
+                    description: Localized human-readable message.
+                  requestId:
+                    type: string
+                  details:
+                    type: object
+                    additionalProperties: true
+                additionalProperties: false
+              examples:
+                common_notFound:
+                  summary: common.notFound
+                  value:
+                    success: false
+                    errorKey: common.notFound
+                    error: The requested resource was not found
+        '429':
+          description: 'HTTP 429. Possible error keys: common.rateLimited.'
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                - success
+                - errorKey
+                - error
+                properties:
+                  success:
+                    const: false
+                  errorKey:
+                    type: string
+                    enum:
+                    - common.rateLimited
+                    description: Stable key for frontend handling; error text is localized.
+                  error:
+                    type: string
+                    description: Localized human-readable message.
+                  requestId:
+                    type: string
+                  details:
+                    type: object
+                    additionalProperties: true
+                additionalProperties: false
+              examples:
+                common_rateLimited:
+                  summary: common.rateLimited
+                  value:
+                    success: false
+                    errorKey: common.rateLimited
+                    error: Too many requests. Please try again later.
+        4XX:
+          $ref: '#/components/responses/ClientError'
+        5XX:
+          $ref: '#/components/responses/ServerError'
+      x-permission-keys:
+      - pet.medication_record.delete_any
+      - pet.medication_record.delete
+      parameters:
+      - name: recordId
+        in: path
+        required: true
+        schema:
+          type: string
   /records/services/{serviceId}:
     patch:
       tags:
@@ -59668,11 +60606,10 @@ paths:
       - pet-medical
       summary: Update records vaccines
       operationId: R087
-      description: >-
-        Corrects fields of a vaccine record; `null` clears an optional field. Writes an audit event.
-        Personal and owning-NGO roles have no default create/update grant. NGO or clinic providers may write
-        through an active pet-specific agreement granting the exact operation. Ownership alone is
-        insufficient; an internal caller needs the exact `_any` permission.
+      description: Corrects fields of a vaccine record; `null` clears an optional field. Writes an audit event. Personal
+        and owning-NGO roles have scoped create/update/delete defaults, subject to current ownership. Non-owner NGO or
+        clinic providers need a live pet-specific agreement granting the exact operation. Internal broad access needs
+        the corresponding `_any` permission.
       security:
       - bearerAuth: []
         apiKeyAuth: []
@@ -59995,6 +60932,244 @@ paths:
           application/json:
             schema:
               $ref: '#/components/schemas/PetMedical_patch_vaccines'
+    delete:
+      tags:
+      - pet-medical
+      summary: Delete vaccine record
+      operationId: R257
+      description: Permanently deletes one vaccine record and appends a human audit event atomically. Accepts no body
+        or query fields. Requires the current owner with its scoped key, an NGO/clinic provider with a live exact delete
+        agreement, or an internal caller with delete_any. Repeated deletion returns 404. Linked service records and
+        delivered notifications remain; missing deworm sources suppress queued reminders.
+      security:
+      - bearerAuth: []
+        apiKeyAuth: []
+      x-source-router: functions/pet-medical/src/router.ts
+      responses:
+        '200':
+          description: Record deleted.
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                - success
+                - data
+                properties:
+                  success:
+                    const: true
+                  message:
+                    type: string
+                  requestId:
+                    type: string
+                  data:
+                    type: object
+                    required:
+                    - recordId
+                    properties:
+                      recordId:
+                        type: string
+                        pattern: ^[a-fA-F0-9]{24}$
+                    additionalProperties: false
+                additionalProperties: true
+        '400':
+          description: Invalid record ID, query parameters, or unexpected request body.
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                - success
+                - errorKey
+                - error
+                properties:
+                  success:
+                    const: false
+                  errorKey:
+                    type: string
+                    enum:
+                    - common.invalidPathParam
+                    - common.invalidQueryParams
+                    - common.invalidBodyParams
+                    description: Stable key for frontend handling; error text is localized.
+                  error:
+                    type: string
+                    description: Localized human-readable message.
+                  requestId:
+                    type: string
+                  details:
+                    type: object
+                    additionalProperties: true
+                additionalProperties: false
+              examples:
+                common.invalidPathParam:
+                  summary: common.invalidPathParam
+                  value:
+                    success: false
+                    errorKey: common.invalidPathParam
+                    error: Invalid path parameter
+                common.invalidQueryParams:
+                  summary: common.invalidQueryParams
+                  value:
+                    success: false
+                    errorKey: common.invalidQueryParams
+                    error: Invalid query parameters
+                common.invalidBodyParams:
+                  summary: common.invalidBodyParams
+                  value:
+                    success: false
+                    errorKey: common.invalidBodyParams
+                    error: Invalid request body parameters
+        '401':
+          description: 'HTTP 401. Possible error keys: common.unauthorized.'
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                - success
+                - errorKey
+                - error
+                properties:
+                  success:
+                    const: false
+                  errorKey:
+                    type: string
+                    enum:
+                    - common.unauthorized
+                    description: Stable key for frontend handling; error text is localized.
+                  error:
+                    type: string
+                    description: Localized human-readable message.
+                  requestId:
+                    type: string
+                  details:
+                    type: object
+                    additionalProperties: true
+                additionalProperties: false
+              examples:
+                common_unauthorized:
+                  summary: common.unauthorized
+                  value:
+                    success: false
+                    errorKey: common.unauthorized
+                    error: Authentication required. Please log in.
+        '403':
+          description: 'HTTP 403. Possible error keys: common.forbidden, common.passwordChangeRequired.'
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                - success
+                - errorKey
+                - error
+                properties:
+                  success:
+                    const: false
+                  errorKey:
+                    type: string
+                    enum:
+                    - common.forbidden
+                    - common.passwordChangeRequired
+                    description: Stable key for frontend handling; error text is localized.
+                  error:
+                    type: string
+                    description: Localized human-readable message.
+                  requestId:
+                    type: string
+                  details:
+                    type: object
+                    additionalProperties: true
+                additionalProperties: false
+              examples:
+                common_forbidden:
+                  summary: common.forbidden
+                  value:
+                    success: false
+                    errorKey: common.forbidden
+                    error: Forbidden
+        '404':
+          description: 'HTTP 404. Possible error keys: common.notFound.'
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                - success
+                - errorKey
+                - error
+                properties:
+                  success:
+                    const: false
+                  errorKey:
+                    type: string
+                    enum:
+                    - common.notFound
+                    description: Stable key for frontend handling; error text is localized.
+                  error:
+                    type: string
+                    description: Localized human-readable message.
+                  requestId:
+                    type: string
+                  details:
+                    type: object
+                    additionalProperties: true
+                additionalProperties: false
+              examples:
+                common_notFound:
+                  summary: common.notFound
+                  value:
+                    success: false
+                    errorKey: common.notFound
+                    error: The requested resource was not found
+        '429':
+          description: 'HTTP 429. Possible error keys: common.rateLimited.'
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                - success
+                - errorKey
+                - error
+                properties:
+                  success:
+                    const: false
+                  errorKey:
+                    type: string
+                    enum:
+                    - common.rateLimited
+                    description: Stable key for frontend handling; error text is localized.
+                  error:
+                    type: string
+                    description: Localized human-readable message.
+                  requestId:
+                    type: string
+                  details:
+                    type: object
+                    additionalProperties: true
+                additionalProperties: false
+              examples:
+                common_rateLimited:
+                  summary: common.rateLimited
+                  value:
+                    success: false
+                    errorKey: common.rateLimited
+                    error: Too many requests. Please try again later.
+        4XX:
+          $ref: '#/components/responses/ClientError'
+        5XX:
+          $ref: '#/components/responses/ServerError'
+      x-permission-keys:
+      - pet.vaccine_record.delete_any
+      - pet.vaccine_record.delete
+      parameters:
+      - name: recordId
+        in: path
+        required: true
+        schema:
+          type: string
   /subscriptions/plans:
     get:
       tags:
