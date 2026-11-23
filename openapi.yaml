@@ -3,7 +3,7 @@
 openapi: 3.1.0
 info:
   title: PetPetClub API
-  version: 2026-11-23.2
+  version: 2026-11-23.3
   description: The 246 implemented HTTP operations of the API. Paths, gateway credentials, request validation, and
     permission keys are checked against current source. Deferred and preview/smoke routes are omitted. Success responses
     document handler payload fields. Each documented HTTP error status lists the stable errorKey values emitted
@@ -2520,10 +2520,15 @@ paths:
       - iam-bootstrap
       summary: Create Internal Membership
       operationId: R012
-      description: Creates an internal staff account in the pending verification state with an active internal membership
-        and role. The new user proves the email through the login code flow to activate the account. A `reason`
-        is required when the role is an administrator role (`internal_admin`, `internal_developer`); without it
-        the request returns 400 `common.invalidBodyParams`.
+      description: |-
+        Creates an internal staff account in the pending verification state with an active internal membership
+        and role. The new user proves the email through the login code flow to activate the account. A
+        `reason` is required when the role is an administrator role (`internal_admin`, `internal_developer`);
+        without it the request returns 400 `common.invalidBodyParams`.
+
+        Override grantKeys must exclude the selected default-policy baseline. Redundant grants return HTTP 422
+        `iam.bootstrap.invalidPolicy`. Revokes must belong to the baseline; withdraw an extra grant by
+        removing it from grantKeys.
       security:
       - bearerAuth: []
         apiKeyAuth: []
@@ -2807,10 +2812,15 @@ paths:
       - iam-bootstrap
       summary: Create Organization
       operationId: R009
-      description: Creates an NGO, hotel, or clinic organization in the provisioning state with pending verification,
-        its profile, and its permission policy (an organization default plus optional grant and revoke overrides
-        within the ceiling). Writes audit events. Pending organizations become active when their first admin membership
-        is created.
+      description: |-
+        Creates an NGO, hotel, or clinic organization in the provisioning state with pending verification, its
+        profile, and its permission policy (an organization default plus optional grant and revoke overrides
+        within the ceiling). Writes audit events. Pending organizations become active when their first admin
+        membership is created.
+
+        Override grantKeys must exclude the selected default-policy baseline. Redundant grants return HTTP 422
+        `iam.bootstrap.invalidPolicy`. Revokes must belong to the baseline; withdraw an extra grant by
+        removing it from grantKeys.
       security:
       - bearerAuth: []
         apiKeyAuth: []
@@ -3091,13 +3101,19 @@ paths:
       - iam-bootstrap
       summary: Create Organization Membership
       operationId: R011
-      description: Creates an organization staff account with an email password credential and an active membership
-        with the given role in the organization. Organization admins may add staff to their own organization; internal
-        callers may add members to any organization. The first member of a provisioning organization must be its admin,
-        and that membership activates the organization. A `reason` is required when the role is an administrator role
-        (`ngo_admin`, `hotel_admin`, `clinic_admin`); without it the request returns 400 `common.invalidBodyParams`.
-        Provisioned credentials set mustChangePassword=true. The active user and membership do not require email verification;
-        the initial-password gate restricts normal service access until owner password replacement.
+      description: |-
+        Creates an organization staff account with an email password credential and an active membership with
+        the given role in the organization. Organization admins may add staff to their own organization;
+        internal callers may add members to any organization. The first member of a provisioning organization
+        must be its admin, and that membership activates the organization. A `reason` is required when the
+        role is an administrator role (`ngo_admin`, `hotel_admin`, `clinic_admin`); without it the request
+        returns 400 `common.invalidBodyParams`. Provisioned credentials set mustChangePassword=true. The
+        active user and membership do not require email verification; the initial-password gate restricts
+        normal service access until owner password replacement.
+
+        Override grantKeys must exclude the selected default-policy baseline. Redundant grants return HTTP 422
+        `iam.bootstrap.invalidPolicy`. Revokes must belong to the baseline; withdraw an extra grant by
+        removing it from grantKeys.
       security:
       - bearerAuth: []
         apiKeyAuth: []
@@ -14652,14 +14668,12 @@ paths:
       - iam-membership
       summary: Read Internal Membership
       operationId: R041
-      description: 'Returns one internal membership with its role and permission overrides.
+      description: |-
+        Returns one internal membership with its role and permission overrides.
 
+        Membership details include permissionResolution, calculated by the shared standing resolver. Authorized readers can still inspect stored configuration of suspended, removed, future-effective, expired, or otherwise unusable memberships; effective keys are empty when the acting context is unavailable. This is current configuration inspection, not historical point-in-time access. Existing membership Reach applies; no user-wide access-read permission is required.
 
-        Membership details include permissionResolution, calculated by the shared standing resolver. Authorized readers
-        can still inspect stored configuration of suspended, removed, future-effective, expired, or otherwise unusable
-        memberships; effective keys are empty when the acting context is unavailable. This is current configuration inspection,
-        not historical point-in-time access. Existing membership Reach applies; no user-wide access-read permission is
-        required.'
+        permissionResolution includes baselinePermissionKeys and grantedPermissionKeys to identify sources. Existing overlaps remain visible; effective access still follows the shared union-minus-revokes formula and applicable ceiling/catalog gates.
       security:
       - bearerAuth: []
         apiKeyAuth: []
@@ -14815,6 +14829,16 @@ paths:
                               snapshot or resource authorization. Pet-scoped agreement grants remain separate. Calculated
                               per request, never persisted.
                             properties:
+                              baselinePermissionKeys:
+                                type: array
+                                items:
+                                  type: string
+                                description: Sorted selected role or personal-default keys before overrides and runtime gates.
+                              grantedPermissionKeys:
+                                type: array
+                                items:
+                                  type: string
+                                description: Sorted saved grants. Historical baseline overlaps remain visible for repair.
                               configuredPermissionKeys:
                                 type: array
                                 items:
@@ -14869,6 +14893,8 @@ paths:
                                 description: Overall failure reason. Null does not imply every candidate catalog permission
                                   is usable.
                             required:
+                            - baselinePermissionKeys
+                            - grantedPermissionKeys
                             - configuredPermissionKeys
                             - candidatePermissionKeys
                             - effectivePermissionKeys
@@ -15084,8 +15110,10 @@ paths:
       - iam-membership
       summary: Update Internal Membership
       operationId: R042
-      description: Changes an internal membership's role or reactivates it. Protected roles require a `reason`,
-        and an internal administrator cannot change their own protected membership.
+      description: |-
+        Changes an internal membership's role or reactivates it. Protected roles require a `reason`, and an internal administrator cannot change their own protected membership.
+
+        Role changes revalidate saved overrides. Remove a saved grant before selecting a role that includes that key in its baseline; otherwise HTTP 422 returns the membership-specific `invalidPolicy` error.
       security:
       - bearerAuth: []
         apiKeyAuth: []
@@ -15538,8 +15566,13 @@ paths:
       - iam-membership
       summary: Update Internal Membership Permissions
       operationId: R043
-      description: Replaces an internal membership's grant and revoke permission overrides. Changes on a protected
-        role require a `reason`.
+      description: |-
+        Replaces an internal membership's grant and revoke permission overrides. Changes on a protected role
+        require a `reason`.
+
+        Override grantKeys must exclude the selected default-policy baseline. Redundant grants return HTTP 422
+        `iam.internalMembership.invalidPolicy`. Revokes must belong to the baseline; withdraw an extra grant
+        by removing it from grantKeys.
       security:
       - bearerAuth: []
         apiKeyAuth: []
@@ -19387,15 +19420,12 @@ paths:
       - iam-membership
       summary: Read Organization Membership
       operationId: R035
-      description: 'Returns one organization membership with its role and permission overrides. Members may read memberships
-        in their acting organization; internal callers may read any.
+      description: |-
+        Returns one organization membership with its role and permission overrides. Members may read memberships in their acting organization; internal callers may read any.
 
+        Membership details include permissionResolution, calculated by the shared standing resolver. Authorized readers can still inspect stored configuration of suspended, removed, future-effective, expired, or otherwise unusable memberships; effective keys are empty when the acting context is unavailable. This is current configuration inspection, not historical point-in-time access. Existing membership Reach applies; no user-wide access-read permission is required.
 
-        Membership details include permissionResolution, calculated by the shared standing resolver. Authorized readers
-        can still inspect stored configuration of suspended, removed, future-effective, expired, or otherwise unusable
-        memberships; effective keys are empty when the acting context is unavailable. This is current configuration inspection,
-        not historical point-in-time access. Existing membership Reach applies; no user-wide access-read permission is
-        required.'
+        permissionResolution includes baselinePermissionKeys and grantedPermissionKeys to identify sources. Existing overlaps remain visible; effective access still follows the shared union-minus-revokes formula and applicable ceiling/catalog gates.
       security:
       - bearerAuth: []
         apiKeyAuth: []
@@ -19551,6 +19581,16 @@ paths:
                               snapshot or resource authorization. Pet-scoped agreement grants remain separate. Calculated
                               per request, never persisted.
                             properties:
+                              baselinePermissionKeys:
+                                type: array
+                                items:
+                                  type: string
+                                description: Sorted selected role or personal-default keys before overrides and runtime gates.
+                              grantedPermissionKeys:
+                                type: array
+                                items:
+                                  type: string
+                                description: Sorted saved grants. Historical baseline overlaps remain visible for repair.
                               configuredPermissionKeys:
                                 type: array
                                 items:
@@ -19605,6 +19645,8 @@ paths:
                                 description: Overall failure reason. Null does not imply every candidate catalog permission
                                   is usable.
                             required:
+                            - baselinePermissionKeys
+                            - grantedPermissionKeys
                             - configuredPermissionKeys
                             - candidatePermissionKeys
                             - effectivePermissionKeys
@@ -19821,9 +19863,10 @@ paths:
       - iam-membership
       summary: Update Organization Membership
       operationId: R036
-      description: 'Changes a membership''s role, or reactivates it with `status: active`. The new role must fit
-        the organization''s permission ceiling, and changes to or from a protected role require a `reason`. The
-        caller''s role must be allowed to manage the roles involved.'
+      description: |-
+        Changes a membership's role, or reactivates it with `status: active`. The selected role must support the organization's type; its baseline may exceed the organization ceiling. Standing access is intersected with that ceiling, and explicit membership grants/revokes remain ceiling-bounded. Changes to or from a protected role require a `reason`. The caller's role must be allowed to manage the roles involved.
+
+        Role changes revalidate saved overrides. Remove a saved grant before selecting a role that includes that key in its baseline; otherwise HTTP 422 returns the membership-specific `invalidPolicy` error.
       security:
       - bearerAuth: []
         apiKeyAuth: []
@@ -20277,8 +20320,13 @@ paths:
       - iam-membership
       summary: Update Organization Membership Permissions
       operationId: R037
-      description: Replaces a membership's grant and revoke permission overrides. Grants must fit the organization's
+      description: |-
+        Replaces a membership's grant and revoke permission overrides. Grants must fit the organization's
         ceiling, and changes on a protected role require a `reason`.
+
+        Override grantKeys must exclude the selected default-policy baseline. Redundant grants return HTTP 422
+        `iam.organizationMembership.invalidPolicy`. Revokes must belong to the baseline; withdraw an extra
+        grant by removing it from grantKeys.
       security:
       - bearerAuth: []
         apiKeyAuth: []
@@ -33817,9 +33865,14 @@ paths:
       - iam-organization
       summary: Update Organization Permissions
       operationId: R033
-      description: Internal operation that changes an organization's default policy and overrides. Requires `expectedRevision`
-        and a `reason`; grant and revoke lists must not overlap and revokes must come from the selected default.
-        A stale revision returns 409.
+      description: |-
+        Internal operation that changes an organization's default policy and overrides. Requires
+        `expectedRevision` and a `reason`; grant and revoke lists must not overlap and revokes must come from
+        the selected default. A stale revision returns 409.
+
+        Override grantKeys must exclude the selected default-policy baseline. Redundant grants return HTTP 422
+        `iam.organization.invalidPolicy`. Revokes must belong to the baseline; withdraw an extra grant by
+        removing it from grantKeys.
       security:
       - bearerAuth: []
         apiKeyAuth: []
@@ -36393,65 +36446,12 @@ paths:
       - iam-policy
       summary: List Permissions
       operationId: R046
-      description: 'Lists permission catalog entries with page/limit pagination, `search`, filters by `domainKey`, applicable
-        `context`, and `status`, and sorting (default by key).
-
-
-        Contextual grant/revoke picker mode: purpose=grant|revoke requires assignmentTarget. The optional context must
-        match that target.
-
-        For an existing membership override, provide membershipId alone; the server derives its organization, role and
-        overrides.
-
-        For a new organization membership, provide organizationId plus rolePolicyId; for a new internal membership, provide
-        rolePolicyId alone.
-
-        For role-policy editing, rolePolicyId is optional for grants and required for revokes. No organizationId is accepted:
-        reusable roles are not ceiling-bounded.
-
-        For organization_ceiling, provide exactly one of organizationId (existing policy) or organizationDefaultPolicyId
-        (new policy baseline), without membershipId or rolePolicyId.
-
-        organization_ceiling is a lookup target only, never a persisted permission assignment target.
-
-        Target references are rejected without purpose. assignmentTarget alone remains a normal catalog assignment-target
-        filter.
-
-
-        Picker responses add data.lookup and per-permission eligibility. Both canGrant and canRevoke are returned; purpose
-        identifies the intended picker.
-
-        Rows blocked by the target ceiling, role baseline, lifecycle, or grant/revoke conflicts remain visible. Context
-        and explicit search/status/domain filters apply before pagination.
-
-        In picker mode, assignmentTarget describes the operation rather than filtering out incompatible catalog rows.
-        Pagination totals include blocked matching rows.
-
-        canGrant/canRevoke describe per-key configuration eligibility using the same catalog, baseline, override, ceiling
-        and role-protection predicates as write validators.
-
-        They do not authorize a mutation or guarantee that a complete array, first-administrator flow, revision, impact
-        check or concurrent policy update will pass.
-
-        Writes reauthorize and revalidate current policy transactionally. Deprecated membership baseline keys can be revoked,
-        but cannot be newly granted.
-
-        Organization ceiling edits retain their active-key write requirement. Removing a key from a shared role is not
-        a membership revoke.
-
-
-        The catalog remains internal-only under iam.permission.list_all. Referenced targets also require existing read
-        authority:
-
-        iam.organization_membership.read_any or iam.internal_membership.read_any for a membership;
-
-        iam.role_default.read for its role; iam.organization_permission.read_any for an organization policy;
-
-        iam.organization_default.read for a directly selected template. No organization-scoped list permission is added.
-
-        Missing authorized targets return 404 iam.policy.notFound; incompatible role scope/version returns 422 iam.policy.invalid.
-
-        '
+      description: >-
+        Lists permission definitions with search, filters and pagination. For grant/revoke selectors, supply
+        purpose and target references to get per-key eligibility; eligibleOnly=true returns only applicable
+        options before pagination. Omit eligibleOnly to inspect blocked keys and reasons. Requires
+        iam.permission.list_all plus read authority for referenced resources. Eligibility explains
+        configuration choices; writes revalidate authorization and current policy.
       security:
       - bearerAuth: []
         apiKeyAuth: []
@@ -36616,6 +36616,9 @@ paths:
                                     enum:
                                     - catalog_not_assignable
                                     - not_in_baseline
+                                    - already_in_baseline
+                                    - already_granted
+                                    - already_revoked
                                     - catalog_not_revocable
                                     - conflicting_revoke
                                     - conflicting_grant
@@ -36634,6 +36637,9 @@ paths:
                                     enum:
                                     - catalog_not_assignable
                                     - not_in_baseline
+                                    - already_in_baseline
+                                    - already_granted
+                                    - already_revoked
                                     - catalog_not_revocable
                                     - conflicting_revoke
                                     - conflicting_grant
@@ -37019,6 +37025,13 @@ paths:
           enum:
           - asc
           - desc
+      - name: eligibleOnly
+        in: query
+        required: false
+        description: Requires purpose and valid target references. True filters canGrant/canRevoke before counting and
+          pagination. False or omitted preserves blocked rows and reasons. Existing read authority remains required.
+        schema:
+          type: boolean
       - name: purpose
         in: query
         required: false
@@ -37044,7 +37057,7 @@ paths:
       - name: organizationId
         in: query
         required: false
-        description: Actual target organization for a new membership or an existing organization ceiling policy.
+        description: For a new organization membership, combine with rolePolicyId. For an existing ceiling, use alone. Not accepted for shared-role editing.
         schema:
           type: string
           pattern: ^[0-9a-fA-F]{24}$
@@ -37059,7 +37072,7 @@ paths:
       - name: organizationDefaultPolicyId
         in: query
         required: false
-        description: Active organization-default template ObjectId for a new ceiling policy; mutually exclusive with organizationId.
+        description: For a new ceiling, provide this template alone. For an existing ceiling, provide organizationId instead. No membershipId or rolePolicyId.
         schema:
           type: string
           pattern: ^[0-9a-fA-F]{24}$
@@ -38548,9 +38561,13 @@ paths:
       - iam-policy
       summary: Update Organization Default
       operationId: R058
-      description: Updates an organization default's name, description, organization types, keys, or status. Requires
-        `expectedRevision` and a `reason`. A change that would remove access from current organizations or memberships
-        returns 409 `iam.policy.impact` with the impact report.
+      description: |-
+        Updates an organization default's name, description, organization types, keys, or status. Requires
+        `expectedRevision` and a `reason`. A change that would remove access from current organizations or
+        memberships returns 409 `iam.policy.impact` with the impact report.
+
+        Baseline changes that make active assignees' saved additional grants redundant return HTTP 409
+        iam.policy.impact. Repair the affected overrides before changing the reusable baseline.
       security:
       - bearerAuth: []
         apiKeyAuth: []
@@ -40132,7 +40149,15 @@ paths:
       - iam-policy
       summary: Update Role Default
       operationId: R054
-      description: "Edits role labels, keys, organizationTypeKeys, protection, assignment mode or status using expectedRevision and reason. Eligibility narrowing and invalidated assignments return 409 iam.policy.impact. Reusable organization role keys may exceed individual ceilings; standing authorization intersects the target ceiling. Membership grants and revokes must remain within it. Pet agreement grants retain their separate agreementEligible policy."
+      description: |-
+        Edits role labels, keys, organizationTypeKeys, protection, assignment mode or status using
+        expectedRevision and reason. Eligibility narrowing and invalidated assignments return 409
+        iam.policy.impact. Reusable organization role keys may exceed individual ceilings; standing
+        authorization intersects the target ceiling. Membership grants and revokes must remain within it. Pet
+        agreement grants retain their separate agreementEligible policy.
+
+        Baseline changes that make active assignees' saved additional grants redundant return HTTP 409
+        iam.policy.impact. Repair the affected overrides before changing the reusable baseline.
       security:
       - bearerAuth: []
         apiKeyAuth: []
@@ -64050,21 +64075,12 @@ paths:
       - iam-policy
       summary: Read Access
       operationId: R047
-      description: 'Returns effective standing permission keys for the target account in one context, including role and
-        policy versions. When `context` is omitted, infer it from the target account class. An organization caller reading
-        its own access keeps its authenticated acting organization. Otherwise, an omitted `organizationId` resolves the
-        target''s sole effective membership in an active organization. Multiple effective memberships return HTTP 400
-        `iam.policy.organizationRequired`; pass `organizationId` to select one explicitly. No effective membership, an
-        inactive or missing target, or an incompatible context returns HTTP 404 `iam.policy.notFound`. An explicit organization
-        must be effective for that target. `organizationId` is valid only for organization accounts and can be supplied
-        without `context`. Users need `iam.access.read` for self; reading another user requires `iam.access.read_any`.
-        This projection does not select the caller''s acting context or grant authorization. User-detail reads are not
-        required to discover the target''s context.
+      description: |-
+        Returns effective standing permission keys for the target account in one context, including role and policy versions. When `context` is omitted, infer it from the target account class. An organization caller reading its own access keeps its authenticated acting organization. Otherwise, an omitted `organizationId` resolves the target's sole effective membership in an active organization. Multiple effective memberships return HTTP 400 `iam.policy.organizationRequired`; pass `organizationId` to select one explicitly. No effective membership, an inactive or missing target, or an incompatible context returns HTTP 404 `iam.policy.notFound`. An explicit organization must be effective for that target. `organizationId` is valid only for organization accounts and can be supplied without `context`. Users need `iam.access.read` for self; reading another user requires `iam.access.read_any`. This projection does not select the caller's acting context or grant authorization. User-detail reads are not required to discover the target's context.
 
+        The additive permissionResolution object uses the same standing resolver as authorization. permissionKeys remains the effective standing list; configured keys are never substituted. No pet-scoped agreement keys are merged into this global response. Existing unavailable-target errors remain unchanged.
 
-        The additive permissionResolution object uses the same standing resolver as authorization. permissionKeys remains
-        the effective standing list; configured keys are never substituted. No pet-scoped agreement keys are merged into
-        this global response. Existing unavailable-target errors remain unchanged.'
+        permissionResolution includes baselinePermissionKeys and grantedPermissionKeys to identify sources. Existing overlaps remain visible; effective access still follows the shared union-minus-revokes formula and applicable ceiling/catalog gates.
       security:
       - bearerAuth: []
         apiKeyAuth: []
@@ -64160,6 +64176,16 @@ paths:
                           snapshot or resource authorization. Pet-scoped agreement grants remain separate. Calculated
                           per request, never persisted.
                         properties:
+                          baselinePermissionKeys:
+                            type: array
+                            items:
+                              type: string
+                            description: Sorted selected role or personal-default keys before overrides and runtime gates.
+                          grantedPermissionKeys:
+                            type: array
+                            items:
+                              type: string
+                            description: Sorted saved grants. Historical baseline overlaps remain visible for repair.
                           configuredPermissionKeys:
                             type: array
                             items:
@@ -64214,6 +64240,8 @@ paths:
                             description: Overall failure reason. Null does not imply every candidate catalog permission
                               is usable.
                         required:
+                        - baselinePermissionKeys
+                        - grantedPermissionKeys
                         - configuredPermissionKeys
                         - candidatePermissionKeys
                         - effectivePermissionKeys

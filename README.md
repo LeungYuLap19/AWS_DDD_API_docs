@@ -156,3 +156,16 @@ Organization-scoped lookup authority and portal wiring remain separate work. API
 Eighteen live read and boundary checks passed; 54 new response objects matched this OpenAPI
 contract. These focused checks do not constitute the full IAM system test matrix. Production
 was untouched.
+
+
+IAM override contract update (2026-11-23.3): grants already supplied by the selected default
+policy are rejected on membership/organization writes. Role changes must clear grants that the
+new role supplies; shared baseline edits report assignment impact before introducing overlaps.
+Rich access/member reads expose `baselinePermissionKeys` and `grantedPermissionKeys`.
+`GET /permissions?purpose=grant|revoke&eligibleOnly=true` returns only applicable options, filtered
+before pagination/counting; target-reference and read-permission requirements remain unchanged.
+Omit `eligibleOnly` to inspect all matching rows and blocking reasons. Saved overrides remain
+readable and removable. API commit `c4137654ffd4132868f5879c2049f7fbfbefb575` deployed to SG preview:
+[deployment 45126237606](https://github.com/LeungYuLap19/AWS_DDD_API/actions/runs/45126237606)
+passed alias verification and smoke testing; CI also passed. Portal changes remain local. No
+backfill or reseed was performed. Authenticated live override checks were not repeated for this patch.
