@@ -3,7 +3,7 @@
 openapi: 3.1.0
 info:
   title: PetPetClub API
-  version: '2026-11-20.4'
+  version: "2026-11-23.1"
   description: The 246 implemented HTTP operations of the API. Paths, gateway credentials, request validation, and
     permission keys are checked against current source. Deferred and preview/smoke routes are omitted. Success responses
     document handler payload fields. Each documented HTTP error status lists the stable errorKey values emitted
@@ -38543,8 +38543,7 @@ paths:
       - iam-policy
       summary: List Role Defaults
       operationId: R051
-      description: Lists role default policies with page/limit pagination, `search`, filters by `scope` and `status`,
-        and sorting.
+      description: "Lists role defaults with pagination and search. Optional organizationType (ngo, hotel, clinic) filters organizationTypeKeys before count and pagination; it cannot accompany personal/internal scope. This global list remains internal-only."
       security:
       - bearerAuth: []
         apiKeyAuth: []
@@ -38573,6 +38572,18 @@ paths:
                         items:
                           type: object
                           properties:
+                            organizationTypeKeys:
+                              type: array
+                              items:
+                                type: string
+                                enum:
+                                - ngo
+                                - hotel
+                                - clinic
+                              uniqueItems: true
+                              maxItems: 3
+                              description: Nonempty for organization roles; empty for personal/internal. Eligibility is matched against the
+                                target organization type.
                             scope:
                               type: string
                               enum:
@@ -38697,6 +38708,7 @@ paths:
                           - createdAt
                           - updatedAt
                           - schemaVersion
+                          - organizationTypeKeys
                       pagination:
                         type: object
                         properties:
@@ -38915,13 +38927,23 @@ paths:
           enum:
           - asc
           - desc
+      - name: organizationType
+        in: query
+        required: false
+        description: Filter organization roles by explicit eligibility before pagination. Cannot accompany personal/internal
+          scope.
+        schema:
+          type: string
+          enum:
+          - ngo
+          - hotel
+          - clinic
     post:
       tags:
       - iam-policy
       summary: Create Role Default
       operationId: R052
-      description: Creates a role default policy (code, scope, permission keys, protection class, assignment mode)
-        with a `reason`. Every key must exist, be active, and be assignable in the role's scope.
+      description: "Creates a reusable role default with reason and required organizationTypeKeys. Organization scope requires unique supported types; personal/internal require []. Catalog, scope, protection and assignment rules apply. Individual organization ceilings do not constrain role policy creation."
       security:
       - bearerAuth: []
         apiKeyAuth: []
@@ -38948,6 +38970,18 @@ paths:
                       roleDefault:
                         type: object
                         properties:
+                          organizationTypeKeys:
+                            type: array
+                            items:
+                              type: string
+                              enum:
+                              - ngo
+                              - hotel
+                              - clinic
+                            uniqueItems: true
+                            maxItems: 3
+                            description: Nonempty for organization roles; empty for personal/internal. Eligibility is matched against the
+                              target organization type.
                           scope:
                             type: string
                             enum:
@@ -39072,6 +39106,7 @@ paths:
                         - createdAt
                         - updatedAt
                         - schemaVersion
+                        - organizationTypeKeys
                     additionalProperties: true
                     required:
                     - roleDefault
@@ -39307,7 +39342,7 @@ paths:
       - iam-policy
       summary: Read Role Default
       operationId: R053
-      description: Returns one role default policy and its permission keys.
+      description: "Returns one role default including organizationTypeKeys and permission keys. Eligibility is explicit metadata, never inferred from its code."
       security:
       - bearerAuth: []
         apiKeyAuth: []
@@ -39334,6 +39369,18 @@ paths:
                       roleDefault:
                         type: object
                         properties:
+                          organizationTypeKeys:
+                            type: array
+                            items:
+                              type: string
+                              enum:
+                              - ngo
+                              - hotel
+                              - clinic
+                            uniqueItems: true
+                            maxItems: 3
+                            description: Nonempty for organization roles; empty for personal/internal. Eligibility is matched against the
+                              target organization type.
                           scope:
                             type: string
                             enum:
@@ -39458,6 +39505,7 @@ paths:
                         - createdAt
                         - updatedAt
                         - schemaVersion
+                        - organizationTypeKeys
                     additionalProperties: true
                     required:
                     - roleDefault
@@ -39650,9 +39698,7 @@ paths:
       - iam-policy
       summary: Update Role Default
       operationId: R054
-      description: Updates a role default's name, description, keys, protection, assignment mode, or status. Requires
-        `expectedRevision` and a `reason`. A change that would remove access from current assignments returns 409
-        `iam.policy.impact` with the impact report in `details`.
+      description: "Edits role labels, keys, organizationTypeKeys, protection, assignment mode or status using expectedRevision and reason. Eligibility narrowing and invalidated assignments return 409 iam.policy.impact. Reusable organization role keys may exceed individual ceilings; standing authorization intersects the target ceiling. Membership grants and revokes must remain within it. Pet agreement grants retain their separate agreementEligible policy."
       security:
       - bearerAuth: []
         apiKeyAuth: []
@@ -39679,6 +39725,18 @@ paths:
                       roleDefault:
                         type: object
                         properties:
+                          organizationTypeKeys:
+                            type: array
+                            items:
+                              type: string
+                              enum:
+                              - ngo
+                              - hotel
+                              - clinic
+                            uniqueItems: true
+                            maxItems: 3
+                            description: Nonempty for organization roles; empty for personal/internal. Eligibility is matched against the
+                              target organization type.
                           scope:
                             type: string
                             enum:
@@ -39803,6 +39861,7 @@ paths:
                         - createdAt
                         - updatedAt
                         - schemaVersion
+                        - organizationTypeKeys
                     additionalProperties: true
                     required:
                     - roleDefault
@@ -76404,8 +76463,33 @@ components:
       - reason
       additionalProperties: false
     iam_policy_src_zodSchema_policySchemas_ts_createRoleDefaultSchema:
+      allOf:
+      - if:
+          properties:
+            scope:
+              const: organization
+        then:
+          properties:
+            organizationTypeKeys:
+              minItems: 1
+        else:
+          properties:
+            organizationTypeKeys:
+              maxItems: 0
       type: object
       properties:
+        organizationTypeKeys:
+          maxItems: 3
+          type: array
+          items:
+            type: string
+            enum:
+            - ngo
+            - hotel
+            - clinic
+          description: Unique supported organization types. Organization roles require at least one; personal/internal require
+            []. PATCH validates against the immutable stored scope.
+          uniqueItems: true
         code:
           type: string
           maxLength: 80
@@ -76470,10 +76554,23 @@ components:
       - assignmentMode
       - status
       - reason
+      - organizationTypeKeys
       additionalProperties: false
     iam_policy_src_zodSchema_policySchemas_ts_updateRoleDefaultSchema:
       type: object
       properties:
+        organizationTypeKeys:
+          maxItems: 3
+          type: array
+          items:
+            type: string
+            enum:
+            - ngo
+            - hotel
+            - clinic
+          description: Unique supported organization types. Organization roles require at least one; personal/internal require
+            []. PATCH validates against the immutable stored scope.
+          uniqueItems: true
         expectedRevision:
           type: string
           pattern: ^(0|[1-9]\d{0,18})$
@@ -78864,6 +78961,12 @@ components:
     iam_policy_src_zodSchema_policySchemas_ts_listRoleDefaultsQuerySchema:
       type: object
       properties:
+        organizationType:
+          type: string
+          enum:
+          - ngo
+          - hotel
+          - clinic
         page: *id099
         limit: *id100
         search: *id101

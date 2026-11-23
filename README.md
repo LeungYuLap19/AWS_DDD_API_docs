@@ -122,3 +122,15 @@ closed, and the temporary helper deleted; original data fingerprints matched. At
 and anomaly entitlement were not tested. An existing payment execution-identity index differs from current model options;
 its separate data/index migration remains open. Two historical, already-disabled legacy-transfer
 permission definitions were retained, without restoring their removed routes or seed grants.
+
+
+## Organization role eligibility (local contract, 2026-11-23)
+
+Role-default reads/writes include `organizationTypeKeys`; organization roles require a nonempty
+unique list of supported types, while personal/internal roles use `[]`. The internal role list
+accepts `organizationType` before counting/pagination. Role codes do not determine eligibility.
+Reusable organization role policies are not restricted by individual organization ceilings.
+Standing authorization intersects the target ceiling; both membership grant/revoke arrays remain
+ceiling-bounded. Pet agreement grants keep their existing `agreementEligible` and exact-pet checks,
+independent of the standing role and ceiling. Runtime and seed changes are local; VPC metadata
+inventory/backfill must precede strict enforcement deployment. No live rollout occurred.
