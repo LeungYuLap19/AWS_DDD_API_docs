@@ -3,7 +3,7 @@
 openapi: 3.1.0
 info:
   title: PetPetClub API
-  version: "2026-11-23.1"
+  version: 2026-11-23.2
   description: The 246 implemented HTTP operations of the API. Paths, gateway credentials, request validation, and
     permission keys are checked against current source. Deferred and preview/smoke routes are omitted. Success responses
     document handler payload fields. Each documented HTTP error status lists the stable errorKey values emitted
@@ -14652,7 +14652,14 @@ paths:
       - iam-membership
       summary: Read Internal Membership
       operationId: R041
-      description: Returns one internal membership with its role and permission overrides.
+      description: 'Returns one internal membership with its role and permission overrides.
+
+
+        Membership details include permissionResolution, calculated by the shared standing resolver. Authorized readers
+        can still inspect stored configuration of suspended, removed, future-effective, expired, or otherwise unusable
+        memberships; effective keys are empty when the acting context is unavailable. This is current configuration inspection,
+        not historical point-in-time access. Existing membership Reach applies; no user-wide access-read permission is
+        required.'
       security:
       - bearerAuth: []
         apiKeyAuth: []
@@ -14802,6 +14809,74 @@ paths:
                             type: string
                           userId:
                             type: string
+                          permissionResolution:
+                            type: object
+                            description: Current standing-permission calculation shared with authorization. Not a past-time
+                              snapshot or resource authorization. Pet-scoped agreement grants remain separate. Calculated
+                              per request, never persisted.
+                            properties:
+                              configuredPermissionKeys:
+                                type: array
+                                items:
+                                  type: string
+                                description: Sorted role baseline union member grants, including keys subsequently revoked
+                                  or ceiling-blocked.
+                              candidatePermissionKeys:
+                                type: array
+                                items:
+                                  type: string
+                                description: Configured keys minus member revokes. Revocation wins malformed overlap.
+                              effectivePermissionKeys:
+                                type: array
+                                items:
+                                  type: string
+                                description: Candidates allowed by current context, role lifecycle, catalog lifecycle/applicability,
+                                  and organization ceiling.
+                              revokedPermissionKeys:
+                                type: array
+                                items:
+                                  type: string
+                                description: Configured keys removed by member revokes.
+                              ceilingBlockedPermissionKeys:
+                                type: array
+                                items:
+                                  type: string
+                                description: Candidates excluded by a resolved organization ceiling; remains empty when
+                                  the ceiling is unavailable.
+                              unavailablePermissionKeys:
+                                type: array
+                                items:
+                                  type: string
+                                description: Remaining candidates unavailable for context, role, ceiling resolution, or
+                                  catalog reasons; excludes ceilingBlockedPermissionKeys.
+                              ceilingStatus:
+                                type: string
+                                enum:
+                                - not_applicable
+                                - resolved
+                                - unavailable
+                                description: 'Personal/internal: not_applicable. Distinguishes an unavailable ceiling
+                                  from a resolved empty ceiling.'
+                              unavailableReason:
+                                type:
+                                - string
+                                - 'null'
+                                enum:
+                                - context_unavailable
+                                - role_unavailable
+                                - ceiling_unavailable
+                                - null
+                                description: Overall failure reason. Null does not imply every candidate catalog permission
+                                  is usable.
+                            required:
+                            - configuredPermissionKeys
+                            - candidatePermissionKeys
+                            - effectivePermissionKeys
+                            - revokedPermissionKeys
+                            - ceilingBlockedPermissionKeys
+                            - unavailablePermissionKeys
+                            - ceilingStatus
+                            - unavailableReason
                         required:
                         - role
                         - permissionOverrides
@@ -14816,6 +14891,7 @@ paths:
                         - updatedAt
                         - membershipId
                         - userId
+                        - permissionResolution
                     additionalProperties: true
                     required:
                     - membership
@@ -19311,8 +19387,15 @@ paths:
       - iam-membership
       summary: Read Organization Membership
       operationId: R035
-      description: Returns one organization membership with its role and permission overrides. Members may read
-        memberships in their acting organization; internal callers may read any.
+      description: 'Returns one organization membership with its role and permission overrides. Members may read memberships
+        in their acting organization; internal callers may read any.
+
+
+        Membership details include permissionResolution, calculated by the shared standing resolver. Authorized readers
+        can still inspect stored configuration of suspended, removed, future-effective, expired, or otherwise unusable
+        memberships; effective keys are empty when the acting context is unavailable. This is current configuration inspection,
+        not historical point-in-time access. Existing membership Reach applies; no user-wide access-read permission is
+        required.'
       security:
       - bearerAuth: []
         apiKeyAuth: []
@@ -19462,6 +19545,74 @@ paths:
                             type: string
                           userId:
                             type: string
+                          permissionResolution:
+                            type: object
+                            description: Current standing-permission calculation shared with authorization. Not a past-time
+                              snapshot or resource authorization. Pet-scoped agreement grants remain separate. Calculated
+                              per request, never persisted.
+                            properties:
+                              configuredPermissionKeys:
+                                type: array
+                                items:
+                                  type: string
+                                description: Sorted role baseline union member grants, including keys subsequently revoked
+                                  or ceiling-blocked.
+                              candidatePermissionKeys:
+                                type: array
+                                items:
+                                  type: string
+                                description: Configured keys minus member revokes. Revocation wins malformed overlap.
+                              effectivePermissionKeys:
+                                type: array
+                                items:
+                                  type: string
+                                description: Candidates allowed by current context, role lifecycle, catalog lifecycle/applicability,
+                                  and organization ceiling.
+                              revokedPermissionKeys:
+                                type: array
+                                items:
+                                  type: string
+                                description: Configured keys removed by member revokes.
+                              ceilingBlockedPermissionKeys:
+                                type: array
+                                items:
+                                  type: string
+                                description: Candidates excluded by a resolved organization ceiling; remains empty when
+                                  the ceiling is unavailable.
+                              unavailablePermissionKeys:
+                                type: array
+                                items:
+                                  type: string
+                                description: Remaining candidates unavailable for context, role, ceiling resolution, or
+                                  catalog reasons; excludes ceilingBlockedPermissionKeys.
+                              ceilingStatus:
+                                type: string
+                                enum:
+                                - not_applicable
+                                - resolved
+                                - unavailable
+                                description: 'Personal/internal: not_applicable. Distinguishes an unavailable ceiling
+                                  from a resolved empty ceiling.'
+                              unavailableReason:
+                                type:
+                                - string
+                                - 'null'
+                                enum:
+                                - context_unavailable
+                                - role_unavailable
+                                - ceiling_unavailable
+                                - null
+                                description: Overall failure reason. Null does not imply every candidate catalog permission
+                                  is usable.
+                            required:
+                            - configuredPermissionKeys
+                            - candidatePermissionKeys
+                            - effectivePermissionKeys
+                            - revokedPermissionKeys
+                            - ceilingBlockedPermissionKeys
+                            - unavailablePermissionKeys
+                            - ceilingStatus
+                            - unavailableReason
                         required:
                         - role
                         - permissionOverrides
@@ -19476,6 +19627,7 @@ paths:
                         - updatedAt
                         - membershipId
                         - userId
+                        - permissionResolution
                     additionalProperties: true
                     required:
                     - membership
@@ -36241,8 +36393,65 @@ paths:
       - iam-policy
       summary: List Permissions
       operationId: R046
-      description: Lists permission catalog entries with page/limit pagination, `search`, filters by `domainKey`,
-        applicable `context`, and `status`, and sorting (default by key).
+      description: 'Lists permission catalog entries with page/limit pagination, `search`, filters by `domainKey`, applicable
+        `context`, and `status`, and sorting (default by key).
+
+
+        Contextual grant/revoke picker mode: purpose=grant|revoke requires assignmentTarget. The optional context must
+        match that target.
+
+        For an existing membership override, provide membershipId alone; the server derives its organization, role and
+        overrides.
+
+        For a new organization membership, provide organizationId plus rolePolicyId; for a new internal membership, provide
+        rolePolicyId alone.
+
+        For role-policy editing, rolePolicyId is optional for grants and required for revokes. No organizationId is accepted:
+        reusable roles are not ceiling-bounded.
+
+        For organization_ceiling, provide exactly one of organizationId (existing policy) or organizationDefaultPolicyId
+        (new policy baseline), without membershipId or rolePolicyId.
+
+        organization_ceiling is a lookup target only, never a persisted permission assignment target.
+
+        Target references are rejected without purpose. assignmentTarget alone remains a normal catalog assignment-target
+        filter.
+
+
+        Picker responses add data.lookup and per-permission eligibility. Both canGrant and canRevoke are returned; purpose
+        identifies the intended picker.
+
+        Rows blocked by the target ceiling, role baseline, lifecycle, or grant/revoke conflicts remain visible. Context
+        and explicit search/status/domain filters apply before pagination.
+
+        In picker mode, assignmentTarget describes the operation rather than filtering out incompatible catalog rows.
+        Pagination totals include blocked matching rows.
+
+        canGrant/canRevoke describe per-key configuration eligibility using the same catalog, baseline, override, ceiling
+        and role-protection predicates as write validators.
+
+        They do not authorize a mutation or guarantee that a complete array, first-administrator flow, revision, impact
+        check or concurrent policy update will pass.
+
+        Writes reauthorize and revalidate current policy transactionally. Deprecated membership baseline keys can be revoked,
+        but cannot be newly granted.
+
+        Organization ceiling edits retain their active-key write requirement. Removing a key from a shared role is not
+        a membership revoke.
+
+
+        The catalog remains internal-only under iam.permission.list_all. Referenced targets also require existing read
+        authority:
+
+        iam.organization_membership.read_any or iam.internal_membership.read_any for a membership;
+
+        iam.role_default.read for its role; iam.organization_permission.read_any for an organization policy;
+
+        iam.organization_default.read for a directly selected template. No organization-scoped list permission is added.
+
+        Missing authorized targets return 404 iam.policy.notFound; incompatible role scope/version returns 422 iam.policy.invalid.
+
+        '
       security:
       - bearerAuth: []
         apiKeyAuth: []
@@ -36393,6 +36602,54 @@ paths:
                               format: date-time
                             schemaVersion:
                               type: number
+                            eligibility:
+                              type: object
+                              properties:
+                                canGrant:
+                                  type: boolean
+                                canRevoke:
+                                  type: boolean
+                                grantBlockedReasons:
+                                  type: array
+                                  items:
+                                    type: string
+                                    enum:
+                                    - catalog_not_assignable
+                                    - not_in_baseline
+                                    - catalog_not_revocable
+                                    - conflicting_revoke
+                                    - conflicting_grant
+                                    - ceiling_unavailable
+                                    - outside_ceiling
+                                    - role_unavailable
+                                    - membership_removed
+                                    - organization_unavailable
+                                    - organization_policy_unavailable
+                                    - role_ineligible
+                                    - role_protected
+                                revokeBlockedReasons:
+                                  type: array
+                                  items:
+                                    type: string
+                                    enum:
+                                    - catalog_not_assignable
+                                    - not_in_baseline
+                                    - catalog_not_revocable
+                                    - conflicting_revoke
+                                    - conflicting_grant
+                                    - ceiling_unavailable
+                                    - outside_ceiling
+                                    - role_unavailable
+                                    - membership_removed
+                                    - organization_unavailable
+                                    - organization_policy_unavailable
+                                    - role_ineligible
+                                    - role_protected
+                              required:
+                              - canGrant
+                              - canRevoke
+                              - grantBlockedReasons
+                              - revokeBlockedReasons
                           required:
                           - revision
                           - _id
@@ -36428,6 +36685,63 @@ paths:
                         - limit
                         - total
                         - totalPages
+                      lookup:
+                        type: object
+                        description: Present only with purpose. Database-derived references, not authority for a later
+                          write.
+                        properties:
+                          purpose:
+                            type: string
+                            enum:
+                            - grant
+                            - revoke
+                          assignmentTarget:
+                            type: string
+                            enum:
+                            - personal_account_default
+                            - organization_role
+                            - organization_membership_override
+                            - internal_role
+                            - internal_membership_override
+                            - organization_ceiling
+                          context:
+                            type: string
+                            enum:
+                            - personal
+                            - organization
+                            - internal
+                          organizationId:
+                            type:
+                            - string
+                            - 'null'
+                            pattern: ^[0-9a-fA-F]{24}$
+                          membershipId:
+                            type:
+                            - string
+                            - 'null'
+                            pattern: ^[0-9a-fA-F]{24}$
+                          rolePolicyId:
+                            type:
+                            - string
+                            - 'null'
+                            pattern: ^[0-9a-fA-F]{24}$
+                          organizationDefaultPolicyId:
+                            type:
+                            - string
+                            - 'null'
+                            pattern: ^[0-9a-fA-F]{24}$
+                          evaluatedAt:
+                            type: string
+                            format: date-time
+                        required:
+                        - purpose
+                        - assignmentTarget
+                        - context
+                        - organizationId
+                        - membershipId
+                        - rolePolicyId
+                        - organizationDefaultPolicyId
+                        - evaluatedAt
                     additionalProperties: true
                     required:
                     - permissions
@@ -36574,34 +36888,102 @@ paths:
           $ref: '#/components/responses/ClientError'
         5XX:
           $ref: '#/components/responses/ServerError'
+        '404':
+          description: 'HTTP 404. Possible error keys: iam.policy.notFound.'
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                - success
+                - errorKey
+                - error
+                properties:
+                  success:
+                    const: false
+                  errorKey:
+                    type: string
+                    enum:
+                    - iam.policy.notFound
+                    description: Stable key for frontend handling; error text is localized.
+                  error:
+                    type: string
+                    description: Localized human-readable message.
+                  requestId:
+                    type: string
+                  details:
+                    type: object
+                    additionalProperties: true
+                additionalProperties: false
+              examples:
+                iam_policy_notFound:
+                  summary: iam.policy.notFound
+                  value:
+                    success: false
+                    errorKey: iam.policy.notFound
+                    error: Policy not found
+        '422':
+          description: 'HTTP 422. Possible error keys: iam.policy.invalid.'
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                - success
+                - errorKey
+                - error
+                properties:
+                  success:
+                    const: false
+                  errorKey:
+                    type: string
+                    enum:
+                    - iam.policy.invalid
+                    description: Stable key for frontend handling; error text is localized.
+                  error:
+                    type: string
+                    description: Localized human-readable message.
+                  requestId:
+                    type: string
+                  details:
+                    type: object
+                    additionalProperties: true
+                additionalProperties: false
+              examples:
+                iam_policy_invalid:
+                  summary: iam.policy.invalid
+                  value:
+                    success: false
+                    errorKey: iam.policy.invalid
+                    error: Policy violates the permission contract
       x-permission-keys:
       - iam.permission.list_all
       parameters:
       - name: page
         in: query
         required: false
-        schema: &id091
+        schema:
           type: number
       - name: limit
         in: query
         required: false
-        schema: &id092
+        schema:
           type: number
       - name: search
         in: query
         required: false
-        schema: &id093 {}
+        schema: {}
       - name: domainKey
         in: query
         required: false
-        schema: &id094
+        schema:
           type: string
           maxLength: 80
           pattern: ^[a-z][a-z0-9_]*$
       - name: context
         in: query
         required: false
-        schema: &id095
+        schema:
           type: string
           enum:
           - personal
@@ -36610,7 +36992,7 @@ paths:
       - name: status
         in: query
         required: false
-        schema: &id096
+        schema:
           type: string
           enum:
           - draft
@@ -36620,7 +37002,7 @@ paths:
       - name: sortBy
         in: query
         required: false
-        schema: &id097
+        schema:
           default: key
           type: string
           enum:
@@ -36631,12 +37013,64 @@ paths:
       - name: sortOrder
         in: query
         required: false
-        schema: &id098
+        schema:
           default: desc
           type: string
           enum:
           - asc
           - desc
+      - name: purpose
+        in: query
+        required: false
+        description: Enable per-key grant/revoke eligibility. Requires assignmentTarget and its target-reference combination.
+        schema:
+          type: string
+          enum:
+          - grant
+          - revoke
+      - name: assignmentTarget
+        in: query
+        required: false
+        description: Catalog target filter without purpose; operation target with purpose. organization_ceiling is lookup-only.
+        schema:
+          type: string
+          enum:
+          - personal_account_default
+          - organization_role
+          - organization_membership_override
+          - internal_role
+          - internal_membership_override
+          - organization_ceiling
+      - name: organizationId
+        in: query
+        required: false
+        description: Actual target organization for a new membership or an existing organization ceiling policy.
+        schema:
+          type: string
+          pattern: ^[0-9a-fA-F]{24}$
+      - name: rolePolicyId
+        in: query
+        required: false
+        description: Stored role-policy ObjectId. Required for new memberships and shared-role revokes; optional for shared-role
+          grants.
+        schema:
+          type: string
+          pattern: ^[0-9a-fA-F]{24}$
+      - name: organizationDefaultPolicyId
+        in: query
+        required: false
+        description: Active organization-default template ObjectId for a new ceiling policy; mutually exclusive with organizationId.
+        schema:
+          type: string
+          pattern: ^[0-9a-fA-F]{24}$
+      - name: membershipId
+        in: query
+        required: false
+        description: Existing membership ObjectId. Derives role and organization server-side; forbids duplicate role/organization
+          references.
+        schema:
+          type: string
+          pattern: ^[0-9a-fA-F]{24}$
     post:
       tags:
       - iam-policy
@@ -63616,16 +64050,21 @@ paths:
       - iam-policy
       summary: Read Access
       operationId: R047
-      description: Returns effective standing permission keys for the target account in one context, including
-        role and policy versions. When `context` is omitted, infer it from the target account class. An organization
-        caller reading its own access keeps its authenticated acting organization. Otherwise, an omitted
-        `organizationId` resolves the target's sole effective membership in an active organization. Multiple effective
-        memberships return HTTP 400 `iam.policy.organizationRequired`; pass `organizationId` to select one explicitly.
-        No effective membership, an inactive or missing target, or an incompatible context returns HTTP 404
-        `iam.policy.notFound`. An explicit organization must be effective for that target. `organizationId` is valid
-        only for organization accounts and can be supplied without `context`. Users need `iam.access.read` for self;
-        reading another user requires `iam.access.read_any`. This projection does not select the caller's acting
-        context or grant authorization. User-detail reads are not required to discover the target's context.
+      description: 'Returns effective standing permission keys for the target account in one context, including role and
+        policy versions. When `context` is omitted, infer it from the target account class. An organization caller reading
+        its own access keeps its authenticated acting organization. Otherwise, an omitted `organizationId` resolves the
+        target''s sole effective membership in an active organization. Multiple effective memberships return HTTP 400
+        `iam.policy.organizationRequired`; pass `organizationId` to select one explicitly. No effective membership, an
+        inactive or missing target, or an incompatible context returns HTTP 404 `iam.policy.notFound`. An explicit organization
+        must be effective for that target. `organizationId` is valid only for organization accounts and can be supplied
+        without `context`. Users need `iam.access.read` for self; reading another user requires `iam.access.read_any`.
+        This projection does not select the caller''s acting context or grant authorization. User-detail reads are not
+        required to discover the target''s context.
+
+
+        The additive permissionResolution object uses the same standing resolver as authorization. permissionKeys remains
+        the effective standing list; configured keys are never substituted. No pet-scoped agreement keys are merged into
+        this global response. Existing unavailable-target errors remain unchanged.'
       security:
       - bearerAuth: []
         apiKeyAuth: []
@@ -63715,12 +64154,81 @@ paths:
                         - organizationDefault
                         - organizationPolicyRevision
                         - membershipRevision
+                      permissionResolution:
+                        type: object
+                        description: Current standing-permission calculation shared with authorization. Not a past-time
+                          snapshot or resource authorization. Pet-scoped agreement grants remain separate. Calculated
+                          per request, never persisted.
+                        properties:
+                          configuredPermissionKeys:
+                            type: array
+                            items:
+                              type: string
+                            description: Sorted role baseline union member grants, including keys subsequently revoked
+                              or ceiling-blocked.
+                          candidatePermissionKeys:
+                            type: array
+                            items:
+                              type: string
+                            description: Configured keys minus member revokes. Revocation wins malformed overlap.
+                          effectivePermissionKeys:
+                            type: array
+                            items:
+                              type: string
+                            description: Candidates allowed by current context, role lifecycle, catalog lifecycle/applicability,
+                              and organization ceiling.
+                          revokedPermissionKeys:
+                            type: array
+                            items:
+                              type: string
+                            description: Configured keys removed by member revokes.
+                          ceilingBlockedPermissionKeys:
+                            type: array
+                            items:
+                              type: string
+                            description: Candidates excluded by a resolved organization ceiling; remains empty when the
+                              ceiling is unavailable.
+                          unavailablePermissionKeys:
+                            type: array
+                            items:
+                              type: string
+                            description: Remaining candidates unavailable for context, role, ceiling resolution, or catalog
+                              reasons; excludes ceilingBlockedPermissionKeys.
+                          ceilingStatus:
+                            type: string
+                            enum:
+                            - not_applicable
+                            - resolved
+                            - unavailable
+                            description: 'Personal/internal: not_applicable. Distinguishes an unavailable ceiling from
+                              a resolved empty ceiling.'
+                          unavailableReason:
+                            type:
+                            - string
+                            - 'null'
+                            enum:
+                            - context_unavailable
+                            - role_unavailable
+                            - ceiling_unavailable
+                            - null
+                            description: Overall failure reason. Null does not imply every candidate catalog permission
+                              is usable.
+                        required:
+                        - configuredPermissionKeys
+                        - candidatePermissionKeys
+                        - effectivePermissionKeys
+                        - revokedPermissionKeys
+                        - ceilingBlockedPermissionKeys
+                        - unavailablePermissionKeys
+                        - ceilingStatus
+                        - unavailableReason
                     additionalProperties: true
                     required:
                     - subject
                     - permissionKeys
                     - generatedAt
                     - policyVersions
+                    - permissionResolution
                 additionalProperties: true
         '400':
           description: 'HTTP 400. Possible error keys: common.invalidPathParam, common.invalidQueryParams, iam.policy.organizationRequired.'
@@ -63769,7 +64277,8 @@ paths:
                   value:
                     success: false
                     errorKey: iam.policy.organizationRequired
-                    error: This account has multiple active organization memberships. Specify organizationId to view one organization's permissions.
+                    error: This account has multiple active organization memberships. Specify organizationId to view one
+                      organization's permissions.
         '401':
           description: 'HTTP 401. Possible error keys: common.unauthorized.'
           content:
@@ -63968,8 +64477,8 @@ paths:
         in: query
         required: false
         description: Optional effective target organization. Self reads retain the authenticated acting organization;
-          other reads auto-resolve a sole effective membership. Required when those reads have multiple effective
-          memberships. Can be supplied without context; invalid for personal or internal targets.
+          other reads auto-resolve a sole effective membership. Required when those reads have multiple effective memberships.
+          Can be supplied without context; invalid for personal or internal targets.
         schema:
           type: string
   /users/{userId}/access-agreements:
@@ -78943,14 +79452,68 @@ components:
     iam_policy_src_zodSchema_policySchemas_ts_listPermissionsQuerySchema:
       type: object
       properties:
-        page: *id091
-        limit: *id092
-        search: *id093
-        domainKey: *id094
-        context: *id095
-        status: *id096
-        sortBy: *id097
-        sortOrder: *id098
+        page:
+          type: number
+        limit:
+          type: number
+        search: {}
+        domainKey:
+          type: string
+          maxLength: 80
+          pattern: ^[a-z][a-z0-9_]*$
+        context:
+          type: string
+          enum:
+          - personal
+          - organization
+          - internal
+        status:
+          type: string
+          enum:
+          - draft
+          - active
+          - deprecated
+          - disabled
+        sortBy:
+          default: key
+          type: string
+          enum:
+          - createdAt
+          - key
+          - name
+          - status
+        sortOrder:
+          default: desc
+          type: string
+          enum:
+          - asc
+          - desc
+        purpose:
+          type: string
+          enum:
+          - grant
+          - revoke
+        assignmentTarget:
+          type: string
+          enum:
+          - personal_account_default
+          - organization_role
+          - organization_membership_override
+          - internal_role
+          - internal_membership_override
+          - organization_ceiling
+        organizationId:
+          type: string
+          pattern: ^[0-9a-fA-F]{24}$
+        rolePolicyId:
+          type: string
+          pattern: ^[0-9a-fA-F]{24}$
+        organizationDefaultPolicyId:
+          type: string
+          pattern: ^[0-9a-fA-F]{24}$
+        membershipId:
+          type: string
+          pattern: ^[0-9a-fA-F]{24}$
       required:
       - page
       - limit

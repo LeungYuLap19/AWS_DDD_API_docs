@@ -124,7 +124,7 @@ its separate data/index migration remains open. Two historical, already-disabled
 permission definitions were retained, without restoring their removed routes or seed grants.
 
 
-## Organization role eligibility (local contract, 2026-11-23)
+## Organization role eligibility (deployed to SG development, 2026-11-23)
 
 Role-default reads/writes include `organizationTypeKeys`; organization roles require a nonempty
 unique list of supported types, while personal/internal roles use `[]`. The internal role list
@@ -132,5 +132,27 @@ accepts `organizationType` before counting/pagination. Role codes do not determi
 Reusable organization role policies are not restricted by individual organization ceilings.
 Standing authorization intersects the target ceiling; both membership grant/revoke arrays remain
 ceiling-bounded. Pet agreement grants keep their existing `agreementEligible` and exact-pet checks,
-independent of the standing role and ceiling. Runtime and seed changes are local; VPC metadata
-inventory/backfill must precede strict enforcement deployment. No live rollout occurred.
+independent of the standing role and ceiling. SG development metadata inventory/backfill and IAM seed
+verification completed on 2026-11-23, before strict enforcement deployment. All ten roles now have
+explicit eligibility; fifteen organization assignments passed audit. No grants or per-organization
+ceilings changed; repeat plans were empty. Production was untouched.
+
+
+## Standing-permission explanation and picker lookup (deployed to SG development, 2026-11-23)
+
+OpenAPI 2026-11-23.2 extends four existing GET contracts. User access keeps effective
+`permissionKeys` and adds `permissionResolution`; organization/internal membership details add
+that same explanation without changing membership Reach. Unusable memberships remain inspectable
+as configured data, with no effective authority; this is not a past-time access snapshot.
+
+The internal permission catalog accepts strict grant/revoke target references and returns per-row
+eligibility plus resolved lookup context. Blocked rows and pagination totals remain visible.
+Write validators and authorization share the relevant algebra and predicates; per-key eligibility
+does not bypass transactional whole-write checks. Shared roles are not organization-ceiling-bound.
+Agreement grants remain independent. No endpoint, permission, dependency or collection was added.
+Organization-scoped lookup authority and portal wiring remain separate work. API commit
+`e59cfc72387ef73888d77a8840ac37cbe1eb75be` deployed successfully through
+[deployment run 45112372198](https://github.com/LeungYuLap19/AWS_DDD_API/actions/runs/45112372198).
+Eighteen live read and boundary checks passed; 54 new response objects matched this OpenAPI
+contract. These focused checks do not constitute the full IAM system test matrix. Production
+was untouched.
