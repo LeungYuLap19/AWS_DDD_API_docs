@@ -63,8 +63,14 @@ Current ownership remains required. Non-owner NGO/clinic providers need an activ
 agreement selecting the exact key; internal broad operations need the matching `_any` key.
 The five DELETE endpoints permanently remove one record with an atomic human audit event,
 accept no body/query, and return `{ recordId }`. Missing records return 404; related service records
-and delivered notifications remain. Preview deployment and SG reseed status appear in Stage 2
-live results. Production policy is unchanged.
+and delivered notifications remain. Preview commit `2a632be` deployed successfully through
+[action 45147511855](https://github.com/LeungYuLap19/AWS_DDD_API/actions/runs/45147511855).
+SG development IAM reseed added ten definitions and updated five revision-checked policies;
+a repeat plan found zero changes. All 1,058 regression tests passed. Live checks verified owner,
+foreign-owner, exact/revoked agreement, ceiling, and ownerless internal access: 17 physical deletes
+produced 17 audit events; 15 denied/invalid mutations preserved target hashes. Fixtures were closed
+and temporary helpers removed. OTP delivery and server commit-order races were not retested.
+Production policy is unchanged.
 
 Identifier management adds four self-only routes for current-factor proof, add/replace requests,
 new-destination verification, and removal. All require `iam.user.identifier_manage`. Read
