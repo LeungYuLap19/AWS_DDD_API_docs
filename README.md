@@ -43,6 +43,20 @@ For frontend error handling, each operation lists the HTTP statuses its handlers
 
 The published contract is [openapi.yaml](openapi.yaml). Local generation and audit scripts are excluded from Git.
 
+## Organization pet management list
+
+Use `GET /organizations/{organizationId}/pets?view=management&sortBy=nextDewormDueDate&sortOrder=asc&page=1&limit=7`
+for a page-at-a-time management table. Omitting `view` preserves the existing summary list.
+The management view adds `organizationPetNumber`, `nextDewormDueDate`, `sterilization`, and a
+five-minute `coverUrl`. It applies search, filters and sorting before pagination and returns
+the matching authorized total. `nextDewormDueDate` is the next scheduled date, not a last-treatment date.
+
+Management supports birthday, organization-number and next-due-date sorts, sex/sterilization/life-state
+filters, organization-number matching, and inclusive birthday/due-date ranges with optional missing values.
+Use the canonical query names in OpenAPI; legacy `ngoPetId`, `lastDewormDate`, and combined `status`
+are not accepted. Independent profile, external-identifier and deworm list access is required.
+Agreement pets need all three exact-pet capabilities; internal readers need each corresponding `_any` key.
+
 Enter the deployed API ID, region, and stage in **Credentials** before sending. Supply the API key, bearer token, checkout token, or device signature required by the operation. Credentials stay in the browser tab and are masked in copied examples. The page loads js-yaml from jsDelivr, so viewing the interactive reference requires access to that CDN.
 
 Browser requests from GitHub Pages use the origin `https://leungyulap19.github.io`. The deployed API must allow that origin, its request methods, and the headers required by the selected operation. In AWS_DDD_API, set the deployment's `AllowedOrigins` parameter; the production workflow supplies it through `PROD_ALLOWED_ORIGINS`.

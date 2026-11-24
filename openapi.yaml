@@ -3,8 +3,8 @@
 openapi: 3.1.0
 info:
   title: PetPetClub API
-  version: 2026-11-23.5
-  description: The 246 implemented HTTP operations of the API. Paths, gateway credentials, request validation, and
+  version: 2026-11-24.1
+  description: The 251 implemented HTTP operations of the API. Paths, gateway credentials, request validation, and
     permission keys are checked against current source. Deferred and preview/smoke routes are omitted. Success responses
     document handler payload fields. Each documented HTTP error status lists the stable errorKey values emitted
     by the reachable handler and validation branches; error text is localized. Gateway-generated responses and upstream
@@ -34263,8 +34263,12 @@ paths:
       - pet-profile
       summary: List Organization Pets
       operationId: R062
-      description: Lists the organization's non-deleted pets with page/limit pagination, `search` on name, and sorting.
-        The acting organization or an internal caller may list them.
+      description: Lists authorized non-deleted pets. Without `view`, the existing summary contract applies.
+        `view=management` adds organization numbers, next deworm due dates, sterilization and cover URLs.
+        All filters and sorting run before pagination; totals include only authorized matching pets.
+        Management reads require profile, external-identifier and deworm list permissions with matching Reach;
+        agreement pets need all three exact-pet capabilities. Without complete standing Reach or any complete
+        exact-pet agreement, returns 403. Clipped standing keys do not block eligible agreement grants.
       security:
       - bearerAuth: []
         apiKeyAuth: []
@@ -34323,6 +34327,30 @@ paths:
                               type:
                               - string
                               - 'null'
+                            sterilization:
+                              description: Present only in management view; existing intrinsic sterilization state.
+                              type: [object, 'null']
+                              properties:
+                                status:
+                                  type: [boolean, 'null']
+                                date:
+                                  type: [string, 'null']
+                                  format: date
+                            organizationPetNumber:
+                              description: Management view only. Number issued by the route organization; canonical namespace
+                                takes priority over imported organization_identifier. Newest updatedAt then ID breaks ties.
+                              type: [string, 'null']
+                            nextDewormDueDate:
+                              description: Management view only. Next due date from the latest treatment by occurrence day
+                                in Asia/Hong_Kong, then createdAt and ID. Undated records follow dated records.
+                                A cleared date stays null; older schedules are not used as fallback. Reminders remain record-based.
+                              type: [string, 'null']
+                              format: date
+                            coverUrl:
+                              description: Management view only. Five-minute signed URL for the first photo's verified asset;
+                                null when unavailable. Displays the existing image, not a generated thumbnail.
+                              type: [string, 'null']
+                              format: uri
                             updatedAt:
                               type: string
                               format: date-time
@@ -34527,11 +34555,15 @@ paths:
       - name: search
         in: query
         required: false
+        description: Literal case-insensitive substring, maximum 100 characters. Summary searches name;
+          management searches name, sex, lifeStateKey and the selected organization pet number.
         schema: &id073 {}
       - name: sortBy
         in: query
         required: false
-        schema: &id074
+        description: Extra birthday, organization-number and due-date sorts require view=management.
+          Management sorts missing values last in both directions, with pet ID as the stable tie breaker.
+        schema:
           default: updatedAt
           type: string
           enum:
@@ -34540,6 +34572,9 @@ paths:
           - name
           - species
           - breed
+          - birthday
+          - organizationPetNumber
+          - nextDewormDueDate
       - name: sortOrder
         in: query
         required: false
@@ -34549,6 +34584,102 @@ paths:
           enum:
           - asc
           - desc
+      - name: view
+        in: query
+        required: false
+        description: Select management to enable the composed read and its additional filters. Omit for the unchanged
+          summary list. Available only on this organization route.
+        schema:
+          type: string
+          enum:
+          - management
+      - name: sex
+        in: query
+        required: false
+        description: Management only. Exact sex filter.
+        schema:
+          type: string
+          enum:
+          - male
+          - female
+          - unknown
+      - name: sterilized
+        in: query
+        required: false
+        description: Management only. Unknown includes missing/null sterilization status.
+        schema:
+          type: string
+          enum:
+          - 'true'
+          - 'false'
+          - unknown
+      - name: lifeStateKey
+        in: query
+        required: false
+        description: Management only. Intrinsic life state; not adoption, custody or availability status.
+        schema:
+          type: string
+          enum:
+          - alive
+          - deceased
+          - unknown
+      - name: organizationPetNumber
+        in: query
+        required: false
+        description: Management only. Literal case-insensitive substring of the selected route-organization number.
+        schema:
+          type: string
+          maxLength: 160
+      - name: birthdayFrom
+        in: query
+        required: false
+        description: Management only. Inclusive calendar-date bound. From must not exceed To.
+        schema:
+          type: string
+          format: date
+      - name: birthdayTo
+        in: query
+        required: false
+        description: Management only. Inclusive calendar-date bound. From must not exceed To.
+        schema:
+          type: string
+          format: date
+      - name: nextDewormDueFrom
+        in: query
+        required: false
+        description: Management only. Inclusive calendar-date bound. From must not exceed To.
+        schema:
+          type: string
+          format: date
+      - name: nextDewormDueTo
+        in: query
+        required: false
+        description: Management only. Inclusive calendar-date bound. From must not exceed To.
+        schema:
+          type: string
+          format: date
+      - name: includeMissingBirthday
+        in: query
+        required: false
+        description: Management only. Include missing values alongside a requested birthday range. Has no effect
+          without that range.
+        schema:
+          type: string
+          enum:
+          - 'true'
+          - 'false'
+          default: 'false'
+      - name: includeMissingNextDewormDue
+        in: query
+        required: false
+        description: Management only. Include missing values alongside a requested due-date range. Has no effect
+          without that range.
+        schema:
+          type: string
+          enum:
+          - 'true'
+          - 'false'
+          default: 'false'
     post:
       tags:
       - pet-profile
@@ -71339,7 +71470,15 @@ paths:
       - name: sortBy
         in: query
         required: false
-        schema: *id074
+        schema: &id074
+          default: updatedAt
+          type: string
+          enum:
+          - updatedAt
+          - createdAt
+          - name
+          - species
+          - breed
       - name: sortOrder
         in: query
         required: false
