@@ -2,17 +2,18 @@
 
 Run `python -m http.server 8000` in this directory and open `http://localhost:8000`, or use the [published GitHub Pages site](https://leungyulap19.github.io/AWS_DDD_API_docs/). Open [openapi.yaml](openapi.yaml) to save the contract for LLM tools and code generators. Choose an endpoint, fill its request fields on the left, and use **Send request** on the right. The preview follows those inputs and offers HTTP, Shell, Node, Ruby, and PHP examples. Success and error response structures are listed below the form. The specification uses OpenAPI 3.1 and YAML 1.2.
 
-The 251 documented operations describe implemented routes, callers, and client rules. Four deferred routes and three preview/smoke routes are omitted. The contract covers subscriptions, placement sites, localized species/breed catalogs, public contacts, unified ownership events (including audited internal corrections), recovery image replacement and event-date filters, PTag location reports, and external adoption listings.
+The 252 documented operations describe implemented routes, callers, and client rules. Four deferred routes and three preview/smoke routes are omitted. The contract covers subscriptions, placement sites, localized species/breed catalogs, public contacts, unified ownership events (including audited internal corrections), recovery image replacement and event-date filters, PTag location reports, and external adoption listings.
 
 ## Public endpoints
 
-The reference marks these 21 operations with **[PUBLIC]** in endpoint titles and
+The reference marks these 24 operations with **[PUBLIC]** in endpoint titles and
 `x-public: true` in OpenAPI. Search **[PUBLIC]** to show only these operations.
 They require neither an account access JWT nor an API key. Login passwords, OTPs,
 request validation, rate limits, and other endpoint-specific checks still apply.
 
 | Area | Public operations |
 | --- | --- |
+| Logistics addresses | `POST /logistics/lookups/areas`<br>`POST /logistics/lookups/net-codes`<br>`POST /logistics/lookups/pickup-locations` |
 | Authentication | `POST /auth/challenges`<br>`POST /auth/challenges/verify`<br>`POST /auth/password/login`<br>`POST /auth/registrations/users` |
 | PTag product catalog | `GET /commerce/catalog/products/ptags`<br>`GET /commerce/catalog/products/ptags/{productId}` |
 | Checkout quote | `POST /commerce/checkouts/quotes` |
@@ -197,3 +198,28 @@ backfill or reseed was performed. Authenticated live override checks were not re
 ## IAM permission sources
 
 Personal accounts use the shared personal role default. Organization and internal staff receive roles and overrides through their respective memberships. Membership detail reads include the configured permission breakdown and current effective result. Organization permission reads describe the organization's ceiling, not an individual member's access. `GET /users/{userId}/access` remains a read-only API projection for authorized clients and signed-in actor resolution; the management portal has no selected-user Permissions page. This UI decision adds no response fields, endpoint, permission key or seed change.
+
+## Organization short names
+
+Organization create (`POST /auth/registrations/organizations`) and identity edits
+(`PATCH /organizations/{organizationId}`) accept optional `shortName`: sanitized, trimmed text
+of 1-5 characters, or null to clear it. Blank text and longer values return
+`400 common.invalidBodyParams`. Organization list/detail/edit responses always include the
+nullable field, including null for existing documents without it. The value is user-set,
+case-preserving, and globally unique ignoring case. Duplicate create/PATCH writes return specific 409 short-name conflicts. Existing create/edit permissions and organization
+ceiling/Reach checks apply; no new permission or seed is required. This field does not generate
+or rewrite pet external identifiers.
+
+Use `POST /pets/{petId}/external-identifiers/organization-pet-number` to allocate
+`UPPERCASE(shortName) + YY + four-digit annual number`, such as `PPC260123`. The selected
+organization must own the pet and hold standing create permission within its ceiling. Body is
+omitted or `{}`. Existing issuer numbers return 200; new numbers return 201. Missing short name
+returns `409 pet.identifier.shortNameRequired`; exhaustion of the 9,999 annual numbers returns
+`409 pet.identifier.sequenceExhausted`. No random suffix or legacy-counter import. Prefix changes
+never rewrite assigned values.
+
+Public logistics address lookups accept an optional existing provider token; omission obtains one server-side. Credentials are not returned. Token issuance, shipping and delivery remain protected. Source IAM seeds remove the unused lookup key; applying seeds remotely is a separate step.
+
+Checkout quotes own delivery pricing. Production charges one HKD 50.00 delivery fee per
+quote; development/previews use HKD 0.10 for controlled testing. Read returned pricing; do
+not calculate fees from product catalog fields. Existing quote/order snapshots stay fixed.

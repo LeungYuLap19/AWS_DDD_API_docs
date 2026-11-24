@@ -3,7 +3,7 @@
 openapi: 3.1.0
 info:
   title: PetPetClub API
-  version: 2026-11-24.1
+  version: 2026-11-24.3
   description: The 251 implemented HTTP operations of the API. Paths, gateway credentials, request validation, and
     permission keys are checked against current source. Deferred and preview/smoke routes are omitted. Success responses
     document handler payload fields. Each documented HTTP error status lists the stable errorKey values emitted
@@ -2812,15 +2812,24 @@ paths:
       - iam-bootstrap
       summary: Create Organization
       operationId: R009
-      description: |-
-        Creates an NGO, hotel, or clinic organization in the provisioning state with pending verification, its
-        profile, and its permission policy (an organization default plus optional grant and revoke overrides
-        within the ceiling). Writes audit events. Pending organizations become active when their first admin
+      description: 'Creates an NGO, hotel, or clinic organization in the provisioning state with pending verification,
+        its
+
+        profile, optional shortName abbreviation (1-5 characters or null), and its permission policy
+
+        (an organization default plus optional grant and revoke overrides within the ceiling).
+
+        Writes audit events. Pending organizations become active when their first admin
+
         membership is created.
 
+
         Override grantKeys must exclude the selected default-policy baseline. Redundant grants return HTTP 422
+
         `iam.bootstrap.invalidPolicy`. Revokes must belong to the baseline; withdraw an extra grant by
-        removing it from grantKeys.
+
+        removing it from grantKeys. Non-null shortName values must be unique across organizations ignoring case; duplicates
+        return 409.'
       security:
       - bearerAuth: []
         apiKeyAuth: []
@@ -2981,7 +2990,7 @@ paths:
                     errorKey: common.forbidden
                     error: Forbidden
         '409':
-          description: 'HTTP 409. Possible error keys: iam.bootstrap.organizationConflict.'
+          description: 'HTTP 409. Possible error keys: iam.bootstrap.organizationConflict, iam.bootstrap.shortNameConflict.'
           content:
             application/json:
               schema:
@@ -2997,6 +3006,7 @@ paths:
                     type: string
                     enum:
                     - iam.bootstrap.organizationConflict
+                    - iam.bootstrap.shortNameConflict
                     description: Stable key for frontend handling; error text is localized.
                   error:
                     type: string
@@ -3014,6 +3024,12 @@ paths:
                     success: false
                     errorKey: iam.bootstrap.organizationConflict
                     error: Organization registration already exists
+                iam_bootstrap_shortNameConflict:
+                  summary: iam.bootstrap.shortNameConflict
+                  value:
+                    success: false
+                    errorKey: iam.bootstrap.shortNameConflict
+                    error: Organization short name is already in use
         '422':
           description: 'HTTP 422. Possible error keys: iam.bootstrap.invalidPolicy.'
           content:
@@ -6213,6 +6229,8 @@ paths:
       description: Prices a cart on the server and returns a short-lived quote token. Checkout drafts must present
         this token, so clients cannot set prices. The server calculates the quote and returns the checkout token
         needed for draft, detail, payment, and cancellation.
+        Delivery is charged once per quote at HKD 50.00 in production and HKD 0.10 in development/previews.
+        Use returned pricing; existing quote and order snapshots keep their original amounts.
       security: []
       x-source-router: functions/commerce-orders/src/router.ts
       responses:
@@ -16931,12 +16949,12 @@ paths:
     post:
       tags:
       - logistics
-      summary: Get Area
+      summary: '[PUBLIC] Get Area'
       operationId: R196
-      description: Looks up SF Express service areas. The provider response is returned as is.
-      security:
-      - bearerAuth: []
-        apiKeyAuth: []
+      description: 'Looks up SF Express service areas. The provider response is returned as is. Public address lookup:
+        no JWT or API key. Provider token is optional; the server obtains an omitted token without returning credentials.
+        IP limit: 30 requests per five minutes.'
+      security: []
       x-source-router: functions/logistics/src/router.ts
       responses:
         '200':
@@ -17019,75 +17037,6 @@ paths:
                     success: false
                     errorKey: logistics.validation.tokenRequired
                     error: Token is required
-        '401':
-          description: 'HTTP 401. Possible error keys: common.unauthorized.'
-          content:
-            application/json:
-              schema:
-                type: object
-                required:
-                - success
-                - errorKey
-                - error
-                properties:
-                  success:
-                    const: false
-                  errorKey:
-                    type: string
-                    enum:
-                    - common.unauthorized
-                    description: Stable key for frontend handling; error text is localized.
-                  error:
-                    type: string
-                    description: Localized human-readable message.
-                  requestId:
-                    type: string
-                  details:
-                    type: object
-                    additionalProperties: true
-                additionalProperties: false
-              examples:
-                common_unauthorized:
-                  summary: common.unauthorized
-                  value:
-                    success: false
-                    errorKey: common.unauthorized
-                    error: Authentication required. Please log in.
-        '403':
-          description: 'HTTP 403. Possible error keys: common.forbidden, common.passwordChangeRequired.'
-          content:
-            application/json:
-              schema:
-                type: object
-                required:
-                - success
-                - errorKey
-                - error
-                properties:
-                  success:
-                    const: false
-                  errorKey:
-                    type: string
-                    enum:
-                    - common.forbidden
-                    - common.passwordChangeRequired
-                    description: Stable key for frontend handling; error text is localized.
-                  error:
-                    type: string
-                    description: Localized human-readable message.
-                  requestId:
-                    type: string
-                  details:
-                    type: object
-                    additionalProperties: true
-                additionalProperties: false
-              examples:
-                common_forbidden:
-                  summary: common.forbidden
-                  value:
-                    success: false
-                    errorKey: common.forbidden
-                    error: Forbidden
         '429':
           description: 'HTTP 429. Possible error keys: common.rateLimited.'
           content:
@@ -17167,24 +17116,23 @@ paths:
           $ref: '#/components/responses/ClientError'
         5XX:
           $ref: '#/components/responses/ServerError'
-      x-permission-keys:
-      - logistics.provider_lookup.read
       requestBody:
-        required: true
+        required: false
         content:
           application/json:
             schema:
               $ref: '#/components/schemas/logistics_src_zodSchema_logisticsSchema_ts_getAreaSchema'
+      x-public: true
   /logistics/lookups/net-codes:
     post:
       tags:
       - logistics
-      summary: Get Net Code
+      summary: '[PUBLIC] Get Net Code'
       operationId: R197
-      description: Looks up SF Express network codes. The provider response is returned as is.
-      security:
-      - bearerAuth: []
-        apiKeyAuth: []
+      description: 'Looks up SF Express network codes. The provider response is returned as is. Public address lookup:
+        no JWT or API key. Provider token is optional; the server obtains an omitted token without returning credentials.
+        IP limit: 30 requests per five minutes.'
+      security: []
       x-source-router: functions/logistics/src/router.ts
       responses:
         '200':
@@ -17281,75 +17229,6 @@ paths:
                     success: false
                     errorKey: logistics.validation.typeIdRequired
                     error: Type ID is required
-        '401':
-          description: 'HTTP 401. Possible error keys: common.unauthorized.'
-          content:
-            application/json:
-              schema:
-                type: object
-                required:
-                - success
-                - errorKey
-                - error
-                properties:
-                  success:
-                    const: false
-                  errorKey:
-                    type: string
-                    enum:
-                    - common.unauthorized
-                    description: Stable key for frontend handling; error text is localized.
-                  error:
-                    type: string
-                    description: Localized human-readable message.
-                  requestId:
-                    type: string
-                  details:
-                    type: object
-                    additionalProperties: true
-                additionalProperties: false
-              examples:
-                common_unauthorized:
-                  summary: common.unauthorized
-                  value:
-                    success: false
-                    errorKey: common.unauthorized
-                    error: Authentication required. Please log in.
-        '403':
-          description: 'HTTP 403. Possible error keys: common.forbidden, common.passwordChangeRequired.'
-          content:
-            application/json:
-              schema:
-                type: object
-                required:
-                - success
-                - errorKey
-                - error
-                properties:
-                  success:
-                    const: false
-                  errorKey:
-                    type: string
-                    enum:
-                    - common.forbidden
-                    - common.passwordChangeRequired
-                    description: Stable key for frontend handling; error text is localized.
-                  error:
-                    type: string
-                    description: Localized human-readable message.
-                  requestId:
-                    type: string
-                  details:
-                    type: object
-                    additionalProperties: true
-                additionalProperties: false
-              examples:
-                common_forbidden:
-                  summary: common.forbidden
-                  value:
-                    success: false
-                    errorKey: common.forbidden
-                    error: Forbidden
         '429':
           description: 'HTTP 429. Possible error keys: common.rateLimited.'
           content:
@@ -17429,24 +17308,23 @@ paths:
           $ref: '#/components/responses/ClientError'
         5XX:
           $ref: '#/components/responses/ServerError'
-      x-permission-keys:
-      - logistics.provider_lookup.read
       requestBody:
         required: true
         content:
           application/json:
             schema:
               $ref: '#/components/schemas/logistics_src_zodSchema_logisticsSchema_ts_getNetCodeSchema'
+      x-public: true
   /logistics/lookups/pickup-locations:
     post:
       tags:
       - logistics
-      summary: Get Pickup Locations
+      summary: '[PUBLIC] Get Pickup Locations'
       operationId: R198
-      description: Looks up SF Express pickup locations. The provider response is returned as is.
-      security:
-      - bearerAuth: []
-        apiKeyAuth: []
+      description: 'Looks up SF Express pickup locations. The provider response is returned as is. Public address
+        lookup: no JWT or API key. Provider token is optional; the server obtains an omitted token without returning
+        credentials. IP limit: 30 requests per five minutes.'
+      security: []
       x-source-router: functions/logistics/src/router.ts
       responses:
         '200':
@@ -17536,75 +17414,6 @@ paths:
                     success: false
                     errorKey: logistics.validation.tokenRequired
                     error: Token is required
-        '401':
-          description: 'HTTP 401. Possible error keys: common.unauthorized.'
-          content:
-            application/json:
-              schema:
-                type: object
-                required:
-                - success
-                - errorKey
-                - error
-                properties:
-                  success:
-                    const: false
-                  errorKey:
-                    type: string
-                    enum:
-                    - common.unauthorized
-                    description: Stable key for frontend handling; error text is localized.
-                  error:
-                    type: string
-                    description: Localized human-readable message.
-                  requestId:
-                    type: string
-                  details:
-                    type: object
-                    additionalProperties: true
-                additionalProperties: false
-              examples:
-                common_unauthorized:
-                  summary: common.unauthorized
-                  value:
-                    success: false
-                    errorKey: common.unauthorized
-                    error: Authentication required. Please log in.
-        '403':
-          description: 'HTTP 403. Possible error keys: common.forbidden, common.passwordChangeRequired.'
-          content:
-            application/json:
-              schema:
-                type: object
-                required:
-                - success
-                - errorKey
-                - error
-                properties:
-                  success:
-                    const: false
-                  errorKey:
-                    type: string
-                    enum:
-                    - common.forbidden
-                    - common.passwordChangeRequired
-                    description: Stable key for frontend handling; error text is localized.
-                  error:
-                    type: string
-                    description: Localized human-readable message.
-                  requestId:
-                    type: string
-                  details:
-                    type: object
-                    additionalProperties: true
-                additionalProperties: false
-              examples:
-                common_forbidden:
-                  summary: common.forbidden
-                  value:
-                    success: false
-                    errorKey: common.forbidden
-                    error: Forbidden
         '429':
           description: 'HTTP 429. Possible error keys: common.rateLimited.'
           content:
@@ -17684,14 +17493,13 @@ paths:
           $ref: '#/components/responses/ClientError'
         5XX:
           $ref: '#/components/responses/ServerError'
-      x-permission-keys:
-      - logistics.provider_lookup.read
       requestBody:
         required: true
         content:
           application/json:
             schema:
               $ref: '#/components/schemas/logistics_src_zodSchema_logisticsSchema_ts_getPickupLocationsSchema'
+      x-public: true
   /logistics/orders/{orderId}/deliver:
     post:
       tags:
@@ -19112,6 +18920,11 @@ paths:
                               - clinic
                             displayName:
                               type: string
+                            shortName:
+                              type: [string, 'null']
+                              minLength: 1
+                              maxLength: 5
+                              description: User-set organization abbreviation; null when unset. Globally unique ignoring case when set.
                             legalName:
                               type:
                               - string
@@ -19189,6 +19002,7 @@ paths:
                           - organizationId
                           - type
                           - displayName
+                          - shortName
                           - legalName
                           - registration
                           - status
@@ -21691,8 +21505,9 @@ paths:
       - iam-organization
       summary: Read Organization
       operationId: R026
-      description: Returns one organization's identity, type, lifecycle status, and verification state. Members
-        may read their acting organization; internal callers may read any.
+      description: Returns one organization's identity, including its nullable shortName abbreviation (maximum five
+        characters), type, lifecycle status, and verification state. Members may read their acting organization; internal
+        callers may read any.
       security:
       - bearerAuth: []
         apiKeyAuth: []
@@ -21729,6 +21544,13 @@ paths:
                             - clinic
                           displayName:
                             type: string
+                          shortName:
+                            type:
+                            - string
+                            - 'null'
+                            minLength: 1
+                            maxLength: 5
+                            description: User-set organization abbreviation; null when unset. Globally unique ignoring case when set.
                           legalName:
                             type:
                             - string
@@ -21806,6 +21628,7 @@ paths:
                         - organizationId
                         - type
                         - displayName
+                        - shortName
                         - legalName
                         - registration
                         - status
@@ -22006,8 +21829,9 @@ paths:
       - iam-organization
       summary: Update Organization
       operationId: R027
-      description: Updates an organization's display name, legal name, or registration details. A registration already
-        used by another organization returns 409, and closed organizations cannot be changed.
+      description: Updates an organization's display name, short name, legal name, or registration details. A registration
+        already used by another organization returns 409, and closed organizations cannot be changed. Non-null shortName
+        values must be unique across organizations ignoring case; duplicates return 409.
       security:
       - bearerAuth: []
         apiKeyAuth: []
@@ -22044,6 +21868,13 @@ paths:
                             - clinic
                           displayName:
                             type: string
+                          shortName:
+                            type:
+                            - string
+                            - 'null'
+                            minLength: 1
+                            maxLength: 5
+                            description: User-set organization abbreviation; null when unset. Globally unique ignoring case when set.
                           legalName:
                             type:
                             - string
@@ -22121,6 +21952,7 @@ paths:
                         - organizationId
                         - type
                         - displayName
+                        - shortName
                         - legalName
                         - registration
                         - status
@@ -22284,7 +22116,8 @@ paths:
                     errorKey: iam.organization.notFound
                     error: Organization not found
         '409':
-          description: 'HTTP 409. Possible error keys: iam.organization.alreadyClosed, iam.organization.registrationConflict.'
+          description: 'HTTP 409. Possible error keys: iam.organization.alreadyClosed, iam.organization.registrationConflict,
+            iam.organization.shortNameConflict.'
           content:
             application/json:
               schema:
@@ -22301,6 +22134,7 @@ paths:
                     enum:
                     - iam.organization.alreadyClosed
                     - iam.organization.registrationConflict
+                    - iam.organization.shortNameConflict
                     description: Stable key for frontend handling; error text is localized.
                   error:
                     type: string
@@ -22324,6 +22158,12 @@ paths:
                     success: false
                     errorKey: iam.organization.registrationConflict
                     error: Registration is already in use
+                iam_organization_shortNameConflict:
+                  summary: iam.organization.shortNameConflict
+                  value:
+                    success: false
+                    errorKey: iam.organization.shortNameConflict
+                    error: Organization short name is already in use
         '429':
           description: 'HTTP 429. Possible error keys: common.rateLimited.'
           content:
@@ -76307,6 +76147,393 @@ paths:
         scope: ip
       x-source-router: functions/notifications/src/router.ts
       x-request-schema-source: functions/notifications/src/zodSchema/preferenceSchema.ts#preferencePutSchema
+  /pets/{petId}/external-identifiers/organization-pet-number:
+    post:
+      tags:
+      - pet-profile
+      summary: Generate Organization Pet Number
+      operationId: R262
+      description: Generates UPPERCASE(shortName) + YY + a four-digit annual number, for example PPC260123. Uses the
+        selected organization and Hong Kong year; no issuer, prefix, year or value input. Requires standing pet.external_identifier.create
+        within the organization ceiling and ownership of the target pet. Personal/internal contexts and agreement-only
+        access are denied. Returns 201 when created or 200 for the existing number issued by this organization, including
+        legacy organization_identifier values. An unset shortName returns 409 even for an existing number. Maximum
+        9,999 allocations per organization per year; overflow returns 409 without wrapping. Prefix edits and year
+        changes never rewrite existing numbers.
+      security:
+      - bearerAuth: []
+        apiKeyAuth: []
+      x-source-router: functions/pet-profile/src/router.ts
+      responses:
+        '201':
+          description: Organization pet number allocated and attached to the pet.
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                - success
+                properties:
+                  success:
+                    const: true
+                  message:
+                    type: string
+                  requestId:
+                    type: string
+                  data:
+                    type: object
+                    properties:
+                      identifier:
+                        type: object
+                        properties:
+                          identifierId:
+                            type: string
+                          petId:
+                            type: string
+                          namespace:
+                            type: string
+                          value:
+                            type: string
+                          issuerOrganizationId:
+                            type:
+                            - string
+                            - 'null'
+                          createdAt:
+                            type: string
+                            format: date-time
+                          updatedAt:
+                            type: string
+                            format: date-time
+                        required:
+                        - identifierId
+                        - petId
+                        - namespace
+                        - value
+                        - issuerOrganizationId
+                        - createdAt
+                        - updatedAt
+                    additionalProperties: true
+                    required:
+                    - identifier
+                additionalProperties: true
+        '400':
+          description: 'HTTP 400. Possible error keys: common.invalidBodyParams, common.invalidPathParam, common.missingBodyParams.'
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                - success
+                - errorKey
+                - error
+                properties:
+                  success:
+                    const: false
+                  errorKey:
+                    type: string
+                    enum:
+                    - common.invalidBodyParams
+                    - common.invalidPathParam
+                    - common.missingBodyParams
+                    description: Stable key for frontend handling; error text is localized.
+                  error:
+                    type: string
+                    description: Localized human-readable message.
+                  requestId:
+                    type: string
+                  details:
+                    type: object
+                    additionalProperties: true
+                additionalProperties: false
+              examples:
+                common_invalidBodyParams:
+                  summary: common.invalidBodyParams
+                  value:
+                    success: false
+                    errorKey: common.invalidBodyParams
+                    error: Invalid request body parameters
+                common_invalidPathParam:
+                  summary: common.invalidPathParam
+                  value:
+                    success: false
+                    errorKey: common.invalidPathParam
+                    error: Invalid path parameter
+                common_missingBodyParams:
+                  summary: common.missingBodyParams
+                  value:
+                    success: false
+                    errorKey: common.missingBodyParams
+                    error: Missing required request body parameters
+        '401':
+          description: 'HTTP 401. Possible error keys: common.unauthorized.'
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                - success
+                - errorKey
+                - error
+                properties:
+                  success:
+                    const: false
+                  errorKey:
+                    type: string
+                    enum:
+                    - common.unauthorized
+                    description: Stable key for frontend handling; error text is localized.
+                  error:
+                    type: string
+                    description: Localized human-readable message.
+                  requestId:
+                    type: string
+                  details:
+                    type: object
+                    additionalProperties: true
+                additionalProperties: false
+              examples:
+                common_unauthorized:
+                  summary: common.unauthorized
+                  value:
+                    success: false
+                    errorKey: common.unauthorized
+                    error: Authentication required. Please log in.
+        '403':
+          description: 'HTTP 403. Possible error keys: common.forbidden, common.passwordChangeRequired.'
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                - success
+                - errorKey
+                - error
+                properties:
+                  success:
+                    const: false
+                  errorKey:
+                    type: string
+                    enum:
+                    - common.forbidden
+                    - common.passwordChangeRequired
+                    description: Stable key for frontend handling; error text is localized.
+                  error:
+                    type: string
+                    description: Localized human-readable message.
+                  requestId:
+                    type: string
+                  details:
+                    type: object
+                    additionalProperties: true
+                additionalProperties: false
+              examples:
+                common_forbidden:
+                  summary: common.forbidden
+                  value:
+                    success: false
+                    errorKey: common.forbidden
+                    error: Forbidden
+        '404':
+          description: 'HTTP 404. Possible error keys: common.notFound.'
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                - success
+                - errorKey
+                - error
+                properties:
+                  success:
+                    const: false
+                  errorKey:
+                    type: string
+                    enum:
+                    - common.notFound
+                    description: Stable key for frontend handling; error text is localized.
+                  error:
+                    type: string
+                    description: Localized human-readable message.
+                  requestId:
+                    type: string
+                  details:
+                    type: object
+                    additionalProperties: true
+                additionalProperties: false
+              examples:
+                common_notFound:
+                  summary: common.notFound
+                  value:
+                    success: false
+                    errorKey: common.notFound
+                    error: The requested resource was not found
+        '409':
+          description: 'HTTP 409. Possible error keys: common.conflict, pet.identifier.shortNameRequired, pet.identifier.sequenceExhausted.'
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                - success
+                - errorKey
+                - error
+                properties:
+                  success:
+                    const: false
+                  errorKey:
+                    type: string
+                    enum:
+                    - common.conflict
+                    - pet.identifier.shortNameRequired
+                    - pet.identifier.sequenceExhausted
+                    description: Stable key for frontend handling; error text is localized.
+                  error:
+                    type: string
+                    description: Localized human-readable message.
+                  requestId:
+                    type: string
+                  details:
+                    type: object
+                    additionalProperties: true
+                additionalProperties: false
+              examples:
+                common_conflict:
+                  summary: common.conflict
+                  value:
+                    success: false
+                    errorKey: common.conflict
+                    error: Conflict
+                pet_identifier_shortNameRequired:
+                  summary: pet.identifier.shortNameRequired
+                  value:
+                    success: false
+                    errorKey: pet.identifier.shortNameRequired
+                    error: Set an organization short name before generating pet numbers
+                pet_identifier_sequenceExhausted:
+                  summary: pet.identifier.sequenceExhausted
+                  value:
+                    success: false
+                    errorKey: pet.identifier.sequenceExhausted
+                    error: The organization's annual pet number range is exhausted
+        '429':
+          description: 'HTTP 429. Possible error keys: common.rateLimited.'
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                - success
+                - errorKey
+                - error
+                properties:
+                  success:
+                    const: false
+                  errorKey:
+                    type: string
+                    enum:
+                    - common.rateLimited
+                    description: Stable key for frontend handling; error text is localized.
+                  error:
+                    type: string
+                    description: Localized human-readable message.
+                  requestId:
+                    type: string
+                  details:
+                    type: object
+                    additionalProperties: true
+                additionalProperties: false
+              examples:
+                common_rateLimited:
+                  summary: common.rateLimited
+                  value:
+                    success: false
+                    errorKey: common.rateLimited
+                    error: Too many requests. Please try again later.
+        4XX:
+          $ref: '#/components/responses/ClientError'
+        5XX:
+          $ref: '#/components/responses/ServerError'
+        '200':
+          description: Existing issuer pet number; no new allocation.
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                - success
+                properties:
+                  success:
+                    const: true
+                  message:
+                    type: string
+                  requestId:
+                    type: string
+                  data:
+                    type: object
+                    properties:
+                      identifier:
+                        type: object
+                        properties:
+                          identifierId:
+                            type: string
+                          petId:
+                            type: string
+                          namespace:
+                            type: string
+                          value:
+                            type: string
+                          issuerOrganizationId:
+                            type:
+                            - string
+                            - 'null'
+                          createdAt:
+                            type: string
+                            format: date-time
+                          updatedAt:
+                            type: string
+                            format: date-time
+                        required:
+                        - identifierId
+                        - petId
+                        - namespace
+                        - value
+                        - issuerOrganizationId
+                        - createdAt
+                        - updatedAt
+                    additionalProperties: true
+                    required:
+                    - identifier
+                additionalProperties: true
+      x-permission-keys:
+      - pet.external_identifier.create
+      parameters:
+      - name: petId
+        in: path
+        required: true
+        schema:
+          type: string
+      - name: X-Acting-Context
+        in: header
+        required: true
+        schema:
+          type: string
+          enum:
+          - organization
+      - name: X-Acting-Organization
+        in: header
+        required: true
+        schema:
+          type: string
+          pattern: ^[0-9a-fA-F]{24}$
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              type: object
+              properties: {}
+              additionalProperties: false
+            example: {}
 components:
   securitySchemes:
     bearerAuth:
@@ -76806,6 +77033,14 @@ components:
           type: string
           minLength: 1
           maxLength: 160
+        shortName:
+          type:
+          - string
+          - 'null'
+          minLength: 1
+          maxLength: 5
+          description: Optional sanitized and trimmed abbreviation, 1-5 characters, globally unique ignoring case. Null
+            clears it; duplicates return 409.
         legalName:
           anyOf:
           - type: string
@@ -77800,6 +78035,14 @@ components:
           type: string
           minLength: 1
           maxLength: 160
+        shortName:
+          type:
+          - string
+          - 'null'
+          minLength: 1
+          maxLength: 5
+          description: Optional sanitized and trimmed abbreviation, 1-5 characters, globally unique ignoring case. Null
+            clears it; duplicates return 409.
         legalName:
           anyOf:
           - type: string
@@ -79321,8 +79564,7 @@ components:
           type: string
           minLength: 1
           maxLength: 2048
-      required:
-      - token
+          description: Optional existing provider token. Omit to let the server obtain one.
       additionalProperties: false
     logistics_src_zodSchema_logisticsSchema_ts_getNetCodeSchema:
       type: object
@@ -79331,6 +79573,7 @@ components:
           type: string
           minLength: 1
           maxLength: 2048
+          description: Optional existing provider token. Omit to let the server obtain one.
         typeId:
           anyOf:
           - type: string
@@ -79344,7 +79587,6 @@ components:
             maxLength: 64
           - type: number
       required:
-      - token
       - typeId
       - areaId
       additionalProperties: false
@@ -79355,6 +79597,7 @@ components:
           type: string
           minLength: 1
           maxLength: 2048
+          description: Optional existing provider token. Omit to let the server obtain one.
         netCode:
           minItems: 1
           maxItems: 100
@@ -79370,9 +79613,7 @@ components:
           maxLength: 16
           pattern: ^[A-Za-z_-]+$
       required:
-      - token
       - netCode
-      - lang
       additionalProperties: false
     notifications_src_zodSchema_contactSchema_ts_userContactPutSchema:
       type: object
