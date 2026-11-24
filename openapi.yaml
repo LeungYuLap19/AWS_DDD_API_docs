@@ -6686,8 +6686,10 @@ paths:
       operationId: R179
       x-public: true
       description: Public check of a partner shop discount code before checkout. Send a shop code as JSON, or a
-        PDF file as multipart form data; the PDF is read in memory and not stored. Multipart requests are limited to
-        5 MiB total, including multipart overhead.
+        PDF file as multipart form data; the PDF is read in memory and not stored. Supported upload MIME types are
+        application/pdf and application/x-pdf; a filename ending in .pdf is also accepted. Image uploads (JPEG, PNG,
+        WebP) are not supported. The decoded request body must not exceed 5 MiB (5,242,880 bytes), including multipart
+        boundaries, headers and other fields, so the PDF itself must be smaller. This limit also applies to JSON requests.
       security: []
       x-source-router: functions/commerce-catalog/src/router.ts
       responses:
@@ -6874,7 +6876,9 @@ paths:
           $ref: '#/components/responses/ServerError'
       requestBody:
         required: true
-        description: Multipart request body must not exceed 5 MiB total, including boundaries and other fields.
+        description: Send application/json for a shop code or multipart/form-data for a PDF. The decoded request body
+          must not exceed 5 MiB (5,242,880 bytes), including multipart overhead. Oversized requests return HTTP 413
+          common.requestBodyTooLarge. When shopCode is non-empty, it takes precedence and uploaded files are ignored.
         content:
           application/json:
             schema:
@@ -6889,7 +6893,10 @@ paths:
                 file:
                   type: string
                   format: binary
-                  description: PDF file. The complete multipart request body is limited to 5 MiB.
+                  description: PDF only; use application/pdf (application/x-pdf is also accepted). A .pdf filename is
+                    also accepted. JPEG, PNG and WebP images are not supported. The complete multipart request, not
+                    just this file, must fit within 5,242,880 bytes. Without shopCode, an unsupported upload returns
+                    HTTP 400 catalog.errors.invalidVerificationFileType. The PDF is not stored or linked to an order.
               anyOf:
               - required:
                 - shopCode
@@ -6897,7 +6904,7 @@ paths:
                 - file
             encoding:
               file:
-                contentType: application/pdf
+                contentType: application/pdf, application/x-pdf
       x-request-schema-source: functions/commerce-catalog/src/zodSchema/verifyShopCodeBodySchema.ts#verifyShopCodeBodySchema
   /commerce/orders:
     get:

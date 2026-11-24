@@ -44,6 +44,20 @@ For frontend error handling, each operation lists the HTTP statuses its handlers
 
 The published contract is [openapi.yaml](openapi.yaml). Local generation and audit scripts are excluded from Git.
 
+## Discount-code verification uploads
+
+`POST /commerce/discount-codes/verify` accepts a shop code as `application/json` or a PDF as
+`multipart/form-data` in the `file` field. Use `application/pdf`; `application/x-pdf` and a
+filename ending in `.pdf` are also accepted. JPEG, PNG and WebP uploads are not supported.
+The decoded request body is limited to **5 MiB (5,242,880 bytes)**, including multipart
+boundaries, headers and other fields. Leave room for that overhead when choosing a PDF.
+Oversized requests return `413 common.requestBodyTooLarge`; unsupported files without a
+shop code return `400 catalog.errors.invalidVerificationFileType`.
+
+A non-empty `shopCode` takes precedence over uploaded files. PDFs are read in memory and
+discarded, with no asset ID or order attachment. Pass the returned `matchedShopCode` as
+`items[].shopCode` when requesting a checkout quote.
+
 ## Organization pet management list
 
 Use `GET /organizations/{organizationId}/pets?view=management&sortBy=nextDewormDueDate&sortOrder=asc&page=1&limit=7`
