@@ -34104,6 +34104,466 @@ paths:
         required: true
         schema:
           type: string
+  /organizations/{organizationId}/pets/{petId}/status:
+    get:
+      tags:
+      - pet-profile
+      summary: Read organization pet status
+      operationId: R263
+      description: Requires standing pet.organization_status.read for the acting/path organization, or internal pet.organization_status.read_any.
+        The original organization retains this narrow read after transfer or pet deletion. Absent rows return null
+        only while the path organization currently owns a non-deleted pet; otherwise 404. Returns no profile or medical
+        data. Personal users and agreement-only access are denied. Bodies are rejected.
+      security:
+      - bearerAuth: []
+        apiKeyAuth: []
+      x-source-router: functions/pet-profile/src/router.ts
+      parameters:
+      - name: organizationId
+        in: path
+        required: true
+        schema:
+          type: string
+          pattern: ^[0-9a-fA-F]{24}$
+      - name: petId
+        in: path
+        required: true
+        schema:
+          type: string
+          pattern: ^[0-9a-fA-F]{24}$
+      - name: X-Acting-Context
+        in: header
+        required: true
+        schema:
+          type: string
+          enum:
+          - organization
+          - internal
+      - name: X-Acting-Organization
+        in: header
+        required: false
+        description: Required when acting in organization context; must match the path organization.
+        schema:
+          type: string
+          pattern: ^[0-9a-fA-F]{24}$
+      responses:
+        '200':
+          description: Organization status or an authorized empty result.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OrganizationPetStatusResponse'
+        '400':
+          description: Invalid path, query or body. Query parameters are not supported.
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                - success
+                - errorKey
+                - error
+                properties:
+                  success:
+                    const: false
+                  errorKey:
+                    type: string
+                    enum:
+                    - common.invalidPathParam
+                    - common.invalidQueryParams
+                    - common.invalidBodyParams
+                  error:
+                    type: string
+                  requestId:
+                    type: string
+                  details:
+                    type: object
+                    additionalProperties: true
+                additionalProperties: true
+        '401':
+          description: 'HTTP 401. Possible error keys: common.unauthorized.'
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                - success
+                - errorKey
+                - error
+                properties:
+                  success:
+                    const: false
+                  errorKey:
+                    type: string
+                    enum:
+                    - common.unauthorized
+                    description: Stable key for frontend handling; error text is localized.
+                  error:
+                    type: string
+                    description: Localized human-readable message.
+                  requestId:
+                    type: string
+                  details:
+                    type: object
+                    additionalProperties: true
+                additionalProperties: false
+              examples:
+                common_unauthorized:
+                  summary: common.unauthorized
+                  value:
+                    success: false
+                    errorKey: common.unauthorized
+                    error: Authentication required. Please log in.
+        '403':
+          description: 'HTTP 403. Possible error keys: common.forbidden, common.passwordChangeRequired.'
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                - success
+                - errorKey
+                - error
+                properties:
+                  success:
+                    const: false
+                  errorKey:
+                    type: string
+                    enum:
+                    - common.forbidden
+                    - common.passwordChangeRequired
+                    description: Stable key for frontend handling; error text is localized.
+                  error:
+                    type: string
+                    description: Localized human-readable message.
+                  requestId:
+                    type: string
+                  details:
+                    type: object
+                    additionalProperties: true
+                additionalProperties: false
+              examples:
+                common_forbidden:
+                  summary: common.forbidden
+                  value:
+                    success: false
+                    errorKey: common.forbidden
+                    error: Forbidden
+        '404':
+          description: No accessible record or current non-deleted pet.
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                - success
+                - errorKey
+                - error
+                properties:
+                  success:
+                    const: false
+                  errorKey:
+                    type: string
+                    enum:
+                    - common.notFound
+                  error:
+                    type: string
+                  requestId:
+                    type: string
+                  details:
+                    type: object
+                    additionalProperties: true
+                additionalProperties: true
+        '429':
+          description: Request rate exceeded.
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                - success
+                - errorKey
+                - error
+                properties:
+                  success:
+                    const: false
+                  errorKey:
+                    type: string
+                    enum:
+                    - common.rateLimited
+                  error:
+                    type: string
+                  requestId:
+                    type: string
+                  details:
+                    type: object
+                    additionalProperties: true
+                additionalProperties: true
+        5XX:
+          $ref: '#/components/responses/ServerError'
+        4XX:
+          $ref: '#/components/responses/ClientError'
+      x-permission-keys:
+      - pet.organization_status.read_any
+      - pet.organization_status.read
+    put:
+      tags:
+      - pet-profile
+      summary: Set organization pet status
+      operationId: R264
+      description: Requires standing pet.organization_status.update and the acting organization to match the path
+        and current pet owner. PUT creates, replaces or clears one organization/pet pair. Both fields are required;
+        expectedRevision 0 means no row observed. No-op writes keep revision and create no audit. Material writes
+        and audit commit together. Personal users, agreements and internal read_any do not authorize updates.
+      security:
+      - bearerAuth: []
+        apiKeyAuth: []
+      x-source-router: functions/pet-profile/src/router.ts
+      parameters:
+      - name: organizationId
+        in: path
+        required: true
+        schema:
+          type: string
+          pattern: ^[0-9a-fA-F]{24}$
+      - name: petId
+        in: path
+        required: true
+        schema:
+          type: string
+          pattern: ^[0-9a-fA-F]{24}$
+      - name: X-Acting-Context
+        in: header
+        required: true
+        schema:
+          type: string
+          enum:
+          - organization
+      - name: X-Acting-Organization
+        in: header
+        required: false
+        description: Required when acting in organization context; must match the path organization.
+        schema:
+          type: string
+          pattern: ^[0-9a-fA-F]{24}$
+      responses:
+        '200':
+          description: Status replaced, cleared, unchanged, or absent.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OrganizationPetStatusResponse'
+        '201':
+          description: First non-null status created.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OrganizationPetStatusResponse'
+        '400':
+          description: Invalid path, query or body. Query parameters are not supported.
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                - success
+                - errorKey
+                - error
+                properties:
+                  success:
+                    const: false
+                  errorKey:
+                    type: string
+                    enum:
+                    - common.invalidPathParam
+                    - common.invalidQueryParams
+                    - common.invalidBodyParams
+                  error:
+                    type: string
+                  requestId:
+                    type: string
+                  details:
+                    type: object
+                    additionalProperties: true
+                additionalProperties: true
+        '401':
+          description: 'HTTP 401. Possible error keys: common.unauthorized.'
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                - success
+                - errorKey
+                - error
+                properties:
+                  success:
+                    const: false
+                  errorKey:
+                    type: string
+                    enum:
+                    - common.unauthorized
+                    description: Stable key for frontend handling; error text is localized.
+                  error:
+                    type: string
+                    description: Localized human-readable message.
+                  requestId:
+                    type: string
+                  details:
+                    type: object
+                    additionalProperties: true
+                additionalProperties: false
+              examples:
+                common_unauthorized:
+                  summary: common.unauthorized
+                  value:
+                    success: false
+                    errorKey: common.unauthorized
+                    error: Authentication required. Please log in.
+        '403':
+          description: 'HTTP 403. Possible error keys: common.forbidden, common.passwordChangeRequired.'
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                - success
+                - errorKey
+                - error
+                properties:
+                  success:
+                    const: false
+                  errorKey:
+                    type: string
+                    enum:
+                    - common.forbidden
+                    - common.passwordChangeRequired
+                    description: Stable key for frontend handling; error text is localized.
+                  error:
+                    type: string
+                    description: Localized human-readable message.
+                  requestId:
+                    type: string
+                  details:
+                    type: object
+                    additionalProperties: true
+                additionalProperties: false
+              examples:
+                common_forbidden:
+                  summary: common.forbidden
+                  value:
+                    success: false
+                    errorKey: common.forbidden
+                    error: Forbidden
+        '404':
+          description: No accessible record or current non-deleted pet.
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                - success
+                - errorKey
+                - error
+                properties:
+                  success:
+                    const: false
+                  errorKey:
+                    type: string
+                    enum:
+                    - common.notFound
+                  error:
+                    type: string
+                  requestId:
+                    type: string
+                  details:
+                    type: object
+                    additionalProperties: true
+                additionalProperties: true
+        '409':
+          description: Stale revision, concurrent first write, or exhausted safe-integer revision.
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                - success
+                - errorKey
+                - error
+                properties:
+                  success:
+                    const: false
+                  errorKey:
+                    type: string
+                    enum:
+                    - common.conflict
+                  error:
+                    type: string
+                  requestId:
+                    type: string
+                  details:
+                    type: object
+                    additionalProperties: true
+                additionalProperties: true
+        '429':
+          description: Request rate exceeded.
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                - success
+                - errorKey
+                - error
+                properties:
+                  success:
+                    const: false
+                  errorKey:
+                    type: string
+                    enum:
+                    - common.rateLimited
+                  error:
+                    type: string
+                  requestId:
+                    type: string
+                  details:
+                    type: object
+                    additionalProperties: true
+                additionalProperties: true
+        5XX:
+          $ref: '#/components/responses/ServerError'
+        4XX:
+          $ref: '#/components/responses/ClientError'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: false
+              required:
+              - status
+              - expectedRevision
+              properties:
+                status:
+                  oneOf:
+                  - $ref: '#/components/schemas/PetOrganizationStatusKey'
+                  - type: 'null'
+                expectedRevision:
+                  type: integer
+                  minimum: 0
+                  maximum: 9007199254740991
+            examples:
+              set:
+                value:
+                  status: pending
+                  expectedRevision: 0
+              clear:
+                value:
+                  status: null
+                  expectedRevision: 1
+      x-permission-keys:
+      - pet.organization_status.update
   /organizations/{organizationId}/pets:
     get:
       tags:
@@ -34116,6 +34576,7 @@ paths:
         Management reads require profile, external-identifier and deworm list permissions with matching Reach;
         agreement pets need all three exact-pet capabilities. Without complete standing Reach or any complete
         exact-pet agreement, returns 403. Clipped standing keys do not block eligible agreement grants.
+        Organization status is optional and requires its own standing organization-status read key; otherwise omitted.
       security:
       - bearerAuth: []
         apiKeyAuth: []
@@ -34183,6 +34644,11 @@ paths:
                                 date:
                                   type: [string, 'null']
                                   format: date
+                            organizationStatus:
+                              description: Management only; present with independent standing status read. Null means no label.
+                              oneOf:
+                              - $ref: '#/components/schemas/PetOrganizationStatusKey'
+                              - type: 'null'
                             organizationPetNumber:
                               description: Management view only. Number issued by the route organization; canonical namespace
                                 takes priority over imported organization_identifier. Newest updatedAt then ID breaks ties.
@@ -76592,6 +77058,70 @@ components:
       schema:
         type: string
   schemas:
+    PetOrganizationStatusKey:
+      type: string
+      enum:
+      - pending
+      - pending_adoption
+      - available
+      - adopted
+      - foster_care
+      - donation
+      - handling
+      - hospitalized
+      - returned_to_requester
+      - other
+      description: Organization administration label; never an ownership transition, recovery report or life state.
+    PetOrganizationStatus:
+      type: object
+      additionalProperties: false
+      required:
+      - petId
+      - organizationId
+      - status
+      - revision
+      - createdAt
+      - updatedAt
+      properties:
+        petId:
+          type: string
+        organizationId:
+          type: string
+        status:
+          oneOf:
+          - $ref: '#/components/schemas/PetOrganizationStatusKey'
+          - type: 'null'
+        revision:
+          type: integer
+          minimum: 1
+          maximum: 9007199254740991
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+    OrganizationPetStatusResponse:
+      type: object
+      required:
+      - success
+      - data
+      properties:
+        success:
+          const: true
+        message:
+          type: string
+        requestId:
+          type: string
+        data:
+          type: object
+          required:
+          - organizationStatus
+          properties:
+            organizationStatus:
+              oneOf:
+              - $ref: '#/components/schemas/PetOrganizationStatus'
+              - type: 'null'
     NotificationFeature:
       type: string
       enum:
