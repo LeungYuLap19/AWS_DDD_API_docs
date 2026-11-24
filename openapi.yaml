@@ -5,7 +5,7 @@ info:
   title: PetPetClub API
   version: 2026-11-24.7
   description: The API documents 255 implemented HTTP operations. Printing-photo upload and response additions are
-    preview-deployed on 2026-11-24; live photo verification is in progress. Paths, gateway credentials, request validation, and permission keys are checked against
+    preview-deployed on 2026-11-24; paid guest/user order and private PTag photo reads passed live verification. Paths, gateway credentials, request validation, and permission keys are checked against
     current source. Deferred and preview/smoke routes are omitted. Success responses document handler payload fields.
     Each documented HTTP error status lists the stable errorKey values emitted by the reachable handler and validation
     branches; error text is localized. Gateway-generated responses and upstream provider JSON may have their own

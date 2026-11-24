@@ -2,14 +2,14 @@
 
 Run `python -m http.server 8000` in this directory and open `http://localhost:8000`, or use the [published GitHub Pages site](https://leungyulap19.github.io/AWS_DDD_API_docs/). Open [openapi.yaml](openapi.yaml) to save the contract for LLM tools and code generators. Choose an endpoint, fill its request fields on the left, and use **Send request** on the right. The preview follows those inputs and offers HTTP, Shell, Node, Ruby, and PHP examples. Success and error response structures are listed below the form. The specification uses OpenAPI 3.1 and YAML 1.2.
 
-The reference describes 255 implemented operations. Printing-photo upload and response additions are preview-deployed; live verification is in progress. Four deferred routes and three preview/smoke routes are omitted. The contract covers subscriptions, placement sites, localized species/breed catalogs, public contacts, unified ownership events (including audited internal corrections), recovery image replacement and event-date filters, PTag location reports, and external adoption listings.
+The reference describes 255 implemented operations. Printing-photo upload and response additions are preview-deployed; paid guest/user photo reads passed live verification. Four deferred routes and three preview/smoke routes are omitted. The contract covers subscriptions, placement sites, localized species/breed catalogs, public contacts, unified ownership events (including audited internal corrections), recovery image replacement and event-date filters, PTag location reports, and external adoption listings.
 
 ## Immutable order printing photos
 
 The approved per-unit printing-photo contract is documented directly in [openapi.yaml](openapi.yaml).
 OpenAPI 2026-11-24.7 marks the upload and response additions
 `x-implementation-status: deployed`. Preview deployment succeeded in
-[action 45356580799](https://github.com/LeungYuLap19/AWS_DDD_API/actions/runs/45356580799); live photo verification is in progress.
+[action 45356580799](https://github.com/LeungYuLap19/AWS_DDD_API/actions/runs/45356580799); paid guest/user order and private PTag photo reads passed live verification.
 Attachments are write-once from first acceptance, with no replacement/removal endpoint.
 `expiresAt` describes temporary download-URL validity, not photo retention. Authenticated PTag
 photo reads additionally require linked-order read authority; lists/public lookups gain no photos.
