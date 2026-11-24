@@ -2,7 +2,21 @@
 
 Run `python -m http.server 8000` in this directory and open `http://localhost:8000`, or use the [published GitHub Pages site](https://leungyulap19.github.io/AWS_DDD_API_docs/). Open [openapi.yaml](openapi.yaml) to save the contract for LLM tools and code generators. Choose an endpoint, fill its request fields on the left, and use **Send request** on the right. The preview follows those inputs and offers HTTP, Shell, Node, Ruby, and PHP examples. Success and error response structures are listed below the form. The specification uses OpenAPI 3.1 and YAML 1.2.
 
-The 252 documented operations describe implemented routes, callers, and client rules. Four deferred routes and three preview/smoke routes are omitted. The contract covers subscriptions, placement sites, localized species/breed catalogs, public contacts, unified ownership events (including audited internal corrections), recovery image replacement and event-date filters, PTag location reports, and external adoption listings.
+The reference describes 255 implemented operations. Printing-photo upload and response additions are preview-deployed; live verification is in progress. Four deferred routes and three preview/smoke routes are omitted. The contract covers subscriptions, placement sites, localized species/breed catalogs, public contacts, unified ownership events (including audited internal corrections), recovery image replacement and event-date filters, PTag location reports, and external adoption listings.
+
+## Immutable order printing photos
+
+The approved per-unit printing-photo contract is documented directly in [openapi.yaml](openapi.yaml).
+OpenAPI 2026-11-24.7 marks the upload and response additions
+`x-implementation-status: deployed`. Preview deployment succeeded in
+[action 45356580799](https://github.com/LeungYuLap19/AWS_DDD_API/actions/runs/45356580799); live photo verification is in progress.
+Attachments are write-once from first acceptance, with no replacement/removal endpoint.
+`expiresAt` describes temporary download-URL validity, not photo retention. Authenticated PTag
+photo reads additionally require linked-order read authority; lists/public lookups gain no photos.
+Upload each photo after creating the quote and before calling the existing JSON draft endpoint.
+The upload uses the exact quote's `x-checkout-token`. It does not extend quote expiry or change
+pricing, payment commands, callbacks or refunds. Proven single-unit legacy orders may have null
+item/quantity indexes and unknown options; canonical quote units always have integer indexes.
 
 ## Public endpoints
 
@@ -237,3 +251,10 @@ Public logistics address lookups accept an optional existing provider token; omi
 Checkout quotes own delivery pricing. Production charges one HKD 50.00 delivery fee per
 quote; development/previews use HKD 0.10 for controlled testing. Read returned pricing; do
 not calculate fees from product catalog fields. Existing quote/order snapshots stay fixed.
+
+## Organization pet status
+
+Private organization status accepts the 11 canonical keys in `PetOrganizationStatusKey`, including
+`lost`. `at_home` remains unsupported. `lost` does not create a recovery report or change ownership.
+Current organization ownership is required to edit; independently authorized retained reads remain
+scoped to the organization/pet pair. No permission grants or default policies change.

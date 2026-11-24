@@ -3,15 +3,16 @@
 openapi: 3.1.0
 info:
   title: PetPetClub API
-  version: 2026-11-24.3
-  description: The 251 implemented HTTP operations of the API. Paths, gateway credentials, request validation, and
-    permission keys are checked against current source. Deferred and preview/smoke routes are omitted. Success responses
-    document handler payload fields. Each documented HTTP error status lists the stable errorKey values emitted
-    by the reachable handler and validation branches; error text is localized. Gateway-generated responses and upstream
-    provider JSON may have their own contracts. Operations marked [PUBLIC] and x-public=true require no account
-    access token or API key. Request credentials such as login passwords or OTPs, validation, and abuse controls
-    still apply. Routes using refresh sessions, checkout/provisioning tokens, or device/provider/worker signatures
-    are not marked public merely because they do not use a bearer JWT.
+  version: 2026-11-24.7
+  description: The API documents 255 implemented HTTP operations. Printing-photo upload and response additions are
+    preview-deployed on 2026-11-24; live photo verification is in progress. Paths, gateway credentials, request validation, and permission keys are checked against
+    current source. Deferred and preview/smoke routes are omitted. Success responses document handler payload fields.
+    Each documented HTTP error status lists the stable errorKey values emitted by the reachable handler and validation
+    branches; error text is localized. Gateway-generated responses and upstream provider JSON may have their own
+    contracts. Operations marked [PUBLIC] and x-public=true require no account access token or API key. Request
+    credentials such as login passwords or OTPs, validation, and abuse controls still apply. Routes using refresh
+    sessions, checkout/provisioning tokens, or device/provider/worker signatures are not marked public merely because
+    they do not use a bearer JWT.
 servers:
 - url: https://{apiId}.execute-api.{region}.amazonaws.com/{stage}
   description: Set these variables to the deployed API Gateway stage.
@@ -5937,8 +5938,10 @@ paths:
       - commerce-orders
       summary: Create Guest Draft
       operationId: R182
-      description: Creates a guest checkout draft from a quote and returns the checkout token used on the guest
-        checkout and order routes (`x-checkout-token`).
+      description: 'Creates a guest checkout draft from a quote and returns the checkout token used on the guest checkout
+        and order routes (`x-checkout-token`). Preview-deployed; atomically copy quote-owned
+        itemCustomizations into the order. Do not submit asset IDs or itemCustomizations in the JSON body; attachments
+        cannot be replaced or cleared.'
       security:
       - checkoutToken: []
       x-source-router: functions/commerce-orders/src/router.ts
@@ -6219,6 +6222,7 @@ paths:
             schema:
               $ref: '#/components/schemas/commerce_orders_src_zodSchema_checkoutContractSchema_ts_createCheckoutDraftRequestSchema'
       x-request-schema-source: functions/commerce-orders/src/zodSchema/checkoutContractSchema.ts#createCheckoutDraftRequestSchema
+      x-printing-photo-implementation-status: deployed
   /commerce/checkouts/quotes:
     post:
       tags:
@@ -6226,11 +6230,12 @@ paths:
       summary: '[PUBLIC] Create Checkout Quote'
       operationId: R183
       x-public: true
-      description: Prices a cart on the server and returns a short-lived quote token. Checkout drafts must present
-        this token, so clients cannot set prices. The server calculates the quote and returns the checkout token
-        needed for draft, detail, payment, and cancellation.
-        Delivery is charged once per quote at HKD 50.00 in production and HKD 0.10 in development/previews.
-        Use returned pricing; existing quote and order snapshots keep their original amounts.
+      description: 'Prices a cart on the server and returns a short-lived quote token. Checkout drafts must present
+        this token, so clients cannot set prices. The server calculates the quote and returns the checkout token needed
+        for draft, detail, payment, and cancellation. Delivery is charged once per quote at HKD 50.00 in production
+        and HKD 0.10 in development/previews. Use returned pricing; existing quote and order snapshots keep their original
+        amounts. Preview-deployed; units[] returns explicit unitIndex/itemIndex/quantityIndex mapping
+        for write-once printing-photo uploads; no client-supplied unit identity.'
       security: []
       x-source-router: functions/commerce-orders/src/router.ts
       responses:
@@ -6368,14 +6373,278 @@ paths:
             schema:
               $ref: '#/components/schemas/commerce_orders_src_zodSchema_checkoutContractSchema_ts_createCheckoutQuoteRequestSchema'
       x-request-schema-source: functions/commerce-orders/src/zodSchema/checkoutContractSchema.ts#createCheckoutQuoteRequestSchema
+      x-printing-photo-implementation-status: deployed
+  /commerce/checkouts/quotes/{quoteId}/units/{unitIndex}/photo:
+    post:
+      tags:
+      - commerce-orders
+      summary: Attach immutable printing photo to checkout unit
+      operationId: uploadCheckoutUnitPhoto
+      description: Preview-deployed 2026-11-24. Upload one multipart photo for an explicit
+        server-returned quote unit. Requires the matching x-checkout-token and an unexpired, unconsumed quote; no
+        JWT or API key. JPEG/PNG/GIF/WebP by file signature, at most 4 MiB per file and 4 MiB plus 64 KiB decoded
+        body. The first accepted photo is immutable. Identical active-quote retries return the same asset; replacement/removal
+        is forbidden. The server binds the verified asset to the quote and draft creation copies it atomically. No
+        asset ID is submitted to the draft. Quote upload and draft consumption use concurrency guards. Uploads do
+        not extend quote expiry or change pricing, payment gateway commands, callbacks or refunds.
+      x-implementation-status: deployed
+      security:
+      - checkoutToken: []
+      parameters:
+      - name: quoteId
+        in: path
+        required: true
+        schema:
+          type: string
+          minLength: 1
+          maxLength: 64
+          pattern: ^[A-Za-z0-9_-]+$
+      - name: unitIndex
+        in: path
+        required: true
+        schema:
+          type: integer
+          minimum: 0
+          maximum: 1979
+        description: Exact order-wide unitIndex from quote units[]. Never a PTag code, per-line position or client-selected
+          identity.
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              additionalProperties: false
+              required:
+              - photo
+              properties:
+                photo:
+                  type: string
+                  format: binary
+                  description: One JPEG, PNG, GIF or WebP image; maximum 4,194,304 bytes. No other file or text fields.
+      responses:
+        '200':
+          description: Identical retry on the same active quote unit; existing immutable asset returned.
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                - success
+                - data
+                properties:
+                  success:
+                    const: true
+                  message:
+                    type: string
+                  requestId:
+                    type: string
+                  data:
+                    $ref: '#/components/schemas/CheckoutUnitPhotoUploadResult'
+        '201':
+          description: Verified image attached once to this quote unit.
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                - success
+                - data
+                properties:
+                  success:
+                    const: true
+                  message:
+                    type: string
+                  requestId:
+                    type: string
+                  data:
+                    $ref: '#/components/schemas/CheckoutUnitPhotoUploadResult'
+        '400':
+          description: Invalid path/query/multipart/image.
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                - errorKey
+                - error
+                properties:
+                  success:
+                    const: false
+                  errorKey:
+                    type: string
+                    enum:
+                    - common.invalidPathParam
+                    - common.invalidQueryParams
+                    - common.invalidBodyParams
+                  error:
+                    type: string
+                    description: Localized human-readable error.
+                  requestId:
+                    type: string
+                additionalProperties: true
+        '403':
+          description: Missing, invalid or foreign checkout capability; do not disclose the foreign quote.
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                - errorKey
+                - error
+                properties:
+                  success:
+                    const: false
+                  errorKey:
+                    type: string
+                    enum:
+                    - orders.errors.checkoutAccessDenied
+                  error:
+                    type: string
+                    description: Localized human-readable error.
+                  requestId:
+                    type: string
+                additionalProperties: true
+        '404':
+          description: Valid quote capability, but no such purchased unit.
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                - errorKey
+                - error
+                properties:
+                  success:
+                    const: false
+                  errorKey:
+                    type: string
+                    enum:
+                    - common.notFound
+                  error:
+                    type: string
+                    description: Localized human-readable error.
+                  requestId:
+                    type: string
+                additionalProperties: true
+        '409':
+          description: Photo already attached with different content, quote expired, or quote already consumed.
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                - errorKey
+                - error
+                properties:
+                  success:
+                    const: false
+                  errorKey:
+                    type: string
+                    enum:
+                    - common.conflict
+                    - orders.errors.quoteExpired
+                    - orders.errors.quoteConsumed
+                  error:
+                    type: string
+                    description: Localized human-readable error.
+                  requestId:
+                    type: string
+                additionalProperties: true
+        '413':
+          description: File exceeds 4 MiB or decoded multipart body exceeds 4 MiB plus 64 KiB.
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                - errorKey
+                - error
+                properties:
+                  success:
+                    const: false
+                  errorKey:
+                    type: string
+                    enum:
+                    - common.requestBodyTooLarge
+                  error:
+                    type: string
+                    description: Localized human-readable error.
+                  requestId:
+                    type: string
+                additionalProperties: true
+        '429':
+          description: Upload rate limit exceeded.
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                - errorKey
+                - error
+                properties:
+                  success:
+                    const: false
+                  errorKey:
+                    type: string
+                    enum:
+                    - common.rateLimited
+                  error:
+                    type: string
+                    description: Localized human-readable error.
+                  requestId:
+                    type: string
+                additionalProperties: true
+        4XX:
+          description: Gateway or other client error.
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                - errorKey
+                - error
+                properties:
+                  success:
+                    const: false
+                  errorKey:
+                    type: string
+                  error:
+                    type: string
+                    description: Localized human-readable error.
+                  requestId:
+                    type: string
+                additionalProperties: true
+        5XX:
+          description: Server or upstream storage error.
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                - errorKey
+                - error
+                properties:
+                  success:
+                    const: false
+                  errorKey:
+                    type: string
+                  error:
+                    type: string
+                    description: Localized human-readable error.
+                  requestId:
+                    type: string
+                additionalProperties: true
   /commerce/checkouts/{checkoutId}:
     get:
       tags:
       - commerce-orders
       summary: Read Checkout
       operationId: R184
-      description: Reads a checkout and its order. Requires the checkout token issued for this checkout, sent as
-        `x-checkout-token`, while it is still valid.
+      description: 'Reads a checkout and its order. Requires the checkout token issued for this checkout, sent as `x-checkout-token`,
+        while it is still valid. Preview-deployed; units[] joins each purchased unit to its issued
+        PTag/QR and immutable printing photo. Photo URLs expire within 300 seconds and never after the checkout-access
+        deadline; reread while the capability remains valid.'
       security:
       - checkoutToken: []
       x-source-router: functions/commerce-orders/src/router.ts
@@ -6517,6 +6786,7 @@ paths:
         required: true
         schema:
           type: string
+      x-printing-photo-implementation-status: deployed
   /commerce/discount-codes:
     get:
       tags:
@@ -7473,8 +7743,10 @@ paths:
       - commerce-orders
       summary: Read Order
       operationId: R188
-      description: Returns full details of one physical order. The ordering user may read it; internal callers may
-        read any order, including guest orders.
+      description: 'Returns full details of one physical order. The ordering user may read it; internal callers may
+        read any order, including guest orders. Preview-deployed; units[] returns exact unit/product/PTag/QR/photo
+        rows. Printing photos are immutable; verified images use temporary signed URLs with expiresAt describing URL
+        validity only. No replacement or removal operation.'
       security:
       - bearerAuth: []
         apiKeyAuth: []
@@ -7689,6 +7961,7 @@ paths:
         required: true
         schema:
           type: string
+      x-printing-photo-implementation-status: deployed
   /commerce/orders/{orderId}/cancel:
     post:
       tags:
@@ -57009,8 +57282,12 @@ paths:
       - ptag
       summary: Read Ptag
       operationId: R170
-      description: Returns one PTag's metadata and assignment. The owner of the assigned pet may read it; internal
-        callers may read any tag.
+      description: 'Returns one PTag''s metadata and assignment. The owner of the assigned pet may read it; internal
+        callers may read any tag. Preview-deployed; optional ptag.printingPhoto resolves through
+        stored orderId + unitIndex. Independently require linked-order commerce.order.read with buyer Reach or commerce.order.read_any,
+        after ordinary PTag authorization. Omit the field when order access is denied; return null for an absent usable
+        photo/link. Pet ownership and PTag read_any alone do not grant the image. Photo is immutable; expiresAt applies
+        only to its signed URL.'
       security:
       - bearerAuth: []
         apiKeyAuth: []
@@ -57094,6 +57371,14 @@ paths:
                           updatedAt:
                             type: string
                             format: date-time
+                          printingPhoto:
+                            anyOf:
+                            - $ref: '#/components/schemas/OrderPrintingPhoto'
+                            - type: 'null'
+                            readOnly: true
+                            x-implementation-status: deployed
+                            description: Optional, independently order-authorized field. Omitted on denied order access;
+                              null when there is no usable photo/link. No write endpoint can modify or remove it.
                         required:
                         - ptagId
                         - tagCode
@@ -57302,6 +57587,10 @@ paths:
         required: true
         schema:
           type: string
+      x-printing-photo-implementation-status: deployed
+      x-printing-photo-permission-keys:
+      - commerce.order.read_any
+      - commerce.order.read
     patch:
       tags:
       - ptag
@@ -67692,9 +67981,11 @@ paths:
       - commerce-orders
       summary: Create User Draft
       operationId: R181
-      description: Creates or resumes a signed-in user's checkout draft from a quote. The quote token must match
-        and is consumed once; replaying a draft only works before the checkout deadline. Self only, or an internal
-        caller with the broad key; the quote proof is never skipped.
+      description: 'Creates or resumes a signed-in user''s checkout draft from a quote. The quote token must match and
+        is consumed once; replaying a draft only works before the checkout deadline. Self only, or an internal caller
+        with the broad key; the quote proof is never skipped. Preview-deployed; atomically
+        copy quote-owned itemCustomizations into the order. The existing request body and IAM/checkout proof remain;
+        no arbitrary asset-ID input or attachment edits.'
       security:
       - bearerAuth: []
         apiKeyAuth: []
@@ -67995,6 +68286,7 @@ paths:
         required: true
         schema:
           type: string
+      x-printing-photo-implementation-status: deployed
   /users/{userId}/commerce/orders:
     get:
       tags:
@@ -77070,8 +77362,9 @@ components:
       - handling
       - hospitalized
       - returned_to_requester
+      - lost
       - other
-      description: Organization administration label; never an ownership transition, recovery report or life state.
+      description: Organization administration label, including lost; never an ownership transition, recovery report or life state. at_home is not supported.
     PetOrganizationStatus:
       type: object
       additionalProperties: false
@@ -82644,6 +82937,14 @@ components:
           type: string
           format: date-time
           pattern: ^(?:(?:\d\d[2468][048]|\d\d[13579][26]|\d\d0[48]|[02468][048]00|[13579][26]00)-02-29|\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\d|30)|(?:02)-(?:0[1-9]|1\d|2[0-8])))T(?:(?:[01]\d|2[0-3]):[0-5]\d(?::[0-5]\d(?:\.\d+)?)?(?:Z|([+-](?:[01]\d|2[0-3]):[0-5]\d)))$
+        units:
+          type: array
+          maxItems: 1980
+          readOnly: true
+          description: Preview-deployed 2026-11-24. Explicit unit identities for photo uploads.
+          x-implementation-status: deployed
+          items:
+            $ref: '#/components/schemas/CheckoutQuotedUnit'
       required:
       - quoteId
       - checkoutToken
@@ -83174,13 +83475,137 @@ components:
           type: string
         quoteId:
           type: string
-        orderReference: *id048
-        purchaseType: *id049
-        status: *id050
-        pricing: *id051
-        items: *id052
-        createdAt: *id053
-        updatedAt: *id054
+        orderReference:
+          type: string
+        purchaseType:
+          const: physical_order
+          type: string
+        status:
+          type: string
+        pricing:
+          type: object
+          required:
+          - itemAmount
+          - discountAmount
+          - deliveryAmount
+          - totalAmount
+          - currency
+          properties:
+            itemAmount:
+              type: string
+            discountAmount:
+              type: string
+            deliveryAmount:
+              type: string
+            totalAmount:
+              type: string
+            currency:
+              type: string
+              const: HKD
+        items:
+          type: array
+          items:
+            type: object
+            properties:
+              productId:
+                type: string
+                pattern: ^[a-fA-F0-9]{24}$
+              variantCode:
+                type: string
+                minLength: 1
+                maxLength: 64
+                pattern: ^[A-Za-z0-9_-]+$
+              sizeCode:
+                type: string
+                minLength: 1
+                maxLength: 64
+                pattern: ^[A-Za-z0-9_-]+$
+              colorCode:
+                type: string
+                minLength: 1
+                maxLength: 64
+                pattern: ^[A-Za-z0-9_-]+$
+              quantity:
+                default: 1
+                type: integer
+                minimum: 1
+                maximum: 99
+              shopCode:
+                type: string
+                minLength: 1
+                maxLength: 64
+                pattern: ^[A-Za-z0-9_-]+$
+              promotionCode:
+                type: string
+                minLength: 1
+                maxLength: 64
+                pattern: ^[A-Za-z0-9_-]+$
+              deliveryMethodCode:
+                type: string
+                minLength: 1
+                maxLength: 64
+                pattern: ^[A-Za-z0-9_-]+$
+              kind:
+                type: string
+                enum:
+                - ptag_air
+                - ptag
+              productName:
+                type: string
+                minLength: 1
+                maxLength: 255
+              subject:
+                type: string
+                minLength: 1
+                maxLength: 255
+              pricing:
+                type: object
+                properties:
+                  unitAmount:
+                    type: string
+                    pattern: ^(?:0|[1-9]\d{0,15})\.\d{2}$
+                  itemAmount:
+                    type: string
+                    pattern: ^(?:0|[1-9]\d{0,15})\.\d{2}$
+                  discountAmount:
+                    type: string
+                    pattern: ^(?:0|[1-9]\d{0,15})\.\d{2}$
+                  deliveryAmount:
+                    type: string
+                    pattern: ^(?:0|[1-9]\d{0,15})\.\d{2}$
+                  totalAmount:
+                    type: string
+                    pattern: ^(?:0|[1-9]\d{0,15})\.\d{2}$
+                  currency:
+                    type: string
+                    const: HKD
+                required:
+                - unitAmount
+                - itemAmount
+                - discountAmount
+                - deliveryAmount
+                - totalAmount
+                - currency
+                additionalProperties: false
+            required:
+            - productId
+            - quantity
+            - deliveryMethodCode
+            - kind
+            - productName
+            - subject
+            - pricing
+            additionalProperties: false
+        createdAt:
+          type:
+          - string
+          - 'null'
+          format: date-time
+        updatedAt:
+          type:
+          - string
+          - 'null'
+          format: date-time
         customer:
           type: object
           required:
@@ -83246,9 +83671,10 @@ components:
           required:
           - name
           properties:
-            name: &id155
+            name:
               type: string
-            contact: *id155
+            contact:
+              type: string
         ptags:
           type: array
           items:
@@ -83268,11 +83694,14 @@ components:
           - merchantReference
           - status
           properties:
-            merchantReference: &id156
+            merchantReference:
               type: string
-            status: *id156
-            requestedNetwork: *id156
-            providerRequestReference: *id156
+            status:
+              type: string
+            requestedNetwork:
+              type: string
+            providerRequestReference:
+              type: string
             resultAt:
               type: string
               format: date-time
@@ -83287,10 +83716,21 @@ components:
               const: sf_express
             trackingNumber:
               type: string
-            shippedAt: &id157
+            shippedAt:
               type: string
               format: date-time
-            deliveredAt: *id157
+            deliveredAt:
+              type: string
+              format: date-time
+        units:
+          type: array
+          maxItems: 1980
+          readOnly: true
+          description: Preview-deployed 2026-11-24. Exact product-unit/tag/printing-photo correspondence.
+            Legacy orders without canonical unit mapping return an empty array.
+          x-implementation-status: deployed
+          items:
+            $ref: '#/components/schemas/OrderPrintingUnit'
       required:
       - access
       - customer
@@ -83567,6 +84007,160 @@ components:
       - placeOfBirth
       - father
       - mother
+    OrderPrintingPhoto:
+      type: object
+      additionalProperties: false
+      description: Immutable printing attachment. URL expiry does not expire or delete the image. Implemented locally; deployment/live verification pending.
+      x-implementation-status: deployed
+      properties:
+        assetId:
+          type: string
+          pattern: ^[a-fA-F0-9]{24}$
+        url:
+          type: string
+          format: uri
+          description: Private signed GET URL; maximum lifetime 300 seconds. Reread the authorized detail endpoint after
+            expiry.
+        expiresAt:
+          type: string
+          format: date-time
+          description: Expiry of this temporary URL only; response-only, never an attachment retention date.
+      required:
+      - assetId
+      - url
+      - expiresAt
+    CheckoutQuotedUnit:
+      type: object
+      additionalProperties: false
+      description: Server-expanded purchased unit; unitIndex is zero-based across the complete quote, not per line.
+        Preview-deployed 2026-11-24.
+      x-implementation-status: deployed
+      properties:
+        unitIndex:
+          type: integer
+          minimum: 0
+          maximum: 1979
+        itemIndex:
+          type: integer
+          minimum: 0
+          maximum: 19
+        quantityIndex:
+          type: integer
+          minimum: 0
+          maximum: 98
+        productId:
+          type: string
+          pattern: ^[a-fA-F0-9]{24}$
+        variantCode:
+          type:
+          - string
+          - 'null'
+        sizeCode:
+          type:
+          - string
+          - 'null'
+        colorCode:
+          type:
+          - string
+          - 'null'
+      required:
+      - unitIndex
+      - itemIndex
+      - quantityIndex
+      - productId
+      - variantCode
+      - sizeCode
+      - colorCode
+    OrderPrintingUnit:
+      type: object
+      additionalProperties: false
+      description: Purchased unit joined to its issued PTag and immutable printing photo by exact orderId + unitIndex.
+        Legacy units require an exact migrated order/PTag pair; unknown item indexes and variant options are null.
+        This projection never invents current pricing or quote items. Preview-deployed 2026-11-24.
+      x-implementation-status: deployed
+      properties:
+        unitIndex:
+          type: integer
+          minimum: 0
+          maximum: 1979
+        itemIndex:
+          type:
+          - integer
+          - 'null'
+          minimum: 0
+          maximum: 19
+          description: Null only for a proven single-unit legacy order without a canonical quoted item snapshot.
+        quantityIndex:
+          type:
+          - integer
+          - 'null'
+          minimum: 0
+          maximum: 98
+          description: Null only for a proven single-unit legacy order without a canonical quoted item snapshot.
+        productId:
+          type: string
+          pattern: ^[a-fA-F0-9]{24}$
+        variantCode:
+          type:
+          - string
+          - 'null'
+        sizeCode:
+          type:
+          - string
+          - 'null'
+        colorCode:
+          type:
+          - string
+          - 'null'
+        ptag:
+          type:
+          - object
+          - 'null'
+          additionalProperties: false
+          description: Null until the exact unit has an issued tag. Never infer by array position or product ID.
+          properties:
+            tagCode:
+              type: string
+            qrUrl:
+              type:
+              - string
+              - 'null'
+              format: uri
+          required:
+          - tagCode
+          - qrUrl
+        photo:
+          anyOf:
+          - $ref: '#/components/schemas/OrderPrintingPhoto'
+          - type: 'null'
+      required:
+      - unitIndex
+      - itemIndex
+      - quantityIndex
+      - productId
+      - variantCode
+      - sizeCode
+      - colorCode
+      - ptag
+      - photo
+    CheckoutUnitPhotoUploadResult:
+      type: object
+      additionalProperties: false
+      x-implementation-status: deployed
+      properties:
+        quoteId:
+          type: string
+        unitIndex:
+          type: integer
+          minimum: 0
+          maximum: 1979
+        assetId:
+          type: string
+          pattern: ^[a-fA-F0-9]{24}$
+      required:
+      - quoteId
+      - unitIndex
+      - assetId
   responses:
     Success:
       description: Successful response. Some operations return an empty body.
