@@ -18,6 +18,10 @@ The upload uses the exact quote's `x-checkout-token`. It does not extend quote e
 pricing, payment commands, callbacks or refunds. Proven single-unit legacy orders may have null
 item/quantity indexes and unknown options; canonical quote units always have integer indexes.
 
+Paid guest and authenticated PTag orders both wait for issued tags before their payment-confirmation
+email includes tag codes, short links and inline QR images. Email delivery does not claim guest
+orders for an account or grant permission to assign a tag to a pet.
+
 ## Public endpoints
 
 The reference marks these 24 operations with **[PUBLIC]** in endpoint titles and

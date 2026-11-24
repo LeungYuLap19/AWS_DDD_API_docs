@@ -5941,7 +5941,8 @@ paths:
       description: 'Creates a guest checkout draft from a quote and returns the checkout token used on the guest checkout
         and order routes (`x-checkout-token`). Preview-deployed; atomically copy quote-owned
         itemCustomizations into the order. Do not submit asset IDs or itemCustomizations in the JSON body; attachments
-        cannot be replaced or cleared.'
+        cannot be replaced or cleared. After payment, guest confirmation emails wait for issued PTags
+        and include their codes, short links and QR images, as authenticated purchase emails do.'
       security:
       - checkoutToken: []
       x-source-router: functions/commerce-orders/src/router.ts
