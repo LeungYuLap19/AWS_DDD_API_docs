@@ -3,7 +3,7 @@
 openapi: 3.1.0
 info:
   title: PetPetClub API
-  version: 2026-11-25.1
+  version: 2026-11-25.2
   description: The API documents 255 implemented HTTP operations. Printing-photo upload and response additions are
     preview-deployed on 2026-11-24; paid guest/user order and private PTag photo reads passed live verification. Paths, gateway credentials, request validation, and permission keys are checked against
     current source. Deferred and preview/smoke routes are omitted. Success responses document handler payload fields.
@@ -1160,8 +1160,21 @@ paths:
                             _id:
                               type: string
                               description: MongoDB audit ID.
+                            display:
+                              type: object
+                              description: List-only reference labels; null for missing, hard-deleted, closed or unavailable
+                                references. Stored IDs remain unchanged. No contact fields.
+                              required:
+                              - actorName
+                              properties:
+                                actorName:
+                                  type:
+                                  - string
+                                  - 'null'
+                              additionalProperties: false
                           required:
                           - _id
+                          - display
                       pagination:
                         type: object
                         properties:
@@ -11027,6 +11040,28 @@ paths:
                         updatedAt:
                           type: string
                           format: date-time
+                        display:
+                          type: object
+                          description: List-only reference labels; null for missing, hard-deleted, closed or unavailable references.
+                            Stored IDs remain unchanged. No contact fields.
+                          required:
+                          - submittedByName
+                          - submittedByOrganizationName
+                          - assignedDeveloperName
+                          properties:
+                            submittedByName:
+                              type:
+                              - string
+                              - 'null'
+                            submittedByOrganizationName:
+                              type:
+                              - string
+                              - 'null'
+                            assignedDeveloperName:
+                              type:
+                              - string
+                              - 'null'
+                          additionalProperties: false
                       required:
                       - reportId
                       - clientRequestId
@@ -11046,6 +11081,7 @@ paths:
                       - screenshotCount
                       - createdAt
                       - updatedAt
+                      - display
                 additionalProperties: true
         '400':
           description: 'HTTP 400. Possible error keys: common.invalidQueryParams.'
@@ -14703,6 +14739,18 @@ paths:
                               type: string
                             userId:
                               type: string
+                            display:
+                              type: object
+                              description: List-only reference labels; null for missing, hard-deleted, closed or unavailable
+                                references. Stored IDs remain unchanged. No contact fields.
+                              required:
+                              - userName
+                              properties:
+                                userName:
+                                  type:
+                                  - string
+                                  - 'null'
+                              additionalProperties: false
                           required:
                           - role
                           - permissionOverrides
@@ -14717,6 +14765,7 @@ paths:
                           - updatedAt
                           - membershipId
                           - userId
+                          - display
                       pagination:
                         type: object
                         properties:
@@ -22597,6 +22646,23 @@ paths:
                             updatedAt:
                               type: string
                               format: date-time
+                            display:
+                              type: object
+                              description: List-only reference labels; null for missing, hard-deleted, closed or unavailable
+                                references. Stored IDs remain unchanged. No contact fields.
+                              required:
+                              - petName
+                              - organizationName
+                              properties:
+                                petName:
+                                  type:
+                                  - string
+                                  - 'null'
+                                organizationName:
+                                  type:
+                                  - string
+                                  - 'null'
+                              additionalProperties: false
                           required:
                           - agreementId
                           - requestId
@@ -22612,6 +22678,7 @@ paths:
                           - statusChangedAt
                           - createdAt
                           - updatedAt
+                          - display
                       pagination:
                         type: object
                         properties:
@@ -22921,6 +22988,28 @@ paths:
                             updatedAt:
                               type: string
                               format: date-time
+                            display:
+                              type: object
+                              description: List-only reference labels; null for missing, hard-deleted, closed or unavailable
+                                references. Stored IDs remain unchanged. No contact fields.
+                              required:
+                              - petName
+                              - decidingOrganizationName
+                              - decidedByName
+                              properties:
+                                petName:
+                                  type:
+                                  - string
+                                  - 'null'
+                                decidingOrganizationName:
+                                  type:
+                                  - string
+                                  - 'null'
+                                decidedByName:
+                                  type:
+                                  - string
+                                  - 'null'
+                              additionalProperties: false
                           required:
                           - consentId
                           - requestId
@@ -22933,6 +23022,7 @@ paths:
                           - decidedAt
                           - createdAt
                           - updatedAt
+                          - display
                       pagination:
                         type: object
                         properties:
@@ -23244,6 +23334,28 @@ paths:
                             updatedAt:
                               type: string
                               format: date-time
+                            display:
+                              type: object
+                              description: List-only reference labels; null for missing, hard-deleted, closed or unavailable
+                                references. Stored IDs remain unchanged. No contact fields.
+                              required:
+                              - petName
+                              - requestingOrganizationName
+                              - requesterName
+                              properties:
+                                petName:
+                                  type:
+                                  - string
+                                  - 'null'
+                                requestingOrganizationName:
+                                  type:
+                                  - string
+                                  - 'null'
+                                requesterName:
+                                  type:
+                                  - string
+                                  - 'null'
+                              additionalProperties: false
                           required:
                           - requestId
                           - petId
@@ -23256,6 +23368,7 @@ paths:
                           - statusChangedAt
                           - createdAt
                           - updatedAt
+                          - display
                       pagination:
                         type: object
                         properties:
@@ -25090,6 +25203,18 @@ paths:
                               type: string
                             userId:
                               type: string
+                            display:
+                              type: object
+                              description: List-only reference labels; null for missing, hard-deleted, closed or unavailable
+                                references. Stored IDs remain unchanged. No contact fields.
+                              required:
+                              - userName
+                              properties:
+                                userName:
+                                  type:
+                                  - string
+                                  - 'null'
+                              additionalProperties: false
                           required:
                           - role
                           - permissionOverrides
@@ -25104,6 +25229,7 @@ paths:
                           - updatedAt
                           - membershipId
                           - userId
+                          - display
                       pagination:
                         type: object
                         properties:
@@ -33440,7 +33566,34 @@ paths:
                       ownershipEvents:
                         type: array
                         items:
-                          $ref: '#/components/schemas/PetOwnershipEvent'
+                          allOf:
+                          - $ref: '#/components/schemas/PetOwnershipEvent'
+                          - type: object
+                            required:
+                            - display
+                            properties:
+                              display:
+                                type: object
+                                description: List-only reference labels; null for missing, hard-deleted, closed or unavailable
+                                  references. Stored IDs remain unchanged. No contact fields.
+                                required:
+                                - fromPartyName
+                                - toPartyName
+                                - actorName
+                                properties:
+                                  fromPartyName:
+                                    type:
+                                    - string
+                                    - 'null'
+                                  toPartyName:
+                                    type:
+                                    - string
+                                    - 'null'
+                                  actorName:
+                                    type:
+                                    - string
+                                    - 'null'
+                                additionalProperties: false
                       pagination:
                         type: object
                         properties:
@@ -36654,6 +36807,23 @@ paths:
                             updatedAt:
                               type: string
                               format: date-time
+                            display:
+                              type: object
+                              description: List-only reference labels; null for missing, hard-deleted, closed or unavailable
+                                references. Stored IDs remain unchanged. No contact fields.
+                              required:
+                              - petName
+                              - ownerName
+                              properties:
+                                petName:
+                                  type:
+                                  - string
+                                  - 'null'
+                                ownerName:
+                                  type:
+                                  - string
+                                  - 'null'
+                              additionalProperties: false
                           required:
                           - ptagId
                           - tagCode
@@ -36667,6 +36837,7 @@ paths:
                           - revision
                           - createdAt
                           - updatedAt
+                          - display
                       pagination:
                         type: object
                         properties:
@@ -42750,24 +42921,57 @@ paths:
                 allOf:
                 - $ref: '#/components/schemas/SuccessEnvelope'
                 - type: object
-                  required: [data]
+                  required:
+                  - data
                   properties:
                     data:
                       type: object
-                      required: [reports, pagination]
+                      required:
+                      - reports
+                      - pagination
                       properties:
                         reports:
                           type: array
                           items:
-                            $ref: '#/components/schemas/PtagLocationReport'
+                            allOf:
+                            - $ref: '#/components/schemas/PtagLocationReport'
+                            - type: object
+                              required:
+                              - display
+                              properties:
+                                display:
+                                  type: object
+                                  description: List-only reference labels; null for missing, hard-deleted, closed or unavailable
+                                    references. Stored IDs remain unchanged. No contact fields.
+                                  required:
+                                  - petName
+                                  - tagCode
+                                  properties:
+                                    petName:
+                                      type:
+                                      - string
+                                      - 'null'
+                                    tagCode:
+                                      type:
+                                      - string
+                                      - 'null'
+                                  additionalProperties: false
                         pagination:
                           type: object
-                          required: [page, limit, total, totalPages]
+                          required:
+                          - page
+                          - limit
+                          - total
+                          - totalPages
                           properties:
-                            page: {type: integer}
-                            limit: {type: integer}
-                            total: {type: integer}
-                            totalPages: {type: integer}
+                            page:
+                              type: integer
+                            limit:
+                              type: integer
+                            total:
+                              type: integer
+                            totalPages:
+                              type: integer
         '400':
           description: 'Invalid path, body, or query. Common keys include common.invalidPathParam, common.invalidBodyParams, common.invalidQueryParams.'
           content:
@@ -45997,6 +46201,23 @@ paths:
                             updatedAt:
                               type: string
                               format: date-time
+                            display:
+                              type: object
+                              description: List-only reference labels; null for missing, hard-deleted, closed or unavailable
+                                references. Stored IDs remain unchanged. No contact fields.
+                              required:
+                              - petName
+                              - organizationName
+                              properties:
+                                petName:
+                                  type:
+                                  - string
+                                  - 'null'
+                                organizationName:
+                                  type:
+                                  - string
+                                  - 'null'
+                              additionalProperties: false
                           required:
                           - agreementId
                           - requestId
@@ -46012,6 +46233,7 @@ paths:
                           - statusChangedAt
                           - createdAt
                           - updatedAt
+                          - display
                       pagination:
                         type: object
                         properties:
@@ -46320,6 +46542,28 @@ paths:
                             updatedAt:
                               type: string
                               format: date-time
+                            display:
+                              type: object
+                              description: List-only reference labels; null for missing, hard-deleted, closed or unavailable
+                                references. Stored IDs remain unchanged. No contact fields.
+                              required:
+                              - petName
+                              - decidingOrganizationName
+                              - decidedByName
+                              properties:
+                                petName:
+                                  type:
+                                  - string
+                                  - 'null'
+                                decidingOrganizationName:
+                                  type:
+                                  - string
+                                  - 'null'
+                                decidedByName:
+                                  type:
+                                  - string
+                                  - 'null'
+                              additionalProperties: false
                           required:
                           - consentId
                           - requestId
@@ -46332,6 +46576,7 @@ paths:
                           - decidedAt
                           - createdAt
                           - updatedAt
+                          - display
                       pagination:
                         type: object
                         properties:
@@ -46643,6 +46888,28 @@ paths:
                             updatedAt:
                               type: string
                               format: date-time
+                            display:
+                              type: object
+                              description: List-only reference labels; null for missing, hard-deleted, closed or unavailable
+                                references. Stored IDs remain unchanged. No contact fields.
+                              required:
+                              - petName
+                              - requestingOrganizationName
+                              - requesterName
+                              properties:
+                                petName:
+                                  type:
+                                  - string
+                                  - 'null'
+                                requestingOrganizationName:
+                                  type:
+                                  - string
+                                  - 'null'
+                                requesterName:
+                                  type:
+                                  - string
+                                  - 'null'
+                              additionalProperties: false
                           required:
                           - requestId
                           - petId
@@ -46655,6 +46922,7 @@ paths:
                           - statusChangedAt
                           - createdAt
                           - updatedAt
+                          - display
                       pagination:
                         type: object
                         properties:
@@ -47729,6 +47997,18 @@ paths:
                             updatedAt:
                               type: string
                               format: date-time
+                            display:
+                              type: object
+                              description: List-only reference labels; null for missing, hard-deleted, closed or unavailable
+                                references. Stored IDs remain unchanged. No contact fields.
+                              required:
+                              - issuerOrganizationName
+                              properties:
+                                issuerOrganizationName:
+                                  type:
+                                  - string
+                                  - 'null'
+                              additionalProperties: false
                           required:
                           - identifierId
                           - petId
@@ -47737,6 +48017,7 @@ paths:
                           - issuerOrganizationId
                           - createdAt
                           - updatedAt
+                          - display
                     additionalProperties: true
                     required:
                     - identifiers
@@ -48823,21 +49104,57 @@ paths:
                       ownershipEvents:
                         type: array
                         items:
-                          $ref: '#/components/schemas/PetOwnershipEvent'
+                          allOf:
+                          - $ref: '#/components/schemas/PetOwnershipEvent'
+                          - type: object
+                            required:
+                            - display
+                            properties:
+                              display:
+                                type: object
+                                description: List-only reference labels; null for missing, hard-deleted, closed or unavailable
+                                  references. Stored IDs remain unchanged. No contact fields.
+                                required:
+                                - fromPartyName
+                                - toPartyName
+                                - actorName
+                                properties:
+                                  fromPartyName:
+                                    type:
+                                    - string
+                                    - 'null'
+                                  toPartyName:
+                                    type:
+                                    - string
+                                    - 'null'
+                                  actorName:
+                                    type:
+                                    - string
+                                    - 'null'
+                                additionalProperties: false
                       currentOwnership:
-                        description: Present for current owners and callers with list_any. An owner of null means no registered owner.
+                        description: Present for current owners and callers with list_any. An owner of null means no registered
+                          owner.
                         oneOf:
                         - type: 'null'
                         - type: object
-                          required: [petId, owner, effectiveAt, revision]
+                          required:
+                          - petId
+                          - owner
+                          - effectiveAt
+                          - revision
                           properties:
-                            petId: {type: string}
+                            petId:
+                              type: string
                             owner:
                               oneOf:
                               - $ref: '#/components/schemas/RegisteredPetOwner'
                               - type: 'null'
-                            effectiveAt: {type: string, format: date-time}
-                            revision: {type: string}
+                            effectiveAt:
+                              type: string
+                              format: date-time
+                            revision:
+                              type: string
                       pagination:
                         type: object
                         properties:
@@ -50697,6 +51014,23 @@ paths:
                                     updatedAt:
                                       type: string
                                       format: date-time
+                                    display:
+                                      type: object
+                                      description: List-only reference labels; null for missing, hard-deleted, closed or unavailable
+                                        references. Stored IDs remain unchanged. No contact fields.
+                                      required:
+                                      - recordedByName
+                                      - recordedByOrganizationName
+                                      properties:
+                                        recordedByName:
+                                          type:
+                                          - string
+                                          - 'null'
+                                        recordedByOrganizationName:
+                                          type:
+                                          - string
+                                          - 'null'
+                                      additionalProperties: false
                                   required:
                                   - recordId
                                   - petId
@@ -50707,6 +51041,7 @@ paths:
                                   - details
                                   - createdAt
                                   - updatedAt
+                                  - display
                               pagination:
                                 type: object
                                 properties:
@@ -50849,6 +51184,23 @@ paths:
                                     updatedAt:
                                       type: string
                                       format: date-time
+                                    display:
+                                      type: object
+                                      description: List-only reference labels; null for missing, hard-deleted, closed or unavailable
+                                        references. Stored IDs remain unchanged. No contact fields.
+                                      required:
+                                      - recordedByName
+                                      - recordedByOrganizationName
+                                      properties:
+                                        recordedByName:
+                                          type:
+                                          - string
+                                          - 'null'
+                                        recordedByOrganizationName:
+                                          type:
+                                          - string
+                                          - 'null'
+                                      additionalProperties: false
                                   required:
                                   - recordId
                                   - petId
@@ -50859,6 +51211,7 @@ paths:
                                   - details
                                   - createdAt
                                   - updatedAt
+                                  - display
                               pagination:
                                 type: object
                                 properties:
@@ -50959,6 +51312,23 @@ paths:
                                     updatedAt:
                                       type: string
                                       format: date-time
+                                    display:
+                                      type: object
+                                      description: List-only reference labels; null for missing, hard-deleted, closed or unavailable
+                                        references. Stored IDs remain unchanged. No contact fields.
+                                      required:
+                                      - recordedByName
+                                      - recordedByOrganizationName
+                                      properties:
+                                        recordedByName:
+                                          type:
+                                          - string
+                                          - 'null'
+                                        recordedByOrganizationName:
+                                          type:
+                                          - string
+                                          - 'null'
+                                      additionalProperties: false
                                   required:
                                   - recordId
                                   - petId
@@ -50969,6 +51339,7 @@ paths:
                                   - details
                                   - createdAt
                                   - updatedAt
+                                  - display
                               pagination:
                                 type: object
                                 properties:
@@ -51073,6 +51444,23 @@ paths:
                                     updatedAt:
                                       type: string
                                       format: date-time
+                                    display:
+                                      type: object
+                                      description: List-only reference labels; null for missing, hard-deleted, closed or unavailable
+                                        references. Stored IDs remain unchanged. No contact fields.
+                                      required:
+                                      - recordedByName
+                                      - recordedByOrganizationName
+                                      properties:
+                                        recordedByName:
+                                          type:
+                                          - string
+                                          - 'null'
+                                        recordedByOrganizationName:
+                                          type:
+                                          - string
+                                          - 'null'
+                                      additionalProperties: false
                                   required:
                                   - recordId
                                   - petId
@@ -51083,6 +51471,7 @@ paths:
                                   - details
                                   - createdAt
                                   - updatedAt
+                                  - display
                               pagination:
                                 type: object
                                 properties:
@@ -51193,6 +51582,23 @@ paths:
                                     updatedAt:
                                       type: string
                                       format: date-time
+                                    display:
+                                      type: object
+                                      description: List-only reference labels; null for missing, hard-deleted, closed or unavailable
+                                        references. Stored IDs remain unchanged. No contact fields.
+                                      required:
+                                      - recordedByName
+                                      - recordedByOrganizationName
+                                      properties:
+                                        recordedByName:
+                                          type:
+                                          - string
+                                          - 'null'
+                                        recordedByOrganizationName:
+                                          type:
+                                          - string
+                                          - 'null'
+                                      additionalProperties: false
                                   required:
                                   - recordId
                                   - petId
@@ -51203,6 +51609,7 @@ paths:
                                   - details
                                   - createdAt
                                   - updatedAt
+                                  - display
                               pagination:
                                 type: object
                                 properties:
@@ -51222,7 +51629,23 @@ paths:
                           services:
                             type: object
                             properties:
-                              serviceRecords:
+                              pagination:
+                                type: object
+                                properties:
+                                  page:
+                                    type: number
+                                  limit:
+                                    type: number
+                                  total:
+                                    type: number
+                                  totalPages:
+                                    type: number
+                                required:
+                                - page
+                                - limit
+                                - total
+                                - totalPages
+                              records:
                                 type: array
                                 items:
                                   type: object
@@ -51241,14 +51664,19 @@ paths:
                                   - details
                                   - createdAt
                                   - updatedAt
+                                  - display
                                   properties:
-                                    serviceId: &id031
+                                    serviceId:
                                       type: string
-                                    petId: *id031
-                                    organizationId: *id031
-                                    accessAgreementId: *id031
-                                    service: *id031
-                                    occurredAt: &id032
+                                    petId:
+                                      type: string
+                                    organizationId:
+                                      type: string
+                                    accessAgreementId:
+                                      type: string
+                                    service:
+                                      type: string
+                                    occurredAt:
                                       type: string
                                       format: date-time
                                     completedAt:
@@ -51263,8 +51691,10 @@ paths:
                                       - accountClass
                                       - organizationId
                                       properties:
-                                        userId: *id031
-                                        accountClass: *id031
+                                        userId:
+                                          type: string
+                                        accountClass:
+                                          type: string
                                         organizationId:
                                           type:
                                           - string
@@ -51275,35 +51705,43 @@ paths:
                                       - in_progress
                                       - completed
                                       - cancelled
-                                    statusChangedAt: *id032
-                                    summary: *id031
+                                    statusChangedAt:
+                                      type: string
+                                      format: date-time
+                                    summary:
+                                      type: string
                                     details:
                                       type:
                                       - object
                                       - 'null'
                                       additionalProperties: true
                                       description: Validated client JSON object, at most 16 KiB and six levels deep.
-                                    createdAt: *id032
-                                    updatedAt: *id032
-                              pagination:
-                                type: object
-                                properties:
-                                  page:
-                                    type: number
-                                  limit:
-                                    type: number
-                                  total:
-                                    type: number
-                                  totalPages:
-                                    type: number
-                                required:
-                                - page
-                                - limit
-                                - total
-                                - totalPages
+                                    createdAt:
+                                      type: string
+                                      format: date-time
+                                    updatedAt:
+                                      type: string
+                                      format: date-time
+                                    display:
+                                      type: object
+                                      description: List-only reference labels; null for missing, hard-deleted, closed or unavailable
+                                        references. Stored IDs remain unchanged. No contact fields.
+                                      required:
+                                      - organizationName
+                                      - performedByName
+                                      properties:
+                                        organizationName:
+                                          type:
+                                          - string
+                                          - 'null'
+                                        performedByName:
+                                          type:
+                                          - string
+                                          - 'null'
+                                      additionalProperties: false
                             additionalProperties: true
                             required:
-                            - serviceRecords
+                            - records
                             - pagination
                     additionalProperties: true
                     required:
@@ -51637,6 +52075,23 @@ paths:
                             updatedAt:
                               type: string
                               format: date-time
+                            display:
+                              type: object
+                              description: List-only reference labels; null for missing, hard-deleted, closed or unavailable
+                                references. Stored IDs remain unchanged. No contact fields.
+                              required:
+                              - recordedByName
+                              - recordedByOrganizationName
+                              properties:
+                                recordedByName:
+                                  type:
+                                  - string
+                                  - 'null'
+                                recordedByOrganizationName:
+                                  type:
+                                  - string
+                                  - 'null'
+                              additionalProperties: false
                           required:
                           - recordId
                           - petId
@@ -51647,6 +52102,7 @@ paths:
                           - details
                           - createdAt
                           - updatedAt
+                          - display
                       pagination:
                         type: object
                         properties:
@@ -52360,6 +52816,23 @@ paths:
                             updatedAt:
                               type: string
                               format: date-time
+                            display:
+                              type: object
+                              description: List-only reference labels; null for missing, hard-deleted, closed or unavailable
+                                references. Stored IDs remain unchanged. No contact fields.
+                              required:
+                              - recordedByName
+                              - recordedByOrganizationName
+                              properties:
+                                recordedByName:
+                                  type:
+                                  - string
+                                  - 'null'
+                                recordedByOrganizationName:
+                                  type:
+                                  - string
+                                  - 'null'
+                              additionalProperties: false
                           required:
                           - recordId
                           - petId
@@ -52370,6 +52843,7 @@ paths:
                           - details
                           - createdAt
                           - updatedAt
+                          - display
                       pagination:
                         type: object
                         properties:
@@ -53076,6 +53550,23 @@ paths:
                             updatedAt:
                               type: string
                               format: date-time
+                            display:
+                              type: object
+                              description: List-only reference labels; null for missing, hard-deleted, closed or unavailable
+                                references. Stored IDs remain unchanged. No contact fields.
+                              required:
+                              - recordedByName
+                              - recordedByOrganizationName
+                              properties:
+                                recordedByName:
+                                  type:
+                                  - string
+                                  - 'null'
+                                recordedByOrganizationName:
+                                  type:
+                                  - string
+                                  - 'null'
+                              additionalProperties: false
                           required:
                           - recordId
                           - petId
@@ -53086,6 +53577,7 @@ paths:
                           - details
                           - createdAt
                           - updatedAt
+                          - display
                       pagination:
                         type: object
                         properties:
@@ -53751,6 +54243,23 @@ paths:
                             updatedAt:
                               type: string
                               format: date-time
+                            display:
+                              type: object
+                              description: List-only reference labels; null for missing, hard-deleted, closed or unavailable
+                                references. Stored IDs remain unchanged. No contact fields.
+                              required:
+                              - recordedByName
+                              - recordedByOrganizationName
+                              properties:
+                                recordedByName:
+                                  type:
+                                  - string
+                                  - 'null'
+                                recordedByOrganizationName:
+                                  type:
+                                  - string
+                                  - 'null'
+                              additionalProperties: false
                           required:
                           - recordId
                           - petId
@@ -53761,6 +54270,7 @@ paths:
                           - details
                           - createdAt
                           - updatedAt
+                          - display
                       pagination:
                         type: object
                         properties:
@@ -54364,14 +54874,19 @@ paths:
                           - details
                           - createdAt
                           - updatedAt
+                          - display
                           properties:
-                            serviceId: &id036
+                            serviceId:
                               type: string
-                            petId: *id036
-                            organizationId: *id036
-                            accessAgreementId: *id036
-                            service: *id036
-                            occurredAt: &id037
+                            petId:
+                              type: string
+                            organizationId:
+                              type: string
+                            accessAgreementId:
+                              type: string
+                            service:
+                              type: string
+                            occurredAt:
                               type: string
                               format: date-time
                             completedAt:
@@ -54386,8 +54901,10 @@ paths:
                               - accountClass
                               - organizationId
                               properties:
-                                userId: *id036
-                                accountClass: *id036
+                                userId:
+                                  type: string
+                                accountClass:
+                                  type: string
                                 organizationId:
                                   type:
                                   - string
@@ -54398,16 +54915,40 @@ paths:
                               - in_progress
                               - completed
                               - cancelled
-                            statusChangedAt: *id037
-                            summary: *id036
+                            statusChangedAt:
+                              type: string
+                              format: date-time
+                            summary:
+                              type: string
                             details:
                               type:
                               - object
                               - 'null'
                               additionalProperties: true
                               description: Validated client JSON object, at most 16 KiB and six levels deep.
-                            createdAt: *id037
-                            updatedAt: *id037
+                            createdAt:
+                              type: string
+                              format: date-time
+                            updatedAt:
+                              type: string
+                              format: date-time
+                            display:
+                              type: object
+                              description: List-only reference labels; null for missing, hard-deleted, closed or unavailable
+                                references. Stored IDs remain unchanged. No contact fields.
+                              required:
+                              - organizationName
+                              - performedByName
+                              properties:
+                                organizationName:
+                                  type:
+                                  - string
+                                  - 'null'
+                                performedByName:
+                                  type:
+                                  - string
+                                  - 'null'
+                              additionalProperties: false
                       pagination:
                         type: object
                         properties:
@@ -55081,6 +55622,23 @@ paths:
                             updatedAt:
                               type: string
                               format: date-time
+                            display:
+                              type: object
+                              description: List-only reference labels; null for missing, hard-deleted, closed or unavailable
+                                references. Stored IDs remain unchanged. No contact fields.
+                              required:
+                              - recordedByName
+                              - recordedByOrganizationName
+                              properties:
+                                recordedByName:
+                                  type:
+                                  - string
+                                  - 'null'
+                                recordedByOrganizationName:
+                                  type:
+                                  - string
+                                  - 'null'
+                              additionalProperties: false
                           required:
                           - recordId
                           - petId
@@ -55091,6 +55649,7 @@ paths:
                           - details
                           - createdAt
                           - updatedAt
+                          - display
                       pagination:
                         type: object
                         properties:
@@ -57081,6 +57640,23 @@ paths:
                             updatedAt:
                               type: string
                               format: date-time
+                            display:
+                              type: object
+                              description: List-only reference labels; null for missing, hard-deleted, closed or unavailable
+                                references. Stored IDs remain unchanged. No contact fields.
+                              required:
+                              - petName
+                              - ownerName
+                              properties:
+                                petName:
+                                  type:
+                                  - string
+                                  - 'null'
+                                ownerName:
+                                  type:
+                                  - string
+                                  - 'null'
+                              additionalProperties: false
                           required:
                           - ptagId
                           - tagCode
@@ -57094,6 +57670,7 @@ paths:
                           - revision
                           - createdAt
                           - updatedAt
+                          - display
                       pagination:
                         type: object
                         properties:
@@ -66516,6 +67093,23 @@ paths:
                             updatedAt:
                               type: string
                               format: date-time
+                            display:
+                              type: object
+                              description: List-only reference labels; null for missing, hard-deleted, closed or unavailable
+                                references. Stored IDs remain unchanged. No contact fields.
+                              required:
+                              - petName
+                              - organizationName
+                              properties:
+                                petName:
+                                  type:
+                                  - string
+                                  - 'null'
+                                organizationName:
+                                  type:
+                                  - string
+                                  - 'null'
+                              additionalProperties: false
                           required:
                           - agreementId
                           - requestId
@@ -66531,6 +67125,7 @@ paths:
                           - statusChangedAt
                           - createdAt
                           - updatedAt
+                          - display
                       pagination:
                         type: object
                         properties:
@@ -66838,6 +67433,28 @@ paths:
                             updatedAt:
                               type: string
                               format: date-time
+                            display:
+                              type: object
+                              description: List-only reference labels; null for missing, hard-deleted, closed or unavailable
+                                references. Stored IDs remain unchanged. No contact fields.
+                              required:
+                              - petName
+                              - decidingOrganizationName
+                              - decidedByName
+                              properties:
+                                petName:
+                                  type:
+                                  - string
+                                  - 'null'
+                                decidingOrganizationName:
+                                  type:
+                                  - string
+                                  - 'null'
+                                decidedByName:
+                                  type:
+                                  - string
+                                  - 'null'
+                              additionalProperties: false
                           required:
                           - consentId
                           - requestId
@@ -66850,6 +67467,7 @@ paths:
                           - decidedAt
                           - createdAt
                           - updatedAt
+                          - display
                       pagination:
                         type: object
                         properties:
@@ -67161,6 +67779,28 @@ paths:
                             updatedAt:
                               type: string
                               format: date-time
+                            display:
+                              type: object
+                              description: List-only reference labels; null for missing, hard-deleted, closed or unavailable
+                                references. Stored IDs remain unchanged. No contact fields.
+                              required:
+                              - petName
+                              - requestingOrganizationName
+                              - requesterName
+                              properties:
+                                petName:
+                                  type:
+                                  - string
+                                  - 'null'
+                                requestingOrganizationName:
+                                  type:
+                                  - string
+                                  - 'null'
+                                requesterName:
+                                  type:
+                                  - string
+                                  - 'null'
+                              additionalProperties: false
                           required:
                           - requestId
                           - petId
@@ -67173,6 +67813,7 @@ paths:
                           - statusChangedAt
                           - createdAt
                           - updatedAt
+                          - display
                       pagination:
                         type: object
                         properties:
@@ -71587,7 +72228,34 @@ paths:
                       ownershipEvents:
                         type: array
                         items:
-                          $ref: '#/components/schemas/PetOwnershipEvent'
+                          allOf:
+                          - $ref: '#/components/schemas/PetOwnershipEvent'
+                          - type: object
+                            required:
+                            - display
+                            properties:
+                              display:
+                                type: object
+                                description: List-only reference labels; null for missing, hard-deleted, closed or unavailable
+                                  references. Stored IDs remain unchanged. No contact fields.
+                                required:
+                                - fromPartyName
+                                - toPartyName
+                                - actorName
+                                properties:
+                                  fromPartyName:
+                                    type:
+                                    - string
+                                    - 'null'
+                                  toPartyName:
+                                    type:
+                                    - string
+                                    - 'null'
+                                  actorName:
+                                    type:
+                                    - string
+                                    - 'null'
+                                additionalProperties: false
                       pagination:
                         type: object
                         properties:
@@ -72948,6 +73616,23 @@ paths:
                             updatedAt:
                               type: string
                               format: date-time
+                            display:
+                              type: object
+                              description: List-only reference labels; null for missing, hard-deleted, closed or unavailable
+                                references. Stored IDs remain unchanged. No contact fields.
+                              required:
+                              - petName
+                              - ownerName
+                              properties:
+                                petName:
+                                  type:
+                                  - string
+                                  - 'null'
+                                ownerName:
+                                  type:
+                                  - string
+                                  - 'null'
+                              additionalProperties: false
                           required:
                           - ptagId
                           - tagCode
@@ -72961,6 +73646,7 @@ paths:
                           - revision
                           - createdAt
                           - updatedAt
+                          - display
                       pagination:
                         type: object
                         properties:

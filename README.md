@@ -4,6 +4,14 @@ Run `python -m http.server 8000` in this directory and open `http://localhost:80
 
 The reference describes 255 implemented operations. Printing-photo upload and response additions are preview-deployed; paid guest/user photo reads passed live verification. Four deferred routes and three preview/smoke routes are omitted. The contract covers subscriptions, placement sites, localized species/breed catalogs, public contacts, unified ownership events (including audited internal corrections), recovery image replacement and event-date filters, PTag location reports, and external adoption listings.
 
+## List display labels
+
+OpenAPI `2026-11-25.2` adds list display labels.
+The 28 affected lists return a `display` object with referenced names/codes. Missing or
+hard-deleted references return null labels while preserving stored IDs and parent rows.
+These labels do not grant related detail/contact access. Existing detail and mutation
+responses receive no new reference-name fields.
+
 ## Immutable order printing photos
 
 The approved per-unit printing-photo contract is documented directly in [openapi.yaml](openapi.yaml).
