@@ -24,6 +24,11 @@ orders for an account or grant permission to assign a tag to a pet.
 
 ## Public endpoints
 
+New-user creation requires both `givenName` and `familyName` for personal registration and
+organization/internal membership registration. Each name must contain 1-100 characters after
+text sanitization. Missing, null, blank, markup-only or oversized names return HTTP 400 before
+account creation. Existing nullable profiles and profile updates are unchanged.
+
 The reference marks these 24 operations with **[PUBLIC]** in endpoint titles and
 `x-public: true` in OpenAPI. Search **[PUBLIC]** to show only these operations.
 They require neither an account access JWT nor an API key. Login passwords, OTPs,

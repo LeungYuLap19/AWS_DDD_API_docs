@@ -3,7 +3,7 @@
 openapi: 3.1.0
 info:
   title: PetPetClub API
-  version: 2026-11-24.7
+  version: 2026-11-25.1
   description: The API documents 255 implemented HTTP operations. Printing-photo upload and response additions are
     preview-deployed on 2026-11-24; paid guest/user order and private PTag photo reads passed live verification. Paths, gateway credentials, request validation, and permission keys are checked against
     current source. Deferred and preview/smoke routes are omitted. Success responses document handler payload fields.
@@ -2530,6 +2530,8 @@ paths:
         Override grantKeys must exclude the selected default-policy baseline. Redundant grants return HTTP 422
         `iam.bootstrap.invalidPolicy`. Revokes must belong to the baseline; withdraw an extra grant by
         removing it from grantKeys.
+        Both givenName and familyName are required (1-100 characters each after sanitization).
+        Invalid names return 400 common.invalidBodyParams before account creation.
       security:
       - bearerAuth: []
         apiKeyAuth: []
@@ -3131,6 +3133,8 @@ paths:
         Override grantKeys must exclude the selected default-policy baseline. Redundant grants return HTTP 422
         `iam.bootstrap.invalidPolicy`. Revokes must belong to the baseline; withdraw an extra grant by
         removing it from grantKeys.
+        Both givenName and familyName are required (1-100 characters each after sanitization).
+        Invalid names return 400 common.invalidBodyParams before account creation.
       security:
       - bearerAuth: []
         apiKeyAuth: []
@@ -3767,9 +3771,10 @@ paths:
       summary: '[PUBLIC] Register User'
       operationId: R004
       x-public: true
-      description: Registers a personal account with exactly one email or phone and optional given and family names,
+      description: Registers a personal account with exactly one email or phone and required given and family names,
         then sends a login code to that destination. The account stays pending until the code is verified. Returns
-        the same 202 whether or not the identifier is already taken.
+        the same 202 whether or not the identifier is already taken. Both givenName and familyName must contain
+        1-100 characters after sanitization; missing, null, blank or markup-only names return 400 before account creation.
       security: []
       x-source-router: functions/iam-auth/src/router.ts
       responses:
@@ -77848,6 +77853,8 @@ components:
           minLength: 1
           maxLength: 500
       required:
+      - givenName
+      - familyName
       - role
       - permissionOverrides
       additionalProperties: false
@@ -78105,6 +78112,8 @@ components:
           minLength: 1
           maxLength: 500
       required:
+      - givenName
+      - familyName
       - email
       - password
       - role
@@ -78133,6 +78142,9 @@ components:
           type: string
           minLength: 1
           maxLength: 100
+      required:
+      - givenName
+      - familyName
       additionalProperties: false
     iam_auth_src_zodSchema_desktopRefreshBodySchema_ts_desktopRefreshBodySchema:
       type: object
