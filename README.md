@@ -2,7 +2,7 @@
 
 Run `python -m http.server 8000` in this directory and open `http://localhost:8000`, or use the [published GitHub Pages site](https://leungyulap19.github.io/AWS_DDD_API_docs/). Open [openapi.yaml](openapi.yaml) to save the contract for LLM tools and code generators. Choose an endpoint, fill its request fields on the left, and use **Send request** on the right. The preview follows those inputs and offers HTTP, Shell, Node, Ruby, and PHP examples. Success and error response structures are listed below the form. The specification uses OpenAPI 3.1 and YAML 1.2.
 
-The reference describes 255 implemented operations. Printing-photo upload and response additions are preview-deployed; paid guest/user photo reads passed live verification. Four deferred routes and three preview/smoke routes are omitted. The contract covers subscriptions, placement sites, localized species/breed catalogs, public contacts, unified ownership events (including audited internal corrections), recovery image replacement and event-date filters, PTag location reports, and external adoption listings.
+The reference describes 248 implemented operations. Printing-photo upload and response additions are preview-deployed; paid guest/user photo reads passed live verification. Four deferred routes and three preview/smoke routes are omitted. The contract covers subscriptions, placement sites, localized species/breed catalogs, public contacts, unified ownership events (including audited internal corrections), recovery image replacement and event-date filters, PTag location reports, and external adoption listings.
 
 ## List display labels
 
@@ -91,7 +91,7 @@ discarded, with no asset ID or order attachment. Pass the returned `matchedShopC
 
 ## Organization pet management list
 
-Use `GET /organizations/{organizationId}/pets?view=management&sortBy=nextDewormDueDate&sortOrder=asc&page=1&limit=7`
+Use `GET /pets?ownerType=organization&ownerId={organizationId}&view=management&sortBy=nextDewormDueDate&sortOrder=asc&page=1&limit=7`
 for a page-at-a-time management table. Omitting `view` preserves the existing summary list.
 The management view adds `organizationPetNumber`, `nextDewormDueDate`, `sterilization`, and a
 five-minute `coverUrl`. It applies search, filters and sorting before pagination and returns
