@@ -11276,6 +11276,18 @@ paths:
       x-permission-keys:
       - support.bug_report.list_all
       parameters:
+      - name: sortBy
+        in: query
+        schema:
+          type: string
+          enum: [createdAt, submittedAt, updatedAt, status]
+          default: createdAt
+      - name: sortOrder
+        in: query
+        schema:
+          type: string
+          enum: [asc, desc]
+          default: desc
       - name: page
         in: query
         required: false
@@ -74442,6 +74454,22 @@ paths:
       - device.device.list_any
       - device.device.list
       parameters:
+      - name: enabled
+        in: query
+        schema:
+          type: boolean
+      - name: sortBy
+        in: query
+        schema:
+          type: string
+          enum: [updatedAt, createdAt, lastSeenAt, deviceId]
+          default: updatedAt
+      - name: sortOrder
+        in: query
+        schema:
+          type: string
+          enum: [asc, desc]
+          default: desc
       - name: ownerType
         in: query
         required: true
