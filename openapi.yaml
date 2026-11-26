@@ -7018,6 +7018,32 @@ paths:
         5XX:
           $ref: '#/components/responses/ServerError'
       parameters:
+      - name: search
+        in: query
+        required: false
+        description: Case-insensitive literal substring of the public shop name.
+        schema:
+          type: string
+          maxLength: 100
+      - name: sortBy
+        in: query
+        required: false
+        description: Omit to retain the directory's existing order.
+        schema:
+          type: string
+          enum:
+          - shopName
+          - shopCode
+      - name: sortOrder
+        in: query
+        required: false
+        description: Applies when sortBy is supplied.
+        schema:
+          type: string
+          default: desc
+          enum:
+          - asc
+          - desc
       - name: page
         in: query
         required: false
@@ -7634,6 +7660,20 @@ paths:
       - commerce.order.list_any
       - commerce.order.list
       parameters:
+      - name: createdAtFrom
+        in: query
+        required: false
+        description: Inclusive creation-time lower bound. Supply an offset or UTC, and do not exceed createdAtTo.
+        schema:
+          type: string
+          format: date-time
+      - name: createdAtTo
+        in: query
+        required: false
+        description: Inclusive creation-time upper bound. Supply an offset or UTC.
+        schema:
+          type: string
+          format: date-time
       - name: userId
         in: query
         required: false
@@ -52561,6 +52601,14 @@ paths:
       - commerce.ptag.list_any
       - commerce.ptag.list
       parameters:
+      - name: kind
+        in: query
+        required: false
+        schema:
+          type: string
+          enum:
+          - ptag
+          - ptag_air
       - name: ownerType
         in: query
         required: false
@@ -67549,6 +67597,53 @@ paths:
       - bearerAuth: []
         apiKeyAuth: []
       x-source-router: functions/commerce-subscriptions/src/router.ts
+      parameters:
+      - name: search
+        in: query
+        required: false
+        description: Case-insensitive literal substring of the promo code.
+        schema:
+          type: string
+          maxLength: 100
+      - name: active
+        in: query
+        required: false
+        description: Filter by the stored active flag. Omit to include both values.
+        schema:
+          type: boolean
+      - name: expiresAtFrom
+        in: query
+        required: false
+        description: Inclusive expiry lower bound. Supply an offset or UTC, and do not exceed expiresAtTo.
+        schema:
+          type: string
+          format: date-time
+      - name: expiresAtTo
+        in: query
+        required: false
+        description: Inclusive expiry upper bound. Supply an offset or UTC.
+        schema:
+          type: string
+          format: date-time
+      - name: sortBy
+        in: query
+        required: false
+        schema:
+          type: string
+          default: createdAt
+          enum:
+          - code
+          - createdAt
+          - expiresAt
+      - name: sortOrder
+        in: query
+        required: false
+        schema:
+          type: string
+          default: desc
+          enum:
+          - asc
+          - desc
       responses:
         '200':
           description: List Promo Codes succeeded.
