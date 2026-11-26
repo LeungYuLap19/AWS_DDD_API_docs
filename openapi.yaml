@@ -39114,6 +39114,16 @@ paths:
       - bearerAuth: []
         apiKeyAuth: []
       parameters:
+      - name: receivedAtFrom
+        in: query
+        schema:
+          type: string
+          format: date-time
+      - name: receivedAtTo
+        in: query
+        schema:
+          type: string
+          format: date-time
       - name: petId
         in: path
         required: true
@@ -46616,6 +46626,13 @@ paths:
         5XX:
           $ref: '#/components/responses/ServerError'
       parameters:
+      - name: sortOrder
+        in: query
+        description: Applies to clinical sections only. Services retain their existing order.
+        schema:
+          type: string
+          enum: [asc, desc]
+          default: desc
       - name: petId
         in: path
         required: true
@@ -46953,6 +46970,24 @@ paths:
       - pet.blood_test_record.list_any
       - pet.blood_test_record.list
       parameters:
+      - name: occurredFrom
+        in: query
+        description: Inclusive occurrence day. Timestamp records use UTC; date-only records use the stored calendar date.
+        schema:
+          type: string
+          format: date
+      - name: occurredTo
+        in: query
+        description: Inclusive occurrence day. Timestamp records use UTC; date-only records use the stored calendar date.
+        schema:
+          type: string
+          format: date
+      - name: sortOrder
+        in: query
+        schema:
+          type: string
+          enum: [asc, desc]
+          default: desc
       - name: petId
         in: path
         required: true
@@ -47647,6 +47682,24 @@ paths:
       - pet.deworm_record.list_any
       - pet.deworm_record.list
       parameters:
+      - name: occurredFrom
+        in: query
+        description: Inclusive occurrence day. Timestamp records use UTC; date-only records use the stored calendar date.
+        schema:
+          type: string
+          format: date
+      - name: occurredTo
+        in: query
+        description: Inclusive occurrence day. Timestamp records use UTC; date-only records use the stored calendar date.
+        schema:
+          type: string
+          format: date
+      - name: sortOrder
+        in: query
+        schema:
+          type: string
+          enum: [asc, desc]
+          default: desc
       - name: petId
         in: path
         required: true
@@ -48372,6 +48425,24 @@ paths:
       - pet.medical_record.list_any
       - pet.medical_record.list
       parameters:
+      - name: occurredFrom
+        in: query
+        description: Inclusive occurrence day. Timestamp records use UTC; date-only records use the stored calendar date.
+        schema:
+          type: string
+          format: date
+      - name: occurredTo
+        in: query
+        description: Inclusive occurrence day. Timestamp records use UTC; date-only records use the stored calendar date.
+        schema:
+          type: string
+          format: date
+      - name: sortOrder
+        in: query
+        schema:
+          type: string
+          enum: [asc, desc]
+          default: desc
       - name: petId
         in: path
         required: true
@@ -49049,6 +49120,24 @@ paths:
       - pet.medication_record.list_any
       - pet.medication_record.list
       parameters:
+      - name: occurredFrom
+        in: query
+        description: Inclusive occurrence day. Timestamp records use UTC; date-only records use the stored calendar date.
+        schema:
+          type: string
+          format: date
+      - name: occurredTo
+        in: query
+        description: Inclusive occurrence day. Timestamp records use UTC; date-only records use the stored calendar date.
+        schema:
+          type: string
+          format: date
+      - name: sortOrder
+        in: query
+        schema:
+          type: string
+          enum: [asc, desc]
+          default: desc
       - name: petId
         in: path
         required: true
@@ -49721,6 +49810,22 @@ paths:
       - pet.service_record.list_any
       - pet.service_record.list
       parameters:
+      - name: occurredFrom
+        in: query
+        schema:
+          type: string
+          format: date-time
+      - name: occurredTo
+        in: query
+        schema:
+          type: string
+          format: date-time
+      - name: sortOrder
+        in: query
+        schema:
+          type: string
+          enum: [asc, desc]
+          default: desc
       - name: petId
         in: path
         required: true
@@ -50411,6 +50516,24 @@ paths:
       - pet.vaccine_record.list_any
       - pet.vaccine_record.list
       parameters:
+      - name: occurredFrom
+        in: query
+        description: Inclusive occurrence day. Timestamp records use UTC; date-only records use the stored calendar date.
+        schema:
+          type: string
+          format: date
+      - name: occurredTo
+        in: query
+        description: Inclusive occurrence day. Timestamp records use UTC; date-only records use the stored calendar date.
+        schema:
+          type: string
+          format: date
+      - name: sortOrder
+        in: query
+        schema:
+          type: string
+          enum: [asc, desc]
+          default: desc
       - name: petId
         in: path
         required: true
@@ -51110,6 +51233,23 @@ paths:
       - pet.recovery_case.list_any
       - pet.recovery_case.list
       parameters:
+      - name: status
+        in: query
+        schema:
+          type: string
+          enum: [active, resolved, withdrawn]
+      - name: sortBy
+        in: query
+        schema:
+          type: string
+          enum: [createdAt, occurredAt]
+          default: createdAt
+      - name: sortOrder
+        in: query
+        schema:
+          type: string
+          enum: [asc, desc]
+          default: desc
       - name: petId
         in: path
         required: true
@@ -70904,6 +71044,12 @@ paths:
       - pet.access_request.list_any
       - pet.access_request.list
       parameters:
+      - name: status
+        in: query
+        description: Effective request status; an elapsed pending request is expired.
+        schema:
+          type: string
+          enum: [pending, approved, declined, cancelled, expired]
       - name: userId
         in: query
         required: false
@@ -71551,6 +71697,11 @@ paths:
       - pet.access_consent.list_any
       - pet.access_consent.list
       parameters:
+      - name: decision
+        in: query
+        schema:
+          type: string
+          enum: [granted, declined]
       - name: userId
         in: query
         required: false
@@ -72175,6 +72326,12 @@ paths:
       - pet.access_agreement.list_any
       - pet.access_agreement.list
       parameters:
+      - name: status
+        in: query
+        description: Effective agreement status at request time.
+        schema:
+          type: string
+          enum: [scheduled, active, expired, revoked]
       - name: userId
         in: query
         required: false
@@ -74012,6 +74169,22 @@ paths:
       - pet.ownership_event.list_any
       - pet.ownership_event.list
       parameters:
+      - name: effectiveAtFrom
+        in: query
+        schema:
+          type: string
+          format: date-time
+      - name: effectiveAtTo
+        in: query
+        schema:
+          type: string
+          format: date-time
+      - name: sortOrder
+        in: query
+        schema:
+          type: string
+          enum: [asc, desc]
+          default: desc
       - name: petId
         in: query
         required: false
