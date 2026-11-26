@@ -3,7 +3,7 @@
 openapi: 3.1.0
 info:
   title: PetPetClub API
-  version: 2026-11-26.1
+  version: 2026-11-26.2
   description: The API documents 248 implemented HTTP operations. Printing-photo upload and response additions are
     preview-deployed on 2026-11-24; paid guest/user order and private PTag photo reads passed live verification. Paths, gateway credentials, request validation, and permission keys are checked against
     current source. Deferred and preview/smoke routes are omitted. Success responses document handler payload fields.
@@ -7060,6 +7060,339 @@ paths:
           minimum: 1
           maximum: 100
           default: 30
+    post:
+      tags:
+        - commerce-catalog
+      summary: Create Partner Shop
+      operationId: R282
+      description: Internal only. Shop codes are case-insensitively unique.
+      security:
+        - bearerAuth: []
+          apiKeyAuth: []
+      x-source-router: functions/commerce-catalog/src/router.ts
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - shopCode
+                - shopName
+                - price
+              properties:
+                shopCode:
+                  type: string
+                  minLength: 1
+                  maxLength: 64
+                  pattern: '^[A-Za-z0-9_-]+$'
+                shopName:
+                  type: string
+                  minLength: 1
+                  maxLength: 200
+                price:
+                  type: number
+                  minimum: 0
+                  maximum: 1000000
+                  description: PTag storefront item price in HKD.
+                shopAddress:
+                  type: string
+                  maxLength: 500
+                shopContact:
+                  type: string
+                  maxLength: 100
+                shopContactPerson:
+                  type: string
+                  maxLength: 200
+                bankName:
+                  type: string
+                  maxLength: 200
+                bankNumber:
+                  type: string
+                  maxLength: 100
+              additionalProperties: false
+      responses:
+        '201':
+          description: Create Partner Shop succeeded.
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - success
+                  - data
+                properties:
+                  success:
+                    const: true
+                  message:
+                    type: string
+                  requestId:
+                    type: string
+                  data:
+                    type: object
+                    required:
+                      - shopId
+                    properties:
+                      shopId:
+                        type: string
+                        pattern: '^[a-fA-F0-9]{24}$'
+        '400':
+          $ref: '#/components/responses/ClientError'
+        '401':
+          $ref: '#/components/responses/ClientError'
+        '403':
+          $ref: '#/components/responses/ClientError'
+        '409':
+          $ref: '#/components/responses/ClientError'
+        '429':
+          $ref: '#/components/responses/ClientError'
+        '500':
+          $ref: '#/components/responses/ServerError'
+      x-permission-keys:
+        - commerce.partner_shop.create
+  /commerce/discount-codes/{shopId}:
+    get:
+      tags:
+        - commerce-catalog
+      summary: Read Partner Shop
+      operationId: R283
+      description: 'Internal only. Returns full shop details, including bank fields when present.'
+      security:
+        - bearerAuth: []
+          apiKeyAuth: []
+      x-source-router: functions/commerce-catalog/src/router.ts
+      responses:
+        '200':
+          description: Read Partner Shop succeeded.
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - success
+                  - data
+                properties:
+                  success:
+                    const: true
+                  message:
+                    type: string
+                  requestId:
+                    type: string
+                  data:
+                    type: object
+                    required:
+                      - shopId
+                      - shopCode
+                      - shopName
+                      - price
+                    properties:
+                      shopId:
+                        type: string
+                        pattern: '^[a-fA-F0-9]{24}$'
+                      shopCode:
+                        type: string
+                        minLength: 1
+                        maxLength: 64
+                        pattern: '^[A-Za-z0-9_-]+$'
+                      shopName:
+                        type: string
+                        minLength: 1
+                        maxLength: 200
+                      price:
+                        type: number
+                        minimum: 0
+                        maximum: 1000000
+                        description: PTag storefront item price in HKD.
+                      shopAddress:
+                        type: string
+                        maxLength: 500
+                      shopContact:
+                        type: string
+                        maxLength: 100
+                      shopContactPerson:
+                        type: string
+                        maxLength: 200
+                      bankName:
+                        type: string
+                        maxLength: 200
+                      bankNumber:
+                        type: string
+                        maxLength: 100
+        '400':
+          $ref: '#/components/responses/ClientError'
+        '401':
+          $ref: '#/components/responses/ClientError'
+        '403':
+          $ref: '#/components/responses/ClientError'
+        '404':
+          $ref: '#/components/responses/ClientError'
+        '429':
+          $ref: '#/components/responses/ClientError'
+        '500':
+          $ref: '#/components/responses/ServerError'
+      x-permission-keys:
+        - commerce.partner_shop.read
+      parameters:
+        - name: shopId
+          in: path
+          required: true
+          schema:
+            type: string
+            pattern: '^[a-fA-F0-9]{24}$'
+    patch:
+      tags:
+        - commerce-catalog
+      summary: Update Partner Shop
+      operationId: R284
+      description: Internal only. Changes only the supplied fields.
+      security:
+        - bearerAuth: []
+          apiKeyAuth: []
+      x-source-router: functions/commerce-catalog/src/router.ts
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              minProperties: 1
+              additionalProperties: false
+              properties:
+                shopCode:
+                  type: string
+                  minLength: 1
+                  maxLength: 64
+                  pattern: '^[A-Za-z0-9_-]+$'
+                shopName:
+                  type: string
+                  minLength: 1
+                  maxLength: 200
+                price:
+                  type: number
+                  minimum: 0
+                  maximum: 1000000
+                  description: PTag storefront item price in HKD.
+                shopAddress:
+                  type: string
+                  maxLength: 500
+                shopContact:
+                  type: string
+                  maxLength: 100
+                shopContactPerson:
+                  type: string
+                  maxLength: 200
+                bankName:
+                  type: string
+                  maxLength: 200
+                bankNumber:
+                  type: string
+                  maxLength: 100
+      responses:
+        '200':
+          description: Update Partner Shop succeeded.
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - success
+                  - data
+                properties:
+                  success:
+                    const: true
+                  message:
+                    type: string
+                  requestId:
+                    type: string
+                  data:
+                    type: object
+                    required:
+                      - shopId
+                    properties:
+                      shopId:
+                        type: string
+                        pattern: '^[a-fA-F0-9]{24}$'
+        '400':
+          $ref: '#/components/responses/ClientError'
+        '401':
+          $ref: '#/components/responses/ClientError'
+        '403':
+          $ref: '#/components/responses/ClientError'
+        '404':
+          $ref: '#/components/responses/ClientError'
+        '409':
+          $ref: '#/components/responses/ClientError'
+        '429':
+          $ref: '#/components/responses/ClientError'
+        '500':
+          $ref: '#/components/responses/ServerError'
+      x-permission-keys:
+        - commerce.partner_shop.update
+      parameters:
+        - name: shopId
+          in: path
+          required: true
+          schema:
+            type: string
+            pattern: '^[a-fA-F0-9]{24}$'
+    delete:
+      tags:
+        - commerce-catalog
+      summary: Delete Partner Shop
+      operationId: R285
+      description: >-
+        Internal only. Removes the shop from future checkouts. Existing quotes and orders retain their saved
+        prices.
+      security:
+        - bearerAuth: []
+          apiKeyAuth: []
+      x-source-router: functions/commerce-catalog/src/router.ts
+      responses:
+        '200':
+          description: Delete Partner Shop succeeded.
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - success
+                  - data
+                properties:
+                  success:
+                    const: true
+                  message:
+                    type: string
+                  requestId:
+                    type: string
+                  data:
+                    type: object
+                    required:
+                      - shopId
+                    properties:
+                      shopId:
+                        type: string
+                        pattern: '^[a-fA-F0-9]{24}$'
+        '400':
+          $ref: '#/components/responses/ClientError'
+        '401':
+          $ref: '#/components/responses/ClientError'
+        '403':
+          $ref: '#/components/responses/ClientError'
+        '404':
+          $ref: '#/components/responses/ClientError'
+        '429':
+          $ref: '#/components/responses/ClientError'
+        '500':
+          $ref: '#/components/responses/ServerError'
+      x-permission-keys:
+        - commerce.partner_shop.delete
+      parameters:
+        - name: shopId
+          in: path
+          required: true
+          schema:
+            type: string
+            pattern: '^[a-fA-F0-9]{24}$'
   /commerce/discount-codes/verify:
     post:
       tags:
@@ -29981,7 +30314,7 @@ paths:
       operationId: R251
       x-public: true
       description: 'Public browse of external adoption listings, newest first. Matches the production list: rows from Arc
-        Dog Shelter, Tolobunny, and HKRABBIT and rows without images are hidden here but stay readable by ID. Filters take
+        Dog Shelter, Tolobunny, and HKRABBIT remain readable by ID but do not appear in the list. Images are optional. Filters take
         comma-separated values (max 20): `species` and `sex` use the normalized keys, `site` matches `siteName`, and `age`
         takes the month buckets 幼年 (<12), 青年 (12-36), 成年 (48-72), and 老年 (>84). `search` matches breed, species, or remark.
         Listings link to partner sites and are not in-system pets.'
@@ -59217,6 +59550,219 @@ paths:
         schema:
           type: string
           pattern: ^[a-fA-F0-9]{24}$
+  /subscriptions/payments:
+    get:
+      tags:
+        - commerce-subscriptions
+      summary: List Subscription Payments
+      operationId: R281
+      description: >-
+        Lists purchase attempts, not individual recurring charges. Personal subscribers must provide their own
+        userId and hold subscription.payment.list. Omit userId for internal subscription.payment.list_all.
+        Checkout secrets, billing contact details, and private provider references are excluded.
+      security:
+        - bearerAuth: []
+          apiKeyAuth: []
+      x-source-router: functions/commerce-subscriptions/src/router.ts
+      responses:
+        '200':
+          description: List Subscription Payments succeeded.
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - success
+                  - data
+                  - pagination
+                properties:
+                  success:
+                    const: true
+                  message:
+                    type: string
+                  requestId:
+                    type: string
+                  data:
+                    type: array
+                    items:
+                      type: object
+                      required:
+                        - purchaseId
+                        - userId
+                        - status
+                        - planCode
+                        - billingMode
+                        - amount
+                        - currency
+                        - merchantReference
+                        - paymentStatus
+                        - createdAt
+                        - updatedAt
+                      properties:
+                        purchaseId:
+                          type: string
+                          pattern: '^[a-fA-F0-9]{24}$'
+                        userId:
+                          type: string
+                          pattern: '^[a-fA-F0-9]{24}$'
+                        status:
+                          type: string
+                          enum:
+                            - awaiting_payment
+                            - active
+                            - cancel_requested
+                            - cancelled
+                            - failed
+                            - expired
+                        planCode:
+                          type: string
+                          enum:
+                            - basic
+                            - pro
+                            - travel
+                        billingMode:
+                          type: string
+                          enum:
+                            - one_time
+                            - recurring
+                        amount:
+                          type: string
+                          description: Original price as a decimal string.
+                        currency:
+                          const: HKD
+                        merchantReference:
+                          type:
+                            - string
+                            - 'null'
+                        paymentStatus:
+                          type:
+                            - string
+                            - 'null'
+                        createdAt:
+                          type: string
+                          format: date-time
+                        updatedAt:
+                          type: string
+                          format: date-time
+                  pagination:
+                    type: object
+                    required:
+                      - page
+                      - limit
+                      - total
+                      - totalPages
+                    properties:
+                      page:
+                        type: integer
+                        minimum: 1
+                      limit:
+                        type: integer
+                        minimum: 1
+                      total:
+                        type: integer
+                        minimum: 0
+                      totalPages:
+                        type: integer
+                        minimum: 0
+        '400':
+          $ref: '#/components/responses/ClientError'
+        '401':
+          $ref: '#/components/responses/ClientError'
+        '403':
+          $ref: '#/components/responses/ClientError'
+        '429':
+          $ref: '#/components/responses/ClientError'
+        '500':
+          $ref: '#/components/responses/ServerError'
+      x-permission-keys:
+        - subscription.payment.list
+        - subscription.payment.list_all
+      parameters:
+        - name: userId
+          in: query
+          required: false
+          description: Subscriber self scope. Omit for the global internal list.
+          schema:
+            type: string
+            pattern: '^[a-fA-F0-9]{24}$'
+        - name: page
+          in: query
+          required: false
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 1000
+            default: 1
+        - name: limit
+          in: query
+          required: false
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 50
+            default: 20
+        - name: status
+          in: query
+          required: false
+          schema:
+            type: string
+            enum:
+              - awaiting_payment
+              - active
+              - cancel_requested
+              - cancelled
+              - failed
+              - expired
+        - name: planCode
+          in: query
+          required: false
+          schema:
+            type: string
+            enum:
+              - basic
+              - pro
+              - travel
+        - name: billingMode
+          in: query
+          required: false
+          schema:
+            type: string
+            enum:
+              - one_time
+              - recurring
+        - name: createdAtFrom
+          in: query
+          required: false
+          description: Inclusive lower bound.
+          schema:
+            type: string
+            format: date-time
+        - name: createdAtTo
+          in: query
+          required: false
+          description: Inclusive upper bound.
+          schema:
+            type: string
+            format: date-time
+        - name: sortBy
+          in: query
+          required: false
+          schema:
+            type: string
+            enum:
+              - updatedAt
+              - createdAt
+              - status
+            default: updatedAt
+        - name: sortOrder
+          in: query
+          required: false
+          schema:
+            type: string
+            enum:
+              - asc
+              - desc
+            default: desc
   /subscriptions/plans:
     get:
       tags:
@@ -59224,7 +59770,7 @@ paths:
       summary: '[PUBLIC] List Plans'
       operationId: R159
       x-public: true
-      description: Public list of active subscription plans with their server-held prices, billing intervals, and
+      description: Public list of active subscription plans with plan document IDs, server-held prices, billing intervals, and
         feature limits. Purchases always reload the price from this catalog.
       security: []
       x-source-router: functions/commerce-subscriptions/src/router.ts
@@ -59248,14 +59794,30 @@ paths:
                     type: array
                     items:
                       type: object
+                      required:
+                        - planId
+                        - code
+                        - cameraLimit
+                        - aiModelSelectionLimit
+                        - petCapacity
+                        - videoRetentionDays
+                        - healthAlertContactLimit
+                        - features
+                        - priceHkd
+                        - intervalDays
+                        - annualPriceHkd
+                        - displayOrder
                       properties:
+                        planId:
+                          type: string
+                          pattern: '^[a-fA-F0-9]{24}$'
                         code:
                           type: string
                           enum:
-                          - basic
-                          - pro
-                          - travel
-                          - free
+                            - basic
+                            - pro
+                            - travel
+                            - free
                         cameraLimit:
                           type: number
                         aiModelSelectionLimit:
@@ -59271,91 +59833,57 @@ paths:
                           properties:
                             dailyBehaviorReminders:
                               oneOf:
-                              - type: boolean
-                                const: false
-                              - type: boolean
-                                const: true
+                                - type: boolean
+                                  const: false
+                                - type: boolean
+                                  const: true
                             behaviorTrendRecords:
                               oneOf:
-                              - type: boolean
-                                const: false
-                              - type: boolean
-                                const: true
+                                - type: boolean
+                                  const: false
+                                - type: boolean
+                                  const: true
                             userPrivacyProtection:
                               oneOf:
-                              - type: boolean
-                                const: false
-                              - type: boolean
-                                const: true
+                                - type: boolean
+                                  const: false
+                                - type: boolean
+                                  const: true
                             dailyHighlight:
                               oneOf:
-                              - type: boolean
-                                const: false
-                              - type: boolean
-                                const: true
+                                - type: boolean
+                                  const: false
+                                - type: boolean
+                                  const: true
                             healthAlerts:
                               oneOf:
-                              - type: boolean
-                                const: false
-                              - type: boolean
-                                const: true
+                                - type: boolean
+                                  const: false
+                                - type: boolean
+                                  const: true
                             additionalAiModelAvailable:
                               oneOf:
-                              - type: boolean
-                                const: false
-                              - type: boolean
-                                const: true
+                                - type: boolean
+                                  const: false
+                                - type: boolean
+                                  const: true
                           required:
-                          - dailyBehaviorReminders
-                          - behaviorTrendRecords
-                          - userPrivacyProtection
-                          - dailyHighlight
-                          - healthAlerts
-                          - additionalAiModelAvailable
+                            - dailyBehaviorReminders
+                            - behaviorTrendRecords
+                            - userPrivacyProtection
+                            - dailyHighlight
+                            - healthAlerts
+                            - additionalAiModelAvailable
                         priceHkd:
                           type: number
                         intervalDays:
                           type: number
                         annualPriceHkd:
                           type:
-                          - number
-                          - 'null'
-                        active:
-                          oneOf:
-                          - type: boolean
-                            const: false
-                          - type: boolean
-                            const: true
+                            - number
+                            - 'null'
                         displayOrder:
                           type: number
-                        createdAt:
-                          type: string
-                          format: date-time
-                        updatedAt:
-                          type: string
-                          format: date-time
-                        schemaVersion:
-                          type: number
-                        _id:
-                          type: string
-                          description: MongoDB ObjectId.
-                      required:
-                      - code
-                      - cameraLimit
-                      - aiModelSelectionLimit
-                      - petCapacity
-                      - videoRetentionDays
-                      - healthAlertContactLimit
-                      - features
-                      - priceHkd
-                      - intervalDays
-                      - annualPriceHkd
-                      - active
-                      - displayOrder
-                      - createdAt
-                      - updatedAt
-                      - schemaVersion
-                      - _id
                 additionalProperties: true
         '400':
           description: 'HTTP 400. Possible error keys: common.invalidQueryParams.'
@@ -59671,6 +60199,161 @@ paths:
             schema:
               $ref: '#/components/schemas/commerce_subscriptions_src_zodSchema_planSchemas_ts_createPlanBodySchema'
   /subscriptions/plans/{planId}:
+    get:
+      tags:
+        - commerce-subscriptions
+      summary: Read Plan
+      operationId: R280
+      description: Internal detail by plan document ID. Includes inactive plans.
+      security:
+        - bearerAuth: []
+          apiKeyAuth: []
+      x-source-router: functions/commerce-subscriptions/src/router.ts
+      responses:
+        '200':
+          description: Read Plan succeeded.
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - success
+                  - data
+                properties:
+                  success:
+                    const: true
+                  message:
+                    type: string
+                  requestId:
+                    type: string
+                  data:
+                    type: object
+                    required:
+                      - planId
+                      - code
+                      - cameraLimit
+                      - aiModelSelectionLimit
+                      - petCapacity
+                      - videoRetentionDays
+                      - healthAlertContactLimit
+                      - features
+                      - priceHkd
+                      - intervalDays
+                      - annualPriceHkd
+                      - active
+                      - displayOrder
+                      - createdAt
+                      - updatedAt
+                    properties:
+                      planId:
+                        type: string
+                        pattern: '^[a-fA-F0-9]{24}$'
+                      code:
+                        type: string
+                        enum:
+                          - basic
+                          - pro
+                          - travel
+                          - free
+                      cameraLimit:
+                        type: number
+                      aiModelSelectionLimit:
+                        type: number
+                      petCapacity:
+                        type: number
+                      videoRetentionDays:
+                        type: number
+                      healthAlertContactLimit:
+                        type: number
+                      features:
+                        type: object
+                        properties:
+                          dailyBehaviorReminders:
+                            oneOf:
+                              - type: boolean
+                                const: false
+                              - type: boolean
+                                const: true
+                          behaviorTrendRecords:
+                            oneOf:
+                              - type: boolean
+                                const: false
+                              - type: boolean
+                                const: true
+                          userPrivacyProtection:
+                            oneOf:
+                              - type: boolean
+                                const: false
+                              - type: boolean
+                                const: true
+                          dailyHighlight:
+                            oneOf:
+                              - type: boolean
+                                const: false
+                              - type: boolean
+                                const: true
+                          healthAlerts:
+                            oneOf:
+                              - type: boolean
+                                const: false
+                              - type: boolean
+                                const: true
+                          additionalAiModelAvailable:
+                            oneOf:
+                              - type: boolean
+                                const: false
+                              - type: boolean
+                                const: true
+                        required:
+                          - dailyBehaviorReminders
+                          - behaviorTrendRecords
+                          - userPrivacyProtection
+                          - dailyHighlight
+                          - healthAlerts
+                          - additionalAiModelAvailable
+                      priceHkd:
+                        type: number
+                      intervalDays:
+                        type: number
+                      annualPriceHkd:
+                        type:
+                          - number
+                          - 'null'
+                      active:
+                        oneOf:
+                          - type: boolean
+                            const: false
+                          - type: boolean
+                            const: true
+                      displayOrder:
+                        type: number
+                      createdAt:
+                        type: string
+                        format: date-time
+                      updatedAt:
+                        type: string
+                        format: date-time
+        '400':
+          $ref: '#/components/responses/ClientError'
+        '401':
+          $ref: '#/components/responses/ClientError'
+        '403':
+          $ref: '#/components/responses/ClientError'
+        '404':
+          $ref: '#/components/responses/ClientError'
+        '429':
+          $ref: '#/components/responses/ClientError'
+        '500':
+          $ref: '#/components/responses/ServerError'
+      x-permission-keys:
+        - subscription.plan.read
+      parameters:
+        - name: planId
+          in: path
+          required: true
+          schema:
+            type: string
+            pattern: '^[a-fA-F0-9]{24}$'
     delete:
       tags:
       - commerce-subscriptions
