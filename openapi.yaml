@@ -1419,6 +1419,11 @@ paths:
           type: string
           maxLength: 120
           pattern: ^[a-z][a-z0-9_.]*$
+      - name: operationClass
+        in: query
+        schema:
+          type: string
+          enum: [iam, security, sensitive_access]
       - name: actorUserId
         in: query
         required: false
@@ -19601,7 +19606,10 @@ paths:
       - name: search
         in: query
         required: false
-        schema: &id086 {}
+        description: Literal case-insensitive match on display name, legal name, or short name.
+        schema: &id086
+          type: string
+          maxLength: 100
       - name: type
         in: query
         required: false
