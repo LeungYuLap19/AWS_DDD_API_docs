@@ -3,8 +3,8 @@
 openapi: 3.1.0
 info:
   title: PetPetClub API
-  version: 2026-11-27.1
-  description: The API documents 254 implemented HTTP operations. Printing-photo upload and response additions are
+  version: 2026-11-27.2
+  description: The API documents 255 implemented HTTP operations. Printing-photo upload and response additions are
     preview-deployed on 2026-11-24; paid guest/user order and private PTag photo reads passed live verification. Paths, gateway credentials, request validation, and permission keys are checked against
     current source. Deferred and preview/smoke routes are omitted. Success responses document handler payload fields.
     Each documented HTTP error status lists the stable errorKey values emitted by the reachable handler and validation
@@ -59547,6 +59547,69 @@ paths:
         schema:
           type: string
           pattern: ^[a-fA-F0-9]{24}$
+  '/subscriptions/payments/{purchaseId}':
+    get:
+      tags:
+        - commerce-subscriptions
+      summary: Read Subscription Payment
+      operationId: R286
+      description: >-
+        Reads one subscription purchase by the purchaseId returned by the payment list. Requires
+        subscription.payment.read for the personal subscriber or subscription.payment.read_any for internal
+        access. IAM resolves the detail key before the purchase lookup; shared Reach checks the stored
+        ownerUserId. Missing and foreign purchases both return 404. List and entitlement-read grants do not
+        authorize this route. Returns original purchase terms and safe lifecycle fields only. Excludes checkout
+        capabilities, action URLs, customer contacts/IPs, idempotency keys and private provider references. Does
+        not query the payment provider or change entitlement. Accepts no query parameters or request body.
+      security:
+        - bearerAuth: []
+          apiKeyAuth: []
+      x-source-router: functions/commerce-subscriptions/src/router.ts
+      x-permission-keys:
+        - subscription.payment.read_any
+        - subscription.payment.read
+      parameters:
+        - name: purchaseId
+          in: path
+          required: true
+          schema:
+            type: string
+            pattern: '^[a-fA-F0-9]{24}$'
+      responses:
+        '200':
+          description: Subscription purchase detail retrieved.
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - success
+                  - data
+                properties:
+                  success:
+                    const: true
+                  message:
+                    type: string
+                  requestId:
+                    type: string
+                  data:
+                    $ref: '#/components/schemas/SubscriptionPaymentDetail'
+        '400':
+          $ref: '#/components/responses/ClientError'
+        '401':
+          $ref: '#/components/responses/ClientError'
+        '403':
+          $ref: '#/components/responses/ClientError'
+        '404':
+          description: Purchase missing or unreachable; errorKey subscription.errors.paymentNotFound.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorEnvelope'
+        '429':
+          $ref: '#/components/responses/ClientError'
+        '500':
+          $ref: '#/components/responses/ServerError'
   /subscriptions/payments:
     get:
       tags:
@@ -76671,6 +76734,189 @@ components:
       schema:
         type: string
   schemas:
+    SubscriptionPaymentDetail:
+      type: object
+      additionalProperties: false
+      required:
+        - purchaseId
+        - userId
+        - status
+        - planCode
+        - billingMode
+        - amount
+        - currency
+        - merchantReference
+        - paymentStatus
+        - createdAt
+        - updatedAt
+        - statusChangedAt
+        - lifecyclePhase
+        - expiresAt
+        - replacementOfPurchaseId
+        - replacementType
+        - intervalDays
+        - planSnapshot
+        - paymentRequestedAt
+        - paymentResultAt
+        - cancellation
+      properties:
+        purchaseId:
+          type: string
+          pattern: '^[a-fA-F0-9]{24}$'
+        userId:
+          type: string
+          pattern: '^[a-fA-F0-9]{24}$'
+        status:
+          type: string
+          enum:
+            - awaiting_payment
+            - active
+            - cancel_requested
+            - cancelled
+            - failed
+            - expired
+        planCode:
+          type: string
+          enum:
+            - basic
+            - pro
+            - travel
+        billingMode:
+          type: string
+          enum:
+            - one_time
+            - recurring
+        amount:
+          type: string
+          description: Original agreed price as a decimal string.
+        currency:
+          const: HKD
+        merchantReference:
+          type:
+            - string
+            - 'null'
+        paymentStatus:
+          type:
+            - string
+            - 'null'
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+        statusChangedAt:
+          type:
+            - string
+            - 'null'
+          format: date-time
+        lifecyclePhase:
+          type:
+            - string
+            - 'null'
+          enum:
+            - tokenization_pending
+            - tokenization_succeeded
+            - schedule_pending
+            - active_auto_renewal
+            - action_required
+            - cancel_requested
+            - cancelled
+            - completed
+            - re_enrollment_required
+            - null
+        expiresAt:
+          type:
+            - string
+            - 'null'
+          format: date-time
+        replacementOfPurchaseId:
+          type:
+            - string
+            - 'null'
+          pattern: '^[a-fA-F0-9]{24}$'
+        replacementType:
+          type:
+            - string
+            - 'null'
+          enum:
+            - upgrade
+            - downgrade
+            - null
+        intervalDays:
+          type: integer
+        planSnapshot:
+          type:
+            - object
+            - 'null'
+          additionalProperties: false
+          required:
+            - code
+            - priceHkd
+            - intervalDays
+            - annualPriceHkd
+            - subject
+          properties:
+            code:
+              type:
+                - string
+                - 'null'
+            priceHkd:
+              type:
+                - number
+                - 'null'
+            intervalDays:
+              type:
+                - integer
+                - 'null'
+            annualPriceHkd:
+              type:
+                - number
+                - 'null'
+            subject:
+              type:
+                - string
+                - 'null'
+        paymentRequestedAt:
+          type:
+            - string
+            - 'null'
+          format: date-time
+        paymentResultAt:
+          type:
+            - string
+            - 'null'
+          format: date-time
+        cancellation:
+          type:
+            - object
+            - 'null'
+          additionalProperties: false
+          required:
+            - reason
+            - requestedAt
+            - accessEndsAt
+            - confirmedAt
+          properties:
+            reason:
+              type:
+                - string
+                - 'null'
+            requestedAt:
+              type:
+                - string
+                - 'null'
+              format: date-time
+            accessEndsAt:
+              type:
+                - string
+                - 'null'
+              format: date-time
+            confirmedAt:
+              type:
+                - string
+                - 'null'
+              format: date-time
     PetOrganizationStatusKey:
       type: string
       enum:

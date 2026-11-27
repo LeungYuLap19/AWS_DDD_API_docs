@@ -2,7 +2,16 @@
 
 Run `python -m http.server 8000` in this directory and open `http://localhost:8000`, or use the [published GitHub Pages site](https://leungyulap19.github.io/AWS_DDD_API_docs/). Open [openapi.yaml](openapi.yaml) to save the contract for LLM tools and code generators. Choose an endpoint, fill its request fields on the left, and use **Send request** on the right. The preview follows those inputs and offers HTTP, Shell, Node, Ruby, and PHP examples. Success and error response structures are listed below the form. The specification uses OpenAPI 3.1 and YAML 1.2.
 
-The reference describes 254 implemented operations across 181 paths. Printing-photo upload and response additions are preview-deployed; paid guest/user photo reads passed live verification. Four deferred routes and three preview/smoke routes are omitted. The contract covers subscriptions, placement sites, localized species/breed catalogs, public contacts, unified ownership events (including audited internal corrections), recovery image replacement and event-date filters, PTag location reports, and external adoption listings.
+The reference describes 255 implemented operations across 182 paths. Printing-photo upload and response additions are preview-deployed; paid guest/user photo reads passed live verification. Four deferred routes and three preview/smoke routes are omitted. The contract covers subscriptions, placement sites, localized species/breed catalogs, public contacts, unified ownership events (including audited internal corrections), recovery image replacement and event-date filters, PTag location reports, and external adoption listings.
+
+`GET /subscriptions/payments/{purchaseId}` reads a purchase listed by the subscription-payment directory.
+It requires independent `subscription.payment.read` for the personal subscriber or internal
+`subscription.payment.read_any`. Missing and foreign purchases both return 404. The response exposes
+original purchase terms and safe lifecycle fields, excluding checkout capabilities, customer contacts,
+idempotency keys and private provider references. It does not list individual renewal charges or
+replace the merchant-reference checkout-status route. SG development permission reconciliation
+applied two definitions and three policy updates; a repeat found zero changes. Live endpoint
+verification remains pending.
 
 ## List display labels
 
