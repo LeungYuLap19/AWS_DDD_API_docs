@@ -18606,7 +18606,7 @@ paths:
       operationId: R199
       description: 'Internal fulfillment: creates the SF Express shipment and label for a paid physical order and
         marks it shipped. Order state and idempotency are checked, so a repeated call does not create a second shipment.
-        Provide attrName and netCode together for pickup, or omit both for address delivery. Staff can review the saved buyer selection before submitting. After an explicit SF rejection with no waybill, correct the pair and use a new idempotency key. For ambiguous failures, retry the original request.'
+        Send netCode for pickup or omit it for address delivery. Staff can use the buyer''s saved pickup code or enter a corrected code. The Lambda sets the SF attribute to Residential. After an explicit SF rejection with no waybill, correct the code and use a new idempotency key. For ambiguous failures, retry the original request.'
       security:
       - bearerAuth: []
         apiKeyAuth: []
@@ -78216,18 +78216,11 @@ components:
           minLength: 1
           maxLength: 128
           pattern: ^[A-Za-z0-9._:-]+$
-        attrName:
-          type: string
-          minLength: 1
-          maxLength: 200
         netCode:
           type: string
           minLength: 1
           maxLength: 64
           pattern: ^[A-Za-z0-9_-]+$
-      dependentRequired:
-        attrName: [netCode]
-        netCode: [attrName]
       required:
       - idempotencyKey
       additionalProperties: false
