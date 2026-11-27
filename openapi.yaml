@@ -6027,7 +6027,9 @@ paths:
         and order routes (`x-checkout-token`). Preview-deployed; atomically copy quote-owned
         itemCustomizations into the order. Do not submit asset IDs or itemCustomizations in the JSON body; attachments
         cannot be replaced or cleared. After payment, guest confirmation emails wait for issued PTags
-        and include their codes, short links and QR images, as authenticated purchase emails do.'
+        and include their codes, short links and QR images, as authenticated purchase emails do.
+        Where enabled, send shipping.pickup.netCode instead of address fields for SF Express pickup in Hong Kong.
+        The server verifies the pickup point before saving the order or consuming the quote.'
       security:
       - checkoutToken: []
       x-source-router: functions/commerce-orders/src/router.ts
@@ -6263,6 +6265,12 @@ paths:
                     success: false
                     errorKey: orders.errors.quoteExpired
                     error: The checkout quote has expired.
+        '422':
+          $ref: '#/components/responses/SfPickupIneligible'
+        '502':
+          $ref: '#/components/responses/SfPickupUnavailable'
+        '503':
+          $ref: '#/components/responses/SfPickupDisabled'
         '429':
           description: 'HTTP 429. Possible error keys: common.rateLimited.'
           content:
@@ -18603,7 +18611,8 @@ paths:
       summary: Ship Order
       operationId: R199
       description: 'Internal fulfillment: creates the SF Express shipment and label for a paid physical order and
-        marks it shipped. Order state and idempotency are checked, so a repeated call does not create a second shipment.'
+        marks it shipped. Order state and idempotency are checked, so a repeated call does not create a second shipment.
+        Pickup details come from the saved order. Do not send a pickup code or carrier attribute in this request.'
       security:
       - bearerAuth: []
         apiKeyAuth: []
@@ -18649,7 +18658,7 @@ paths:
                 additionalProperties: true
         '400':
           description: 'HTTP 400. Possible error keys: common.invalidBodyParams, common.invalidPathParam, common.invalidQueryParams,
-            common.missingBodyParams, logistics.validation.pickupMetadataPairRequired.'
+            common.missingBodyParams.'
           content:
             application/json:
               schema:
@@ -18668,7 +18677,6 @@ paths:
                     - common.invalidPathParam
                     - common.invalidQueryParams
                     - common.missingBodyParams
-                    - logistics.validation.pickupMetadataPairRequired
                     description: Stable key for frontend handling; error text is localized.
                   error:
                     type: string
@@ -18704,12 +18712,6 @@ paths:
                     success: false
                     errorKey: common.missingBodyParams
                     error: Missing required request body parameters
-                logistics_validation_pickupMetadataPairRequired:
-                  summary: logistics.validation.pickupMetadataPairRequired
-                  value:
-                    success: false
-                    errorKey: logistics.validation.pickupMetadataPairRequired
-                    error: attrName and netCode must be provided together
         '401':
           description: 'HTTP 401. Possible error keys: common.unauthorized.'
           content:
@@ -18815,7 +18817,8 @@ paths:
                     error: Order not found
         '409':
           description: 'HTTP 409. Possible error keys: logistics.invalidShipmentState, logistics.orderAlreadyShipped,
-            logistics.orderNotReadyToShip, logistics.shippingIdempotencyConflict, logistics.shippingInProgress.'
+            logistics.orderNotReadyToShip, logistics.pickupNotConfigured, logistics.shippingIdempotencyConflict,
+            logistics.shippingInProgress.'
           content:
             application/json:
               schema:
@@ -18833,6 +18836,7 @@ paths:
                     - logistics.invalidShipmentState
                     - logistics.orderAlreadyShipped
                     - logistics.orderNotReadyToShip
+                    - logistics.pickupNotConfigured
                     - logistics.shippingIdempotencyConflict
                     - logistics.shippingInProgress
                     description: Stable key for frontend handling; error text is localized.
@@ -64706,8 +64710,9 @@ paths:
       description: 'Creates or resumes a signed-in user''s checkout draft from a quote. The quote token must match and
         is consumed once; replaying a draft only works before the checkout deadline. Self only, or an internal caller
         with the broad key; the quote proof is never skipped. Preview-deployed; atomically
-        copy quote-owned itemCustomizations into the order. The existing request body and IAM/checkout proof remain;
-        no arbitrary asset-ID input or attachment edits.'
+        copy quote-owned itemCustomizations into the order. No arbitrary asset-ID input or attachment edits.
+        Where enabled, send shipping.pickup.netCode instead of address fields for SF Express pickup in Hong Kong.
+        The server verifies the pickup point before saving the order or consuming the quote.'
       security:
       - bearerAuth: []
         apiKeyAuth: []
@@ -64954,6 +64959,12 @@ paths:
                     success: false
                     errorKey: orders.errors.quoteExpired
                     error: The checkout quote has expired.
+        '422':
+          $ref: '#/components/responses/SfPickupIneligible'
+        '502':
+          $ref: '#/components/responses/SfPickupUnavailable'
+        '503':
+          $ref: '#/components/responses/SfPickupDisabled'
         '429':
           description: 'HTTP 429. Possible error keys: common.rateLimited.'
           content:
@@ -77548,29 +77559,58 @@ components:
           - billingAddress
           additionalProperties: false
         shipping:
-          type: object
-          properties:
-            recipientName:
-              type: string
-              minLength: 1
-              maxLength: 255
-            phone:
-              type: string
-              pattern: ^\+[1-9]\d{1,14}$
-            address:
-              type: string
-              minLength: 1
-              maxLength: 500
-            state: {}
-            country: {}
-            postalCode:
-              type: string
-              pattern: ^[A-Za-z0-9][A-Za-z0-9 -]*$
-          required:
-          - recipientName
-          - address
-          - country
-          additionalProperties: false
+          oneOf:
+          - type: object
+            properties:
+              recipientName:
+                type: string
+                minLength: 1
+                maxLength: 255
+              phone:
+                type: string
+                pattern: ^\+[1-9]\d{1,14}$
+              address:
+                type: string
+                minLength: 1
+                maxLength: 500
+              state:
+                type: string
+                pattern: ^[A-Za-z]{2}$
+              country:
+                type: string
+                pattern: ^[A-Za-z]{2}$
+              postalCode:
+                type: string
+                pattern: ^[A-Za-z0-9][A-Za-z0-9 -]*$
+            required:
+            - recipientName
+            - address
+            - country
+            additionalProperties: false
+          - type: object
+            properties:
+              recipientName:
+                type: string
+                minLength: 1
+                maxLength: 255
+              phone:
+                type: string
+                pattern: ^\+[1-9]\d{1,14}$
+              pickup:
+                type: object
+                properties:
+                  netCode:
+                    type: string
+                    minLength: 1
+                    maxLength: 64
+                    pattern: ^[A-Za-z0-9_-]+$
+                required:
+                - netCode
+                additionalProperties: false
+            required:
+            - recipientName
+            - pickup
+            additionalProperties: false
         pet:
           type: object
           properties:
@@ -78176,15 +78216,6 @@ components:
           minLength: 1
           maxLength: 128
           pattern: ^[A-Za-z0-9._:-]+$
-        attrName:
-          type: string
-          minLength: 1
-          maxLength: 200
-        netCode:
-          type: string
-          minLength: 1
-          maxLength: 64
-          pattern: ^[A-Za-z0-9_-]+$
       required:
       - idempotencyKey
       additionalProperties: false
@@ -83707,6 +83738,24 @@ components:
       - unitIndex
       - assetId
   responses:
+    SfPickupIneligible:
+      description: 'The SF pickup point cannot accept this order. Select another point. Error key: orders.errors.pickupIneligible.'
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorEnvelope'
+    SfPickupUnavailable:
+      description: 'SF pickup could not be verified. The quote is not consumed; retry later. Error key: orders.errors.pickupUnavailable.'
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorEnvelope'
+    SfPickupDisabled:
+      description: 'SF pickup drafts are not enabled on this deployment. Error key: orders.errors.pickupUnavailable.'
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorEnvelope'
     Success:
       description: Successful response. Some operations return an empty body.
       content:
