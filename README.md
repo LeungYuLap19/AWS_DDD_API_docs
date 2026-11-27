@@ -2,7 +2,7 @@
 
 Run `python -m http.server 8000` in this directory and open `http://localhost:8000`, or use the [published GitHub Pages site](https://leungyulap19.github.io/AWS_DDD_API_docs/). Open [openapi.yaml](openapi.yaml) to save the contract for LLM tools and code generators. Choose an endpoint, fill its request fields on the left, and use **Send request** on the right. The preview follows those inputs and offers HTTP, Shell, Node, Ruby, and PHP examples. Success and error response structures are listed below the form. The specification uses OpenAPI 3.1 and YAML 1.2.
 
-The reference describes 248 implemented operations. Printing-photo upload and response additions are preview-deployed; paid guest/user photo reads passed live verification. Four deferred routes and three preview/smoke routes are omitted. The contract covers subscriptions, placement sites, localized species/breed catalogs, public contacts, unified ownership events (including audited internal corrections), recovery image replacement and event-date filters, PTag location reports, and external adoption listings.
+The reference describes 254 implemented operations across 181 paths. Printing-photo upload and response additions are preview-deployed; paid guest/user photo reads passed live verification. Four deferred routes and three preview/smoke routes are omitted. The contract covers subscriptions, placement sites, localized species/breed catalogs, public contacts, unified ownership events (including audited internal corrections), recovery image replacement and event-date filters, PTag location reports, and external adoption listings.
 
 ## List display labels
 
@@ -37,7 +37,7 @@ organization/internal membership registration. Each name must contain 1-100 char
 text sanitization. Missing, null, blank, markup-only or oversized names return HTTP 400 before
 account creation. Existing nullable profiles and profile updates are unchanged.
 
-The reference marks these 24 operations with **[PUBLIC]** in endpoint titles and
+The reference marks these 25 operations with **[PUBLIC]** in endpoint titles and
 `x-public: true` in OpenAPI. Search **[PUBLIC]** to show only these operations.
 They require neither an account access JWT nor an API key. Login passwords, OTPs,
 request validation, rate limits, and other endpoint-specific checks still apply.
@@ -51,7 +51,7 @@ request validation, rate limits, and other endpoint-specific checks still apply.
 | Shop codes | `GET /commerce/discount-codes`<br>`POST /commerce/discount-codes/verify` |
 | Order lookup | `GET /commerce/orders/public/{orderReference}` |
 | Payment return handoff | `GET /commerce/payments/return`<br>`POST /commerce/payments/return` |
-| Reference catalogs | `GET /reference-data/animal-species`<br>`GET /reference-data/adoption-listings`<br>`GET /reference-data/adoption-listings/{listingId}` |
+| Reference catalogs | `GET /reference-data/animal-species`<br>`GET /reference-data/animal-species/{speciesId}`<br>`GET /reference-data/adoption-listings`<br>`GET /reference-data/adoption-listings/{listingId}` |
 | PTag lookup/location submission | `GET /pets/ptags/{tagCode}`<br>`POST /pets/ptags/{tagCode}/location-reports` |
 | Recovery cases | `GET /pets/recovery-cases`<br>`POST /pets/recovery-cases`<br>`GET /pets/recovery-cases/{caseId}` |
 | Subscription plans | `GET /subscriptions/plans` |

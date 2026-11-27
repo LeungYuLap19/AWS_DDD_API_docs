@@ -3,8 +3,8 @@
 openapi: 3.1.0
 info:
   title: PetPetClub API
-  version: 2026-11-26.2
-  description: The API documents 248 implemented HTTP operations. Printing-photo upload and response additions are
+  version: 2026-11-27.1
+  description: The API documents 254 implemented HTTP operations. Printing-photo upload and response additions are
     preview-deployed on 2026-11-24; paid guest/user order and private PTag photo reads passed live verification. Paths, gateway credentials, request validation, and permission keys are checked against
     current source. Deferred and preview/smoke routes are omitted. Success responses document handler payload fields.
     Each documented HTTP error status lists the stable errorKey values emitted by the reachable handler and validation
@@ -6028,8 +6028,8 @@ paths:
         itemCustomizations into the order. Do not submit asset IDs or itemCustomizations in the JSON body; attachments
         cannot be replaced or cleared. After payment, guest confirmation emails wait for issued PTags
         and include their codes, short links and QR images, as authenticated purchase emails do.
-        Where enabled, send shipping.pickup.netCode instead of address fields for SF Express pickup in Hong Kong.
-        The server verifies the pickup point before saving the order or consuming the quote.'
+        For Hong Kong pickup, send shipping.address, shipping.country=HK, and shipping.pickup with netCode and locationName
+        from the public pickup lookup. The draft saves the selection without calling SF.'
       security:
       - checkoutToken: []
       x-source-router: functions/commerce-orders/src/router.ts
@@ -6265,12 +6265,6 @@ paths:
                     success: false
                     errorKey: orders.errors.quoteExpired
                     error: The checkout quote has expired.
-        '422':
-          $ref: '#/components/responses/SfPickupIneligible'
-        '502':
-          $ref: '#/components/responses/SfPickupUnavailable'
-        '503':
-          $ref: '#/components/responses/SfPickupDisabled'
         '429':
           description: 'HTTP 429. Possible error keys: common.rateLimited.'
           content:
@@ -18612,7 +18606,7 @@ paths:
       operationId: R199
       description: 'Internal fulfillment: creates the SF Express shipment and label for a paid physical order and
         marks it shipped. Order state and idempotency are checked, so a repeated call does not create a second shipment.
-        Pickup details come from the saved order. Do not send a pickup code or carrier attribute in this request.'
+        Provide attrName and netCode together for pickup, or omit both for address delivery. Staff can review the saved buyer selection before submitting. After an explicit SF rejection with no waybill, correct the pair and use a new idempotency key. For ambiguous failures, retry the original request.'
       security:
       - bearerAuth: []
         apiKeyAuth: []
@@ -18817,7 +18811,7 @@ paths:
                     error: Order not found
         '409':
           description: 'HTTP 409. Possible error keys: logistics.invalidShipmentState, logistics.orderAlreadyShipped,
-            logistics.orderNotReadyToShip, logistics.pickupNotConfigured, logistics.shippingIdempotencyConflict,
+            logistics.orderNotReadyToShip, logistics.shippingIdempotencyConflict,
             logistics.shippingInProgress.'
           content:
             application/json:
@@ -18836,7 +18830,6 @@ paths:
                     - logistics.invalidShipmentState
                     - logistics.orderAlreadyShipped
                     - logistics.orderNotReadyToShip
-                    - logistics.pickupNotConfigured
                     - logistics.shippingIdempotencyConflict
                     - logistics.shippingInProgress
                     description: Stable key for frontend handling; error text is localized.
@@ -30317,8 +30310,8 @@ paths:
       summary: '[PUBLIC] List Adoption Listings'
       operationId: R251
       x-public: true
-      description: 'Public browse of external adoption listings, newest first. Matches the production list: rows from Arc
-        Dog Shelter, Tolobunny, and HKRABBIT remain readable by ID but do not appear in the list. Images are optional. Filters take
+      description: 'Public browse of external adoption listings, newest first. Rows from Arc Dog Shelter, Tolobunny, and
+        HKRABBIT remain readable by ID but do not appear in the list. Listings without images return imageUrls as an empty array. Filters take
         comma-separated values (max 20): `species` and `sex` use the normalized keys, `site` matches `siteName`, and `age`
         takes the month buckets 幼年 (<12), 青年 (12-36), 成年 (48-72), and 老年 (>84). `search` matches breed, species, or remark.
         Listings link to partner sites and are not in-system pets.'
@@ -64711,8 +64704,8 @@ paths:
         is consumed once; replaying a draft only works before the checkout deadline. Self only, or an internal caller
         with the broad key; the quote proof is never skipped. Preview-deployed; atomically
         copy quote-owned itemCustomizations into the order. No arbitrary asset-ID input or attachment edits.
-        Where enabled, send shipping.pickup.netCode instead of address fields for SF Express pickup in Hong Kong.
-        The server verifies the pickup point before saving the order or consuming the quote.'
+        For Hong Kong pickup, send shipping.address, shipping.country=HK, and shipping.pickup with netCode and locationName
+        from the public pickup lookup. The draft saves the selection without calling SF.'
       security:
       - bearerAuth: []
         apiKeyAuth: []
@@ -64959,12 +64952,6 @@ paths:
                     success: false
                     errorKey: orders.errors.quoteExpired
                     error: The checkout quote has expired.
-        '422':
-          $ref: '#/components/responses/SfPickupIneligible'
-        '502':
-          $ref: '#/components/responses/SfPickupUnavailable'
-        '503':
-          $ref: '#/components/responses/SfPickupDisabled'
         '429':
           description: 'HTTP 429. Possible error keys: common.rateLimited.'
           content:
@@ -77596,6 +77583,12 @@ components:
               phone:
                 type: string
                 pattern: ^\+[1-9]\d{1,14}$
+              address:
+                type: string
+                minLength: 1
+                maxLength: 500
+              country:
+                const: HK
               pickup:
                 type: object
                 properties:
@@ -77604,11 +77597,18 @@ components:
                     minLength: 1
                     maxLength: 64
                     pattern: ^[A-Za-z0-9_-]+$
+                  locationName:
+                    type: string
+                    minLength: 1
+                    maxLength: 255
                 required:
                 - netCode
+                - locationName
                 additionalProperties: false
             required:
             - recipientName
+            - address
+            - country
             - pickup
             additionalProperties: false
         pet:
@@ -78216,6 +78216,18 @@ components:
           minLength: 1
           maxLength: 128
           pattern: ^[A-Za-z0-9._:-]+$
+        attrName:
+          type: string
+          minLength: 1
+          maxLength: 200
+        netCode:
+          type: string
+          minLength: 1
+          maxLength: 64
+          pattern: ^[A-Za-z0-9_-]+$
+      dependentRequired:
+        attrName: [netCode]
+        netCode: [attrName]
       required:
       - idempotencyKey
       additionalProperties: false
@@ -83242,6 +83254,14 @@ components:
               type: string
             address:
               type: string
+            pickup:
+              type: object
+              required: [netCode, locationName]
+              properties:
+                netCode:
+                  type: string
+                locationName:
+                  type: string
         pet:
           type: object
           required:
@@ -83738,24 +83758,6 @@ components:
       - unitIndex
       - assetId
   responses:
-    SfPickupIneligible:
-      description: 'The SF pickup point cannot accept this order. Select another point. Error key: orders.errors.pickupIneligible.'
-      content:
-        application/json:
-          schema:
-            $ref: '#/components/schemas/ErrorEnvelope'
-    SfPickupUnavailable:
-      description: 'SF pickup could not be verified. The quote is not consumed; retry later. Error key: orders.errors.pickupUnavailable.'
-      content:
-        application/json:
-          schema:
-            $ref: '#/components/schemas/ErrorEnvelope'
-    SfPickupDisabled:
-      description: 'SF pickup drafts are not enabled on this deployment. Error key: orders.errors.pickupUnavailable.'
-      content:
-        application/json:
-          schema:
-            $ref: '#/components/schemas/ErrorEnvelope'
     Success:
       description: Successful response. Some operations return an empty body.
       content:
